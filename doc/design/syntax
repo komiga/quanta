@@ -1,0 +1,117 @@
+
+// root is an untyped collection
+
+// C++-style comments
+
+name = xyz // can be named
+
+// can contain inner '-', but not leading or trailing
+// cannot lead with number
+this.is-a_freeform8string1
+"quoted"
+```
+r
+  a
+    w
+```
+
+1 // integer
+1.0 // floating-point
+1unit_type // unit type follows numeric value
+
+// markers (left-leaning):
+	? // uncertain
+	G~ // guess
+	~ // approximate, maybe less than (sense intensified by repetition)
+	^ // approximate, maybe more than (sense intensified by repetition)
+
+// ~ and ^ can be repeated up to three times (a 0-3 scale)
+// ? and ~ and ^ are valid without a value part (e.g.: ?, x[^^], ~~~)
+// ? and G~ are mutually exclusive
+// if ? is the only marker present, it may be repeated twice
+
+// operators:
+	// arithmetic
+	x + y // addition; unary: plus
+	x - y // subtraction (requires whitespace separation if between two strings); unary: minus
+	x * y // multiplication
+	x / y // division
+	x % y // modulo
+
+	// bitwise
+	(^x) // bitwise NOT
+	x & y // bitwise AND
+	x | y // bitwise OR
+	x ^ y // bitwise XOR
+	x << y // bitwise left-shift
+	x >> y // bitwise right-shift
+
+	// logical
+	!x // logical NOT
+	x && y // logical AND
+	x || y // logical OR
+
+	// comparison
+	x == y // equal-to test
+	x != y // not-equal-to test
+	x <  y // less-than test
+	x >  y // greater-than test
+	x <= y // less-than-or-equal-to test
+	x >= y // greater-than-or-equal-to test
+
+// operators form an expression object, a type of collection
+
+// sources (IDs must be numbers from [0, 0xFFFF) (start-exclusive, end-inclusive))
+	glitter$1 // source ID (1)
+	glitter$1$2 // source ID (1) and sub-source ID (2)
+	// uncertainty marker only applies here
+	x$?1
+	x$1$?
+
+type{} // collection; type is optional and just a string
+
+glitter[~10g] // quantity
+x[1u / 42g] // '/' forms an expression, but is used in this context to mean "alternative measurement"
+x[1u, 2u] // quantity object is expanded to a collection when multiple values are specified
+xxx{d = "ghosts"}[^^^374ghost-grams] // quantity is an attachment to the object, not the object's type
+
+// terminators are ',', ';', and '\n'
+{
+	w, x; y
+	z
+}
+
+// tags
+	x:name
+	x:~~markers
+	y:name{} // comes before collection
+	z:name[1] // comes before quantity
+	:name // can tag a value-less object
+	:collection("goats", x = 4) // tags can be collections
+	u:v(w:x()){y}[z]
+
+// basic composition
+// ! means a singular match where at least one of the !-marked elements must occur
+
+Elements = {
+
+String = [a-zA-Z_\.][a-zA-Z0-9_\.\-]*[a-zA-Z0-9_\.]+ | "\"" (.*|\\\")* "\"" | "```" ([.\s\n]*) "```"
+GuessMarker = "G~"
+ApproximationMarkers = "?" | "??" | "???" | "~" | "~~" | "~~~" | "^" | "^^" | "^^^"
+Name = String "="
+TagName = ":" String
+Tag = TagName TagChildren?
+Tags = Tag+
+TagChildren = "(" Object* ")"
+Children = "{" Object* "}"
+Quantity = "[" Object* "]"
+Unit = String
+Null = "null"
+Boolean = "false" | "true"
+ValueConstant = Null | Boolean
+ValueNumber = Number Unit?
+ValueString = String
+Value = ValueConstant | ValueNumber | ValueString
+Object = Name? GuessMarker? ApproximationMarkers! Value! Tags? Children? Quantity?
+
+}

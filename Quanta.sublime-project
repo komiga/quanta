@@ -1,0 +1,67 @@
+{
+	"folders":
+	[
+		{
+			"name": "Root",
+			"path": "./",
+			"folder_exclude_patterns": [
+				"doc",
+				"dep",
+				"scripts",
+				"lib",
+				"app",
+				"test",
+				"tmp",
+				"build"
+			],
+			"file_exclude_patterns": [
+				"Makefile",
+				"*.make"
+			]
+		},
+		{
+			"name": "Documentation",
+			"path": "./doc/",
+			"folder_exclude_patterns": [
+				"html",
+				"gen_interface"
+			]
+		},
+		{
+			"name": "Dependencies",
+			"path": "./dep/",
+			"folder_exclude_patterns": [
+				"*"
+			]
+		},
+		{
+			"name": "Scripts",
+			"path": "./scripts/"
+		},
+		{
+			"name": "Library: core",
+			"path": "./lib/core/",
+			"folder_exclude_patterns": [
+				"src",
+				"build"
+			],
+			"file_exclude_patterns": [
+				"Makefile",
+				"*.make",
+				"*.exe",
+				"*.elf"
+			]
+		},
+		{
+			"name": "— lib/core",
+			"path": "./lib/core/src/quanta/",
+			"file_exclude_patterns": [
+				"*.gen_interface"
+			]
+		}
+	],
+	"settings":
+	{
+		"tab_size": 4
+	}
+}

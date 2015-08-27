@@ -1,5 +1,5 @@
 
-dofile("dep/togo/scripts/common.lua")
+dofile("../dep/togo/scripts/common.lua")
 
 function quanta_libs()
 	return {

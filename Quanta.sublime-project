@@ -54,7 +54,7 @@
 		},
 		{
 			"name": "— lib/core",
-			"path": "./lib/core/src/quanta/",
+			"path": "./lib/core/src/quanta/core/",
 			"file_exclude_patterns": [
 				"*.gen_interface"
 			]

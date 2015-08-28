@@ -22,6 +22,8 @@ namespace togo {
 namespace quanta {
 namespace string {
 
+using namespace togo::string;
+
 /**
 	@addtogroup lib_core_string
 	@{

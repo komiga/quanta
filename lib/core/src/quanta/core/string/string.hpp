@@ -14,7 +14,7 @@
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/memory/types.hpp>
-#include <togo/core/string/types.hpp>
+#include <togo/core/string/string.hpp>
 #include <togo/core/hash/hash.hpp>
 
 #include <quanta/core/string/types.hpp>

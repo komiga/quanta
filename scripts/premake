@@ -4,6 +4,7 @@ premake4 $@
 
 if [[ -f Makefile ]]; then
 	sed -i \
+		-e 's/lib_core:/& | igen/' \
 		-e 's/clean:/&:/' \
 		-e '$a include scripts/tests.make' \
 		Makefile

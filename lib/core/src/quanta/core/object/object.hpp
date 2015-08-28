@@ -19,6 +19,7 @@
 #include <togo/core/hash/hash.hpp>
 #include <togo/core/io/types.hpp>
 
+#include <quanta/core/string/string.hpp>
 #include <quanta/core/object/types.hpp>
 #include <quanta/core/object/object.gen_interface>
 
@@ -44,7 +45,7 @@ inline ObjectNameHash hash_name(StringRef const& name) {
 
 /// Value type.
 inline ObjectValueType type(Object const& obj) {
-	return obj.properties & Object::M_TYPE;
+	return static_cast<ObjectValueType>(obj.properties & Object::M_TYPE);
 }
 
 /// Whether type is type.
@@ -78,13 +79,33 @@ inline bool is_numeric(Object const& obj) {
 inline bool is_string(Object const& obj) { return object::is_type(obj, ObjectValueType::string); }
 
 /// Name.
-inline HashedString& name(Object& obj) {
+inline HashedString<ObjectNameHash> const& name(Object const& obj) {
 	return obj.name;
+}
+
+/// Set name.
+inline void set_name(Object& obj, StringRef name) {
+	string::set(obj.name, name, memory::default_allocator());
+}
+
+/// Clear name.
+inline void clear_name(Object& obj) {
+	string::clear(obj.name, memory::default_allocator());
 }
 
 /// Whether name is non-empty.
 inline bool is_named(Object const& obj) {
 	return obj.name.size;
+}
+
+/// Source.
+inline unsigned source(Object const& obj) {
+	return obj.source;
+}
+
+/// Sub-source.
+inline unsigned sub_source(Object const& obj) {
+	return obj.sub_source;
 }
 
 /// Boolean value.
@@ -107,13 +128,13 @@ inline f64 decimal(Object const& obj) {
 
 /// Numeric value unit.
 inline Object::UnitString& unit(Object& obj) {
-	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::numeric));
+	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
 	return obj.value.numeric.unit;
 }
 
 // SEE PLUS PLUS
 inline Object::UnitString const& unit(Object const& obj) {
-	return Object::unit(const_cast<Object&>(obj));
+	return object::unit(const_cast<Object&>(obj));
 }
 
 /// String value.
@@ -123,10 +144,20 @@ inline String& string(Object& obj) {
 }
 
 inline String const& string(Object const& obj) {
-	return Object::string(const_cast<Object&>(obj));
+	return object::string(const_cast<Object&>(obj));
 }
 
-/// Free value if dynamic and change type to ObjectValueType::null.
+/// Set source.
+inline unsigned set_source(Object& obj, unsigned source) {
+	return obj.source = static_cast<u16>(max(source, 0xFFFFu));
+}
+
+/// Set sub-source.
+inline unsigned set_sub_source(Object& obj, unsigned sub_source) {
+	return obj.sub_source = static_cast<u16>(max(sub_source, 0xFFFFu));
+}
+
+/// Set value to null.
 inline void set_null(Object& obj) {
 	object::set_type(obj, ObjectValueType::null);
 }
@@ -154,13 +185,13 @@ inline void set_decimal(Object& obj, f64 const value) {
 /// Type must be numeric.
 inline void set_unit(Object& obj, StringRef const unit) {
 	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
-	string::set(obj.value.numeric.unit, unit);
+	string::set(obj.value.numeric.unit, unit, memory::default_allocator());
 }
 
 /// Set string value.
 inline void set_string(Object& obj, StringRef const value) {
 	object::set_type(obj, ObjectValueType::string);
-	string::set(obj.value.string, value);
+	string::set(obj.value.string, value, memory::default_allocator());
 }
 
 /// Children.
@@ -199,7 +230,9 @@ inline bool has_quantity(Object const& obj) {
 /// Destruct.
 inline Object::~Object() {
 	object::set_null(*this);
-	string::free(name);
+	object::clear_name(*this);
+	object::clear_tags(*this);
+	object::clear_children(*this);
 }
 
 /// Construct null.

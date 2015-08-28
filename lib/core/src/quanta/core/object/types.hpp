@@ -31,6 +31,8 @@ namespace object {
 /// Object name hash.
 using ObjectNameHash = hash32;
 
+namespace hash_literals {
+
 /// Object name hash literal.
 inline constexpr ObjectNameHash
 operator"" _object_name(
@@ -39,6 +41,10 @@ operator"" _object_name(
 ) {
 	return hash::calc_generic_ce<ObjectNameHash>(data, size);
 }
+
+} // namespace hash_literals
+
+using namespace hash_literals;
 
 /// Object names.
 enum : ObjectNameHash {
@@ -134,13 +140,16 @@ struct Object {
 	Array<Object> children;
 	Object* quantity;
 
-	Object& operator=(Object const&) = delete;
 	Object& operator=(Object&&) = delete;
 
 	~Object();
 	Object();
 	Object(Object const& other);
 	Object(Object&& other);
+
+private:
+	friend struct togo::collection_npod_impl<Object, true>;
+	Object& operator=(Object const&);
 };
 
 /** @} */ // end of doc-group lib_core_object
@@ -148,13 +157,17 @@ struct Object {
 } // namespace object
 
 using object::ObjectNameHash;
-using object::_object_name;
+using namespace object::hash_literals;
 using object::ObjectValueType;
 using object::Object;
 
-/** @cond INTERNAL */
-template<>
-struct enable_enum_bitwise_ops<ObjectValueType> : true_type {};
-/** @endcond */ // INTERNAL
 
 } // namespace quanta
+
+/** @cond INTERNAL */
+namespace togo {
+	template<> struct enable_enum_bitwise_ops<quanta::ObjectValueType> : true_type {};
+	template<> struct allow_collection_value_type<quanta::Object> : true_type {};
+	template<> struct enable_collection_construction_and_destruction<quanta::Object> : true_type {};
+} // namespace togo
+/** @endcond */ // INTERNAL

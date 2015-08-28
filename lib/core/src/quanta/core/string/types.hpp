@@ -13,6 +13,7 @@
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
 #include <togo/core/utility/utility.hpp>
+#include <togo/core/string/types.hpp>
 
 namespace togo {
 	class Allocator;
@@ -30,6 +31,10 @@ namespace string {
 struct String {
 	char* data;
 	u32 size;
+
+	operator StringRef() const {
+		return StringRef{data, size};
+	}
 };
 
 /// Hashed string.
@@ -44,6 +49,10 @@ struct HashedString
 	);
 
 	H hash;
+
+	operator StringRef() const {
+		return StringRef{data, size};
+	}
 };
 
 /** @} */ // end of doc-group lib_core_string

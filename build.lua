@@ -247,6 +247,33 @@ precore.make_config_scoped("quanta.projects", {
 			"precore.generic",
 		}
 	)
+
+	local env = {
+		NO_LINK = true,
+	}
+	local configs = {
+		"quanta.strict",
+	}
+	for _, name in pairs(quanta.libs) do
+		table.insert(configs, 1, "quanta.lib." .. name .. ".dep")
+	end
+	for _, name in pairs(quanta.apps) do
+		table.insert(configs, 1, "quanta.app." .. name .. ".dep")
+	end
+
+	precore.make_project(
+		"igen",
+		"C++", "StaticLib",
+		"build/igen/", "build/igen/",
+		env, configs
+	)
+
+	configuration {"gmake"}
+		prebuildcommands {
+			"$(SILENT) mkdir -p ./tmp",
+			"$(SILENT) ./scripts/run_igen.py -- $(ALL_CXXFLAGS)",
+			"$(SILENT) exit 0",
+		}
 end}})
 
 quanta.libs = quanta_libs()

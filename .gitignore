@@ -4,6 +4,7 @@ Quanta.sublime-workspace
 *.make
 Makefile
 build/
+tmp/
 
 *.exe
 *.elf

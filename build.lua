@@ -218,6 +218,11 @@ end}})
 precore.make_config("quanta.base", nil, {
 "togo.base",
 {project = function(p)
+	configuration {}
+		libdirs {
+			S"${QUANTA_BUILD}/lib/",
+		}
+
 	configuration {"linux"}
 		buildoptions {
 			"-pthread",

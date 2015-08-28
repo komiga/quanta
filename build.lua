@@ -165,6 +165,9 @@ function quanta.make_test(group, name, srcglob, configs)
 
 	configuration {}
 		targetname(name)
+		includedirs {
+			G"${TOGO_ROOT}/support/",
+		}
 		files {
 			srcglob
 		}

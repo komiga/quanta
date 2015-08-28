@@ -48,16 +48,6 @@ void object::clear_value(Object& obj) {
 	}
 }
 
-/// Clear tags.
-void object::clear_tags(Object& obj) {
-	array::clear(obj.tags);
-}
-
-/// Clear children.
-void object::clear_children(Object& obj) {
-	array::clear(obj.children);
-}
-
 /// Copy an object.
 void object::copy(Object& dst, Object const& src) {
 	auto& a = memory::default_allocator();

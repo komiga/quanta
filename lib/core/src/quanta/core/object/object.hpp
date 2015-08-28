@@ -195,22 +195,12 @@ inline void set_string(Object& obj, StringRef const value) {
 }
 
 /// Children.
-inline Array<Object>& children(Object& obj) {
-	return obj.children;
-}
-
-inline Array<Object> const& children(Object const& obj) {
-	return obj.children;
-}
+inline Array<Object>& children(Object& obj) { return obj.children; }
+inline Array<Object> const& children(Object const& obj) { return obj.children; }
 
 /// Tags.
-inline Array<Object>& tags(Object& obj) {
-	return obj.tags;
-}
-
-inline Array<Object> const& tags(Object const& obj) {
-	return obj.tags;
-}
+inline Array<Object>& tags(Object& obj) { return obj.tags; }
+inline Array<Object> const& tags(Object const& obj) { return obj.tags; }
 
 /// Whether the object has tags.
 inline bool has_tags(Object const& obj) {
@@ -225,6 +215,16 @@ inline bool has_children(Object const& obj) {
 /// Whether the object has a quantity.
 inline bool has_quantity(Object const& obj) {
 	return obj.quantity;
+}
+
+/// Clear tags.
+inline void clear_tags(Object& obj) {
+	array::clear(obj.tags);
+}
+
+/// Clear children.
+inline void clear_children(Object& obj) {
+	array::clear(obj.children);
 }
 
 /// Destruct.

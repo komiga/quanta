@@ -158,6 +158,12 @@ inline unsigned set_sub_source(Object& obj, unsigned sub_source) {
 	return obj.sub_source = static_cast<u16>(max(sub_source, 0xFFFFu));
 }
 
+/// Clear source and sub-source.
+inline void clear_source(Object& obj) {
+	object::set_source(obj, 0);
+	object::set_sub_source(obj, 0);
+}
+
 /// Set value to null.
 inline void set_null(Object& obj) {
 	object::set_type(obj, ObjectValueType::null);
@@ -187,6 +193,20 @@ inline void set_decimal(Object& obj, f64 const value) {
 inline void set_unit(Object& obj, StringRef const unit) {
 	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
 	unmanaged_string::set(obj.value.numeric.unit, unit, memory::default_allocator());
+}
+
+/// Set integer value and unit.
+inline void set_integer(Object& obj, s64 const value, StringRef const unit) {
+	object::set_type(obj, ObjectValueType::integer);
+	obj.value.numeric.integer = value;
+	object::set_unit(obj, unit);
+}
+
+/// Set decimal value and unit.
+inline void set_decimal(Object& obj, f64 const value, StringRef const unit) {
+	object::set_type(obj, ObjectValueType::decimal);
+	obj.value.numeric.decimal = value;
+	object::set_unit(obj, unit);
 }
 
 /// Set string value.
@@ -234,6 +254,13 @@ inline void clear_children(Object& obj) {
 
 /// Clear quantity.
 inline void clear_quantity(Object& obj) {
+	if (object::has_quantity(obj)) {
+		object::clear(*obj.quantity);
+	}
+}
+
+/// Release quantity.
+inline void release_quantity(Object& obj) {
 	TOGO_DESTROY(memory::default_allocator(), obj.quantity);
 	obj.quantity = nullptr;
 }
@@ -242,7 +269,7 @@ inline void clear_quantity(Object& obj) {
 inline Object::~Object() {
 	object::clear_name(*this);
 	object::set_null(*this);
-	object::clear_quantity(*this);
+	object::release_quantity(*this);
 }
 
 /// Construct null.

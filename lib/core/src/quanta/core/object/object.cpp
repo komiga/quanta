@@ -76,13 +76,33 @@ void object::copy(Object& dst, Object const& src) {
 	}
 	array::copy(dst.tags, src.tags);
 	array::copy(dst.children, src.children);
-	if (src.quantity) {
-		if (!dst.quantity) {
-			dst.quantity = TOGO_CONSTRUCT(a, Object, *src.quantity);
-		} else {
+	if (object::has_quantity(src)) {
+		if (object::has_quantity(dst)) {
 			object::copy(*dst.quantity, *src.quantity);
+		} else {
+			dst.quantity = TOGO_CONSTRUCT(a, Object, *src.quantity);
 		}
 	}
+}
+
+/// Create quantity or clear existing quantity.
+Object& object::make_quantity(Object& obj) {
+	if (object::has_quantity(obj)) {
+		object::clear(*obj.quantity);
+	} else {
+		obj.quantity = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
+	}
+	return *obj.quantity;
+}
+
+/// Clear all properties.
+void object::clear(Object& obj) {
+	object::set_null(obj);
+	object::clear_name(obj);
+	object::clear_source(obj);
+	object::clear_tags(obj);
+	object::clear_children(obj);
+	object::clear_quantity(obj);
 }
 
 namespace object {

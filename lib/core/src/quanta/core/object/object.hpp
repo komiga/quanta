@@ -291,6 +291,11 @@ inline Object::Object(Object const& other)
 	object::copy(*this, other);
 }
 
+inline Object& Object::operator=(Object const& other) {
+	object::copy(*this, other);
+	return *this;
+}
+
 /** @} */ // end of doc-group lib_core_object
 
 } // namespace object

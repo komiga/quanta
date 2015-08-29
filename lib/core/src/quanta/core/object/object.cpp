@@ -105,13 +105,8 @@ void object::clear(Object& obj) {
 	object::clear_quantity(obj);
 }
 
-namespace object {
 
-Object& Object::operator=(Object const& other) {
-	object::copy(*this, other);
-	return *this;
 }
 
-} // namespace object
 
 } // namespace quanta

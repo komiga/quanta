@@ -19,7 +19,7 @@
 #include <togo/core/hash/hash.hpp>
 #include <togo/core/io/types.hpp>
 
-#include <quanta/core/string/string.hpp>
+#include <quanta/core/string/unmanaged_string.hpp>
 #include <quanta/core/object/types.hpp>
 #include <quanta/core/object/object.gen_interface>
 
@@ -85,12 +85,12 @@ inline HashedString<ObjectNameHash> const& name(Object const& obj) {
 
 /// Set name.
 inline void set_name(Object& obj, StringRef name) {
-	string::set(obj.name, name, memory::default_allocator());
+	unmanaged_string::set(obj.name, name, memory::default_allocator());
 }
 
 /// Clear name.
 inline void clear_name(Object& obj) {
-	string::clear(obj.name, memory::default_allocator());
+	unmanaged_string::clear(obj.name, memory::default_allocator());
 }
 
 /// Whether name is non-empty.
@@ -185,13 +185,13 @@ inline void set_decimal(Object& obj, f64 const value) {
 /// Type must be numeric.
 inline void set_unit(Object& obj, StringRef const unit) {
 	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
-	string::set(obj.value.numeric.unit, unit, memory::default_allocator());
+	unmanaged_string::set(obj.value.numeric.unit, unit, memory::default_allocator());
 }
 
 /// Set string value.
 inline void set_string(Object& obj, StringRef const value) {
 	object::set_type(obj, ObjectValueType::string);
-	string::set(obj.value.string, value, memory::default_allocator());
+	unmanaged_string::set(obj.value.string, value, memory::default_allocator());
 }
 
 /// Children.

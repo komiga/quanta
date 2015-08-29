@@ -20,17 +20,21 @@ namespace togo {
 } // namespace togo
 
 namespace quanta {
-namespace string {
-
-using namespace togo::string;
 
 /**
 	@addtogroup lib_core_string
 	@{
 */
 
-/// String.
-struct String {
+namespace unmanaged_string {
+
+/**
+	@addtogroup lib_core_unmanaged_string
+	@{
+*/
+
+/// Unmanaged string.
+struct UnmanagedString {
 	char* data;
 	u32 size;
 
@@ -39,10 +43,10 @@ struct String {
 	}
 };
 
-/// Hashed string.
+/// Hashed unmanaged string.
 template<class H>
-struct HashedString
-	: String
+struct HashedUnmanagedString
+	: UnmanagedString
 {
 	static_assert(
 		is_same<H, hash32>::value ||
@@ -57,11 +61,13 @@ struct HashedString
 	}
 };
 
+/** @} */ // end of doc-group lib_core_unmanaged_string
+
+} // namespace unmanaged_string
+
+using unmanaged_string::UnmanagedString;
+using unmanaged_string::HashedUnmanagedString;
+
 /** @} */ // end of doc-group lib_core_string
-
-} // namespace string
-
-using string::String;
-using string::HashedString;
 
 } // namespace quanta

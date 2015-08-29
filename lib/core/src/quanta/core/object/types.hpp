@@ -20,6 +20,8 @@
 #include <togo/core/string/types.hpp>
 #include <togo/core/hash/hash.hpp>
 
+#include <quanta/core/string/types.hpp>
+
 namespace quanta {
 namespace object {
 
@@ -79,8 +81,6 @@ enum class ObjectValueMarker : unsigned {
 
 /// Object.
 struct Object {
-	using UnitString = HashedString<hash32>;
-
 	union Value {
 		bool boolean;
 		struct Numeric {
@@ -88,9 +88,9 @@ struct Object {
 				s64 integer;
 				f64 decimal;
 			};
-			UnitString unit;
+			HashedUnmanagedString<ObjectNumericUnitHash> unit;
 		} numeric;
-		String string;
+		UnmanagedString string;
 	};
 
 	enum : unsigned {
@@ -134,7 +134,7 @@ struct Object {
 	u64 properties;
 	u16 source;
 	u16 sub_source;
-	HashedString<ObjectNameHash> name;
+	HashedUnmanagedString<ObjectNameHash> name;
 	Value value;
 	Array<Object> tags;
 	Array<Object> children;

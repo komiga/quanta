@@ -8,7 +8,7 @@
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/memory/memory.hpp>
 
-#include <quanta/core/string/string.hpp>
+#include <quanta/core/string/unmanaged_string.hpp>
 #include <quanta/core/object/object.hpp>
 
 namespace quanta {
@@ -36,14 +36,14 @@ void object::clear_value(Object& obj) {
 		break;
 	case ObjectValueType::integer:
 		obj.value.numeric.integer = 0;
-		string::clear(obj.value.numeric.unit, a);
+		unmanaged_string::clear(obj.value.numeric.unit, a);
 		break;
 	case ObjectValueType::decimal:
 		obj.value.numeric.decimal = 0.0f;
-		string::clear(obj.value.numeric.unit, a);
+		unmanaged_string::clear(obj.value.numeric.unit, a);
 		break;
 	case ObjectValueType::string:
-		string::clear(obj.value.string, a);
+		unmanaged_string::clear(obj.value.string, a);
 		break;
 	}
 }
@@ -54,7 +54,7 @@ void object::copy(Object& dst, Object const& src) {
 	dst.source = src.source;
 	dst.sub_source = src.sub_source;
 	dst.properties = src.properties;
-	string::set(dst.name, src.name, a);
+	unmanaged_string::set(dst.name, src.name, a);
 	object::set_type(dst, object::type(src));
 	switch (object::type(dst)) {
 	case ObjectValueType::null:
@@ -64,14 +64,14 @@ void object::copy(Object& dst, Object const& src) {
 		break;
 	case ObjectValueType::integer:
 		dst.value.numeric.integer = src.value.numeric.integer;
-		string::set(dst.value.numeric.unit, src.value.numeric.unit, a);
+		unmanaged_string::set(dst.value.numeric.unit, src.value.numeric.unit, a);
 		break;
 	case ObjectValueType::decimal:
 		dst.value.numeric.decimal = src.value.numeric.decimal;
-		string::set(dst.value.numeric.unit, src.value.numeric.unit, a);
+		unmanaged_string::set(dst.value.numeric.unit, src.value.numeric.unit, a);
 		break;
 	case ObjectValueType::string:
-		string::set(dst.value.string, src.value.string, a);
+		unmanaged_string::set(dst.value.string, src.value.string, a);
 		break;
 	}
 	array::copy(dst.tags, src.tags);

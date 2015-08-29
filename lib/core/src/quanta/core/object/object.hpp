@@ -112,6 +112,11 @@ inline unsigned sub_source(Object const& obj) {
 	return obj.sub_source;
 }
 
+/// Whether the object has a source.
+inline bool has_source(Object const& obj) {
+	return obj.source != 0;
+}
+
 /// Boolean value.
 inline bool boolean(Object const& obj) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::boolean));
@@ -149,13 +154,24 @@ inline StringRef string(Object const& obj) {
 }
 
 /// Set source.
-inline unsigned set_source(Object& obj, unsigned source) {
-	return obj.source = static_cast<u16>(max(source, 0xFFFFu));
+///
+/// If source is 0, sub-source is also set to 0 (same effect as clear_source()).
+inline void set_source(Object& obj, unsigned const source) {
+	if (source == 0) {
+		obj.source = 0;
+		obj.sub_source = 0;
+	} else {
+		obj.source = static_cast<u16>(min(source, 0xFFFFu));
+	}
 }
 
 /// Set sub-source.
-inline unsigned set_sub_source(Object& obj, unsigned sub_source) {
-	return obj.sub_source = static_cast<u16>(max(sub_source, 0xFFFFu));
+///
+/// The source must be non-0 for the sub-source to take a non-0 value.
+inline void set_sub_source(Object& obj, unsigned const sub_source) {
+	if (object::has_source(obj)) {
+		obj.sub_source = static_cast<u16>(min(sub_source, 0xFFFFu));
+	}
 }
 
 /// Clear source and sub-source.

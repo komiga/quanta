@@ -33,6 +33,9 @@ namespace object {
 /// Object name hash.
 using ObjectNameHash = hash32;
 
+/// Object numeric unit hash.
+using ObjectNumericUnitHash = hash32;
+
 namespace hash_literals {
 
 /// Object name hash literal.
@@ -157,10 +160,11 @@ private:
 } // namespace object
 
 using object::ObjectNameHash;
+using object::ObjectNumericUnitHash;
 using namespace object::hash_literals;
+using object::OBJECT_NAME_NULL;
 using object::ObjectValueType;
 using object::Object;
-
 
 } // namespace quanta
 

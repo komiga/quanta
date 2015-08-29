@@ -14,10 +14,9 @@
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/memory/memory.hpp>
-#include <togo/core/string/types.hpp>
+#include <togo/core/collection/array.hpp>
 #include <togo/core/string/string.hpp>
 #include <togo/core/hash/hash.hpp>
-#include <togo/core/io/types.hpp>
 
 #include <quanta/core/string/unmanaged_string.hpp>
 #include <quanta/core/object/types.hpp>
@@ -79,8 +78,18 @@ inline bool is_numeric(Object const& obj) {
 inline bool is_string(Object const& obj) { return object::is_type(obj, ObjectValueType::string); }
 
 /// Name.
-inline HashedString<ObjectNameHash> const& name(Object const& obj) {
+inline StringRef name(Object const& obj) {
 	return obj.name;
+}
+
+/// Name hash.
+inline ObjectNameHash name_hash(Object const& obj) {
+	return obj.name.hash;
+}
+
+/// Whether name is non-empty.
+inline bool is_named(Object const& obj) {
+	return unmanaged_string::any(obj.name);
 }
 
 /// Set name.
@@ -91,11 +100,6 @@ inline void set_name(Object& obj, StringRef name) {
 /// Clear name.
 inline void clear_name(Object& obj) {
 	unmanaged_string::clear(obj.name, memory::default_allocator());
-}
-
-/// Whether name is non-empty.
-inline bool is_named(Object const& obj) {
-	return obj.name.size;
 }
 
 /// Source.
@@ -127,24 +131,21 @@ inline f64 decimal(Object const& obj) {
 }
 
 /// Numeric value unit.
-inline Object::UnitString& unit(Object& obj) {
+inline StringRef unit(Object const& obj) {
 	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
 	return obj.value.numeric.unit;
 }
 
-// SEE PLUS PLUS
-inline Object::UnitString const& unit(Object const& obj) {
-	return object::unit(const_cast<Object&>(obj));
+/// Numeric value unit hash.
+inline ObjectNumericUnitHash unit_hash(Object const& obj) {
+	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
+	return obj.value.numeric.unit.hash;
 }
 
 /// String value.
-inline String& string(Object& obj) {
+inline StringRef string(Object const& obj) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));
 	return obj.value.string;
-}
-
-inline String const& string(Object const& obj) {
-	return object::string(const_cast<Object&>(obj));
 }
 
 /// Set source.
@@ -202,6 +203,10 @@ inline Array<Object> const& children(Object const& obj) { return obj.children; }
 inline Array<Object>& tags(Object& obj) { return obj.tags; }
 inline Array<Object> const& tags(Object const& obj) { return obj.tags; }
 
+/// Quantity.
+inline Object* quantity(Object& obj) { return obj.quantity; }
+inline Object const* quantity(Object const& obj) { return obj.quantity; }
+
 /// Whether the object has tags.
 inline bool has_tags(Object const& obj) {
 	return array::any(obj.tags);
@@ -227,12 +232,17 @@ inline void clear_children(Object& obj) {
 	array::clear(obj.children);
 }
 
+/// Clear quantity.
+inline void clear_quantity(Object& obj) {
+	TOGO_DESTROY(memory::default_allocator(), obj.quantity);
+	obj.quantity = nullptr;
+}
+
 /// Destruct.
 inline Object::~Object() {
-	object::set_null(*this);
 	object::clear_name(*this);
-	object::clear_tags(*this);
-	object::clear_children(*this);
+	object::set_null(*this);
+	object::clear_quantity(*this);
 }
 
 /// Construct null.

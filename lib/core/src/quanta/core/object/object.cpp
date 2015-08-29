@@ -4,6 +4,7 @@
 */
 
 #include <quanta/core/config.hpp>
+#include <togo/core/log/log.hpp>
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/memory/memory.hpp>
@@ -105,8 +106,80 @@ void object::clear(Object& obj) {
 	object::clear_quantity(obj);
 }
 
-
+IGEN_PRIVATE
+Object const* object::find_impl(
+	Array<Object> const& collection,
+	StringRef const& name,
+	ObjectNameHash const name_hash
+) {
+	if (name_hash == OBJECT_NAME_NULL || array::empty(collection)) {
+		return nullptr;
+	}
+	for (Object const& item : collection) {
+		if (name_hash == item.name.hash) {
+			#if defined(TOGO_DEBUG)
+			if (name.valid() && !string::compare_equal(name, object::name(item))) {
+				TOGO_LOG_DEBUGF(
+					"hashes matched, but names mismatched: '%.*s' != '%.*s' (lookup_name != name)\n",
+					name.size, name.data,
+					item.name.size, item.name.data
+				);
+			}
+			#else
+				(void)name;
+			#endif
+			return &item;
+		}
+	}
+	return nullptr;
 }
 
+/// Find tag by name.
+Object* object::find_tag(Object& obj, StringRef const& name) {
+	ObjectNameHash const name_hash = object::hash_name(name);
+	return const_cast<Object*>(object::find_impl(obj.tags, name, name_hash));
+}
+
+/// Find tag by name.
+Object const* object::find_tag(Object const& obj, StringRef const& name) {
+	ObjectNameHash const name_hash = object::hash_name(name);
+	return object::find_impl(obj.tags, name, name_hash);
+}
+
+/// Find tag by name hash.
+Object* object::find_tag(Object& obj, ObjectNameHash const name_hash) {
+	return const_cast<Object*>(
+		object::find_impl(obj.tags, StringRef{}, name_hash)
+	);
+}
+
+/// Find tag by name hash.
+Object const* object::find_tag(Object const& obj, ObjectNameHash const name_hash) {
+	return object::find_impl(obj.tags, StringRef{}, name_hash);
+}
+
+/// Find tag by name.
+Object* object::find_child(Object& obj, StringRef const& name) {
+	ObjectNameHash const name_hash = object::hash_name(name);
+	return const_cast<Object*>(object::find_impl(obj.children, name, name_hash));
+}
+
+/// Find tag by name.
+Object const* object::find_child(Object const& obj, StringRef const& name) {
+	ObjectNameHash const name_hash = object::hash_name(name);
+	return object::find_impl(obj.children, name, name_hash);
+}
+
+/// Find tag by name hash.
+Object* object::find_child(Object& obj, ObjectNameHash const name_hash) {
+	return const_cast<Object*>(
+		object::find_impl(obj.children, StringRef{}, name_hash)
+	);
+}
+
+/// Find tag by name hash.
+Object const* object::find_child(Object const& obj, ObjectNameHash const name_hash) {
+	return object::find_impl(obj.children, StringRef{}, name_hash);
+}
 
 } // namespace quanta

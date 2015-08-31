@@ -30,11 +30,71 @@ signed main() {
 
 	{
 		Object a;
-		set_string(a, "brains");
-		TOGO_ASSERTE(string::compare_equal(object::string(a), "brains"));
+		TOGO_ASSERTE(
+			!has_source(a) && source(a) == 0 && sub_source(a) == 0 &&
+			!source_certain(a) && source_certain_or_unspecified(a) &&
+			!marker_source_uncertain(a) && !marker_sub_source_uncertain(a)
+		);
+
 		set_source(a, 1);
 		set_sub_source(a, 2);
-		TOGO_ASSERTE(has_source(a) && source(a) == 1 && sub_source(a) == 2);
+		TOGO_ASSERTE(
+			has_source(a) && source(a) == 1 && sub_source(a) == 2 &&
+			source_certain(a) && source_certain_or_unspecified(a) &&
+			!marker_source_uncertain(a) && !marker_sub_source_uncertain(a)
+		);
+		set_source_certain(a, false);
+		TOGO_ASSERTE(
+			!source_certain(a) && !source_certain_or_unspecified(a) &&
+			marker_source_uncertain(a) && !marker_sub_source_uncertain(a)
+		);
+		set_sub_source_certain(a, false);
+		TOGO_ASSERTE(
+			!source_certain(a) && !source_certain_or_unspecified(a) &&
+			marker_source_uncertain(a) && marker_sub_source_uncertain(a)
+		);
+		clear_source(a);
+		TOGO_ASSERTE(
+			!has_source(a) && source(a) == 0 && sub_source(a) == 0 &&
+			!source_certain(a) && source_certain_or_unspecified(a) &&
+			!marker_source_uncertain(a) && !marker_sub_source_uncertain(a)
+		);
+	}
+
+	{
+		Object a;
+		TOGO_ASSERTE(
+			value_certain(a) &&
+			!marker_value_uncertain(a) && !marker_value_guess(a) &&
+			value_approximation(a) == 0
+		);
+
+		set_value_certain(a, false);
+		TOGO_ASSERTE(!value_certain(a) && marker_value_uncertain(a) && !marker_value_guess(a));
+		set_value_guess(a, true);
+		TOGO_ASSERTE(!value_certain(a) && !marker_value_uncertain(a) && marker_value_guess(a));
+		set_value_certain(a, true);
+		TOGO_ASSERTE(value_certain(a) && !marker_value_uncertain(a) && !marker_value_guess(a));
+
+		set_value_approximation(a, -3);
+		TOGO_ASSERTE(!value_certain(a) && value_approximation(a) == -3);
+		set_value_approximation(a, 0);
+		TOGO_ASSERTE(value_certain(a) && value_approximation(a) == 0);
+		set_value_approximation(a, +3);
+		TOGO_ASSERTE(!value_certain(a) && value_approximation(a) == +3);
+
+		clear_value_markers(a);
+		TOGO_ASSERTE(
+			value_certain(a) &&
+			!marker_value_uncertain(a) && !marker_value_guess(a) &&
+			value_approximation(a) == 0
+		);
+	}
+
+	{
+		Object a;
+		set_string(a, "brains");
+		TOGO_ASSERTE(string::compare_equal(object::string(a), "brains"));
 
 		auto& q = make_quantity(a);
 		set_integer(q, 42, "g");

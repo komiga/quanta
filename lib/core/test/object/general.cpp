@@ -12,30 +12,34 @@ signed main() {
 
 	{
 		Object a;
-		TOGO_ASSERTE(!is_named(a));
-		TOGO_ASSERTE(string::compare_equal(name(a), ""));
-		TOGO_ASSERTE(name_hash(a) == OBJECT_NAME_NULL);
-		TOGO_ASSERTE(source(a) == 0);
-		TOGO_ASSERTE(sub_source(a) == 0);
-		TOGO_ASSERTE(!has_source(a));
+		TOGO_ASSERTE(
+			!is_named(a) &&
+			name_hash(a) == OBJECT_NAME_NULL &&
+			string::compare_equal(name(a), "")
+		);
+		TOGO_ASSERTE(
+			!has_source(a) && source(a) == 0 && sub_source(a) == 0 &&
+			!source_certain(a) && source_certain_or_unspecified(a) &&
+			!marker_source_uncertain(a) && !marker_sub_source_uncertain(a)
+		);
+		TOGO_ASSERTE(
+			value_certain(a) && value_approximation(a) == 0 &&
+			!marker_value_uncertain(a) && !marker_value_guess(a)
+		);
 		TOGO_ASSERTE(is_null(a));
 		TOGO_ASSERTE(!has_tags(a));
 		TOGO_ASSERTE(!has_children(a));
 		TOGO_ASSERTE(!has_quantity(a));
+		TOGO_ASSERTE(!find_child(a, OBJECT_NAME_NULL));
 		TOGO_ASSERTE(!find_child(a, ""));
 		TOGO_ASSERTE(!find_child(a, "a"));
+		TOGO_ASSERTE(!find_tag(a, OBJECT_NAME_NULL));
 		TOGO_ASSERTE(!find_tag(a, ""));
 		TOGO_ASSERTE(!find_tag(a, "a"));
 	}
 
 	{
 		Object a;
-		TOGO_ASSERTE(
-			!has_source(a) && source(a) == 0 && sub_source(a) == 0 &&
-			!source_certain(a) && source_certain_or_unspecified(a) &&
-			!marker_source_uncertain(a) && !marker_sub_source_uncertain(a)
-		);
-
 		set_source(a, 1);
 		set_sub_source(a, 2);
 		TOGO_ASSERTE(
@@ -63,12 +67,6 @@ signed main() {
 
 	{
 		Object a;
-		TOGO_ASSERTE(
-			value_certain(a) &&
-			!marker_value_uncertain(a) && !marker_value_guess(a) &&
-			value_approximation(a) == 0
-		);
-
 		set_value_certain(a, false);
 		TOGO_ASSERTE(!value_certain(a) && marker_value_uncertain(a) && !marker_value_guess(a));
 		set_value_guess(a, true);
@@ -89,6 +87,14 @@ signed main() {
 			!marker_value_uncertain(a) && !marker_value_guess(a) &&
 			value_approximation(a) == 0
 		);
+	}
+
+	{
+		Object a;
+		set_name(a, "name");
+		TOGO_ASSERTE(is_named(a) && string::compare_equal(name(a), "name") && name_hash(a) == "name"_object_name);
+		clear_name(a);
+		TOGO_ASSERTE(!is_named(a) && string::compare_equal(name(a), "") && name_hash(a) == OBJECT_NAME_NULL);
 	}
 
 	{

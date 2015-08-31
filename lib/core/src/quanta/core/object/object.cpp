@@ -23,12 +23,14 @@ bool object::set_type(Object& obj, ObjectValueType const type) {
 	}
 	object::clear_value(obj);
 	internal::set_property(obj, Object::M_TYPE, 0, unsigned_cast(type));
+	if (type == ObjectValueType::null) {
+		internal::clear_property(obj, Object::M_VALUE_GUESS);
+	}
 	return true;
 }
 
 /// Reset value to type default.
 void object::clear_value(Object& obj) {
-	// TODO: Clear markers that would be invalid in the subsequent state
 	auto& a = memory::default_allocator();
 	switch (object::type(obj)) {
 	case ObjectValueType::null:

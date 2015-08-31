@@ -269,9 +269,12 @@ inline void set_value_certain(Object& obj, bool const certain) {
 
 /// Set value guess marker.
 ///
+/// If the value is null, this has no effect.
 /// This clears the value uncertainty marker.
 inline void set_value_guess(Object& obj, bool const guess) {
-	internal::set_property(obj, Object::M_VALUE_UNCERTAIN_AND_GUESS, Object::S_VALUE_GUESS, guess);
+	if (object::is_null(obj)) {
+		internal::set_property(obj, Object::M_VALUE_UNCERTAIN_AND_GUESS, Object::S_VALUE_GUESS, guess);
+	}
 }
 
 /// Set value approximation value.

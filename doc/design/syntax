@@ -29,6 +29,7 @@ r
 // ? and ~ and ^ are valid without a value part (e.g.: ?, x[^^], ~~~)
 // ~ and ^ are mutually exclusive
 // ? and G~ are mutually exclusive
+// G~ cannot be applied to null
 
 // operators:
 	// arithmetic

@@ -22,7 +22,7 @@ bool object::set_type(Object& obj, ObjectValueType const type) {
 		return false;
 	}
 	object::clear_value(obj);
-	obj.properties = (obj.properties & ~Object::M_TYPE) | unsigned_cast(type);
+	set_property(obj, Object::M_TYPE, 0, unsigned_cast(type));
 	return true;
 }
 

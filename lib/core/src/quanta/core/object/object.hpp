@@ -37,6 +37,18 @@ namespace {
 	;
 } // anonymous namespace
 
+inline unsigned get_property(Object const& obj, unsigned mask, unsigned shift) {
+	return (obj.properties & mask) >> shift;
+}
+
+inline void set_property(Object& obj, unsigned mask, unsigned shift, unsigned value) {
+	obj.properties = (obj.properties & ~mask) | (value << shift);
+}
+
+inline void clear_property(Object& obj, unsigned mask) {
+	obj.properties &= ~mask;
+}
+
 /// Calculate object name hash of string.
 inline ObjectNameHash hash_name(StringRef const& name) {
 	return hash::calc_generic<ObjectNameHash>(name);
@@ -44,7 +56,7 @@ inline ObjectNameHash hash_name(StringRef const& name) {
 
 /// Value type.
 inline ObjectValueType type(Object const& obj) {
-	return static_cast<ObjectValueType>(obj.properties & Object::M_TYPE);
+	return static_cast<ObjectValueType>(get_property(obj, Object::M_TYPE, 0));
 }
 
 /// Whether type is type.
@@ -107,9 +119,19 @@ inline unsigned source(Object const& obj) {
 	return obj.source;
 }
 
+/// Whether source is certain.
+inline bool source_certain(Object const& obj) {
+	return !get_property(obj, Object::M_SOURCE_UNCERTAIN, Object::S_SOURCE_UNCERTAIN);
+}
+
 /// Sub-source.
 inline unsigned sub_source(Object const& obj) {
 	return obj.sub_source;
+}
+
+/// Whether sub-source is certain.
+inline bool sub_source_certain(Object const& obj) {
+	return !get_property(obj, Object::M_SUB_SOURCE_UNCERTAIN, Object::S_SUB_SOURCE_UNCERTAIN);
 }
 
 /// Whether the object has a source.
@@ -165,6 +187,11 @@ inline void set_source(Object& obj, unsigned const source) {
 	}
 }
 
+/// Set source certainty.
+inline void set_source_certain(Object& obj, bool const certain) {
+	set_property(obj, Object::M_SOURCE_UNCERTAIN, Object::S_SOURCE_UNCERTAIN, !certain);
+}
+
 /// Set sub-source.
 ///
 /// The source must be non-0 for the sub-source to take a non-0 value.
@@ -174,10 +201,16 @@ inline void set_sub_source(Object& obj, unsigned const sub_source) {
 	}
 }
 
-/// Clear source and sub-source.
+/// Set source certainty.
+inline void set_sub_source_certain(Object& obj, bool const certain) {
+	set_property(obj, Object::M_SUB_SOURCE_UNCERTAIN, Object::S_SUB_SOURCE_UNCERTAIN, !certain);
+}
+
+/// Clear source and sub-source and their certainty markers.
 inline void clear_source(Object& obj) {
 	object::set_source(obj, 0);
 	object::set_sub_source(obj, 0);
+	clear_property(obj, Object::M_SOURCE_UNCERTAIN | Object::M_SUB_SOURCE_UNCERTAIN);
 }
 
 /// Set value to null.

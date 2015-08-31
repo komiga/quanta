@@ -22,12 +22,13 @@ bool object::set_type(Object& obj, ObjectValueType const type) {
 		return false;
 	}
 	object::clear_value(obj);
-	set_property(obj, Object::M_TYPE, 0, unsigned_cast(type));
+	internal::set_property(obj, Object::M_TYPE, 0, unsigned_cast(type));
 	return true;
 }
 
 /// Reset value to type default.
 void object::clear_value(Object& obj) {
+	// TODO: Clear markers that would be invalid in the subsequent state
 	auto& a = memory::default_allocator();
 	switch (object::type(obj)) {
 	case ObjectValueType::null:
@@ -96,10 +97,11 @@ Object& object::make_quantity(Object& obj) {
 	return *obj.quantity;
 }
 
-/// Clear all properties.
+/// Set to null and clear all properties.
 void object::clear(Object& obj) {
-	object::set_null(obj);
 	object::clear_name(obj);
+	object::set_null(obj);
+	object::clear_value_markers(obj);
 	object::clear_source(obj);
 	object::clear_tags(obj);
 	object::clear_children(obj);

@@ -70,18 +70,6 @@ enum class ObjectValueType : u32 {
 	string		= 1 << 4,
 };
 
-/// Object value marker.
-enum class ObjectValueMarker : unsigned {
-	/// No marker.
-	none,
-	/// Standalone uncertainty marker.
-	uncertain,
-	/// Approximate, maybe less than value.
-	approximate_less,
-	/// Approximate, maybe more than value.
-	approximate_more,
-};
-
 /// Object.
 struct Object {
 	union Value {
@@ -98,36 +86,46 @@ struct Object {
 
 	enum : unsigned {
 		M_TYPE = (unsigned_cast(ObjectValueType::string) << 1) - 1,
-		S_MARKER_UNCERTAIN = 5,
-		M_MARKER_UNCERTAIN = 1 << S_MARKER_UNCERTAIN,
-		S_MARKER_GUESS = 6,
-		M_MARKER_GUESS = 1 << S_MARKER_GUESS,
-		S_MARKER_TYPE = 7,
-		M_MARKER_TYPE = ((1 << (unsigned_cast(ObjectValueMarker::approximate_more))) - 1) << S_MARKER_TYPE,
-		// 0-3 scale, technically bounded to 0-2 because non-zero M_MARKER_TYPE already counts for one
-		S_MARKER_COUNT = 10,
-		M_MARKER_COUNT = 3 << S_MARKER_COUNT,
-		S_SOURCE_UNCERTAIN = 12,
+		S_VALUE_UNCERTAIN = 5,
+		M_VALUE_UNCERTAIN = 1 << S_VALUE_UNCERTAIN,
+		S_VALUE_GUESS = 6,
+		M_VALUE_GUESS = 1 << S_VALUE_GUESS,
+		// bits: NXX, where: N = negative, X = value (0-3)
+		S_VALUE_APPROXIMATE = 7,
+		M_VALUE_APPROXIMATE = ((1 << 2) | 3) << S_VALUE_APPROXIMATE,
+		S_SOURCE_UNCERTAIN = 10,
 		M_SOURCE_UNCERTAIN = 1 << S_SOURCE_UNCERTAIN,
-		S_SUB_SOURCE_UNCERTAIN = 13,
+		S_SUB_SOURCE_UNCERTAIN = 11,
 		M_SUB_SOURCE_UNCERTAIN = 1 << S_SUB_SOURCE_UNCERTAIN,
+
+		M_BOTH_SOURCE_UNCERTAIN
+			= M_SOURCE_UNCERTAIN
+			| M_SUB_SOURCE_UNCERTAIN
+		,
+		M_VALUE_UNCERTAIN_AND_GUESS
+			= M_VALUE_UNCERTAIN
+			| M_VALUE_GUESS
+		,
+		M_VALUE_MARKERS
+			= M_VALUE_UNCERTAIN
+			| M_VALUE_GUESS
+			| M_VALUE_APPROXIMATE
+		,
 	};
 	static_assert(
 		0 == (
 			  M_TYPE
-			& M_MARKER_UNCERTAIN
-			& M_MARKER_GUESS
-			& M_MARKER_TYPE
-			& M_MARKER_COUNT
+			& M_VALUE_UNCERTAIN
+			& M_VALUE_GUESS
+			& M_VALUE_APPROXIMATE
 			& M_SOURCE_UNCERTAIN
 			& M_SUB_SOURCE_UNCERTAIN
 		) &&
 		((1 << (S_SUB_SOURCE_UNCERTAIN + 1)) - 1) == (
 			  M_TYPE
-			| M_MARKER_UNCERTAIN
-			| M_MARKER_GUESS
-			| M_MARKER_TYPE
-			| M_MARKER_COUNT
+			| M_VALUE_UNCERTAIN
+			| M_VALUE_GUESS
+			| M_VALUE_APPROXIMATE
 			| M_SOURCE_UNCERTAIN
 			| M_SUB_SOURCE_UNCERTAIN
 		)

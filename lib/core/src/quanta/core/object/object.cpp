@@ -55,12 +55,12 @@ void object::clear_value(Object& obj) {
 /// Copy an object.
 void object::copy(Object& dst, Object const& src) {
 	auto& a = memory::default_allocator();
+	object::clear_value(dst);
+	dst.properties = src.properties;
 	dst.source = src.source;
 	dst.sub_source = src.sub_source;
-	dst.properties = src.properties;
 	unmanaged_string::set(dst.name, src.name, a);
-	object::set_type(dst, object::type(src));
-	switch (object::type(dst)) {
+	switch (object::type(src)) {
 	case ObjectValueType::null:
 		break;
 	case ObjectValueType::boolean:

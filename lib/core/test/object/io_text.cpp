@@ -177,7 +177,7 @@ void check(Test const& test) {
 		);
 		TOGO_ASSERT(test.success, "read succeeded when it should have failed");
 		TOGO_ASSERT(
-			test.expected_output.empty() || string::compare_equal(test.expected_output, output),
+			string::compare_equal(test.expected_output, output),
 			"output does not match"
 		);
 	} else {

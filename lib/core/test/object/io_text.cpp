@@ -23,22 +23,32 @@ struct Test {
 	StringRef data;
 	StringRef expected_output;
 } const tests[]{
+// whitespace
 	TSN("")
 	TSN(" ")
 	TSN("\n")
 	TSN(" \t\n")
 
+// comments
+	TF("/")
+	TF("/*")
 	TSN("//")
 	TSN("/**/")
 	TSN("/*\nblah\n*/")
-	TF("/")
-	TF("/*")
 
-	TSE("x", "x")
+// constants
 	TSE("null", "null")
 	TSE("false", "false")
 	TSE("true", "true")
 
+// identifiers
+	TSE("a", "a")
+	TSE("á", "á")
+	TSE(".á", ".á")
+	TSE("_", "_")
+	TSE("a\nb", "a\nb")
+
+// markers
 	TSE("~", "~")
 	TSE("~x", "~x")
 	TSE("~~x", "~~x")
@@ -58,6 +68,7 @@ struct Test {
 	TSE(" ?x",  "?x")
 	TSE("?^x", "?^x")
 
+// source
 	TSE("x$0", "x")
 	TSE("x$0$0", "x")
 	TSE("x$0$1", "x")
@@ -75,6 +86,7 @@ struct Test {
 
 	TSE("x$?$?", "x$?$?")
 
+// numerics
 	TSE(" 1",  "1")
 	TSE("+1",  "1")
 	TSE("-1", "-1")
@@ -100,11 +112,11 @@ struct Test {
 	TSE("+1.1e-1",  "0.11")
 	TSE("-1.1e-1", "-0.11")
 
+// units
 	TSE("1a", "1a")
 	TSE("1µg", "1µg")
 
-	TSE("a", "a")
-	TSE("a\nb", "a\nb")
+// strings
 	TSE("\"\"", "\"\"")
 	TSE("\"a\"", "a")
 	TSE("``````", "\"\"")
@@ -113,32 +125,7 @@ struct Test {
 	TSE("\"\\t\"", "\"\t\"")
 	TSE("\"\\n\"", "```\n```")
 
-	TF(":")
-	TF("::")
-	TF(":,")
-	TF(":;")
-	TF(":\n")
-	TF(":\"a\"")
-	TF(":```a```")
-	TF(":1")
-	TF(":x=")
-	TF("x=:")
-	TF(":x:")
-	TSE(":x", ":x")
-	TSE("x:y", "x:y")
-	TSE(":x:y", ":x:y")
-
-	TF(":x(")
-	TSE(":x()", ":x")
-	TSE(":x( )", ":x")
-	TSE(":x(\t)", ":x")
-	TSE(":x(\n)", ":x")
-	TSE(":x(1)", ":x(1)")
-	TSE(":x(y)", ":x(y)")
-	TSE(":x(y,z)", ":x(y, z)")
-	TSE(":x(y;z)", ":x(y, z)")
-	TSE(":x(y\nz)", ":x(y, z)")
-
+// names
 	TF("=")
 	TF("a=")
 	TF("=,")
@@ -158,6 +145,61 @@ struct Test {
 	TSE("a=```a b```", "a = \"a b\"")
 	TSE("a=```a\nb```", "a = ```a\nb```")
 
+// tags
+	TF(":")
+	TF("::")
+	TF(":,")
+	TF(":;")
+	TF(":\n")
+	TF(":\"a\"")
+	TF(":```a```")
+	TF(":1")
+	TF(":x=")
+	TF("x=:")
+	TF(":x:")
+	TSE(":x", ":x")
+	TSE("x:y", "x:y")
+	TSE(":x:y", ":x:y")
+
+	TSE(":?x", ":?x")
+	TSE(":G~x", ":G~x")
+
+	TSE(":~x", ":~x")
+	TSE(":~~x", ":~~x")
+	TSE(":~~~x", ":~~~x")
+
+	TSE(":^x", ":^x")
+	TSE(":^^x", ":^^x")
+	TSE(":^^^x", ":^^^x")
+
+	TSE(":?~x", ":?~x")
+	TSE(":?~~x", ":?~~x")
+	TSE(":?~~~x", ":?~~~x")
+
+	TSE(":?^x", ":?^x")
+	TSE(":?^^x", ":?^^x")
+	TSE(":?^^^x", ":?^^^x")
+
+	TSE(":G~~x", ":G~~x")
+	TSE(":G~~~x", ":G~~~x")
+	TSE(":G~~~~x", ":G~~~~x")
+
+	TSE(":G~^x", ":G~^x")
+	TSE(":G~^^x", ":G~^^x")
+	TSE(":G~^^^x", ":G~^^^x")
+
+	TF(":x(")
+	TSE(":x()", ":x")
+	TSE(":x( )", ":x")
+	TSE(":x(\t)", ":x")
+	TSE(":x(\n)", ":x")
+	TSE(":x(1)", ":x(1)")
+	TSE(":x(y)", ":x(y)")
+	TSE(":x(y,z)", ":x(y, z)")
+	TSE(":x(y;z)", ":x(y, z)")
+	TSE(":x(y\nz)", ":x(y, z)")
+
+// scopes
 	TF("{")
 	TF("(")
 	TF("[")

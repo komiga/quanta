@@ -209,17 +209,14 @@ static bool write_tag(
 	);
 	if (object::has_children(obj)) {
 		RETURN_ERROR(io::write_value(stream, '('));
+		auto& last_child = array::back(object::children(obj));
 		for (auto& child : object::children(obj)) {
 			RETURN_ERROR(
-				write_tabs(stream, tabs) &&
 				write_object(stream, child, tabs) &&
-				io::write_value(stream, '\n')
+				(&child == &last_child || io::write(stream, ", ", 2))
 			);
 		}
-		RETURN_ERROR(
-			write_tabs(stream, tabs) &&
-			io::write_value(stream, '}')
-		);
+		RETURN_ERROR(io::write_value(stream, ')'));
 	}
 	return true;
 }

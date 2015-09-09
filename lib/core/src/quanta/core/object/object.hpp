@@ -209,6 +209,11 @@ inline ObjectNumericUnitHash unit_hash(Object const& obj) {
 	return obj.value.numeric.unit.hash;
 }
 
+/// Whether the numeric value has a unit.
+inline bool has_unit(Object const& obj) {
+	return object::is_type_any(obj, type_mask_numeric) && unmanaged_string::any(obj.value.numeric.unit);
+}
+
 /// String value.
 inline StringRef string(Object const& obj) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));

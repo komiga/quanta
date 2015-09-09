@@ -153,6 +153,16 @@ private:
 	Object& operator=(Object const&);
 };
 
+/// Object parser information.
+struct ObjectParserInfo {
+	/// Line in stream.
+	unsigned line;
+	/// Column on line.
+	unsigned column;
+	/// Error message.
+	char message[512];
+};
+
 /** @} */ // end of doc-group lib_core_object
 
 } // namespace object
@@ -163,6 +173,7 @@ using namespace object::hash_literals;
 using object::OBJECT_NAME_NULL;
 using object::ObjectValueType;
 using object::Object;
+using object::ObjectParserInfo;
 
 } // namespace quanta
 

@@ -9,6 +9,8 @@
 
 #pragma once
 
+// igen-source: object/io_text.cpp
+
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
 #include <togo/core/error/assert.hpp>
@@ -17,6 +19,7 @@
 #include <togo/core/collection/array.hpp>
 #include <togo/core/string/string.hpp>
 #include <togo/core/hash/hash.hpp>
+#include <togo/core/io/types.hpp>
 
 #include <quanta/core/string/unmanaged_string.hpp>
 #include <quanta/core/object/types.hpp>

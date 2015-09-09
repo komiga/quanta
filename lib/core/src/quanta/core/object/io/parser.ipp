@@ -568,7 +568,6 @@ static bool parser_read_source_id(ObjectParser& p) {
 }
 
 static void parser_push_new(ObjectParser& p) {
-	TOGO_DEBUG_ASSERTE(parser_scope(p));
 	Object* obj = nullptr;
 	// TODO: set object flag if tag is pre/post
 	switch (parser_scope(p) & ~PN_TAG) {
@@ -958,15 +957,21 @@ static bool parser_step(ObjectParser& p) {
 		break;
  
 	case '}':
-		parser_close_scope(p, PN_S_CHILDREN);
+		CHECK_UNEXPECTED_TERMINATION else {
+			parser_close_scope(p, PN_S_CHILDREN);
+		}
 		break;
 
 	case ')':
-		parser_close_scope(p, PN_S_CHILDREN | PN_TAG);
+		CHECK_UNEXPECTED_TERMINATION else {
+			parser_close_scope(p, PN_S_CHILDREN | PN_TAG);
+		}
 		break;
 
 	case ']':
-		parser_close_scope(p, PN_S_QUANTITY);
+		CHECK_UNEXPECTED_TERMINATION else {
+			parser_close_scope(p, PN_S_QUANTITY);
+		}
 		break;
 
 	case ',':

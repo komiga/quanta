@@ -192,6 +192,21 @@ inline static bool write_source(IWriter& stream, unsigned source, bool uncertain
 	return true;
 }
 
+inline static bool write_markers(IWriter& stream, Object const& obj) {
+	if (object::marker_value_uncertain(obj)) {
+		RETURN_ERROR(io::write_value(stream, '?'));
+	} else if (object::marker_value_guess(obj)) {
+		RETURN_ERROR(io::write(stream, "G~", 2));
+	}
+	auto approximation = object::value_approximation(obj);
+	if (approximation < 0) {
+		RETURN_ERROR(io::write(stream, "~~~", unsigned_cast(-approximation)));
+	} else if (approximation > 0) {
+		RETURN_ERROR(io::write(stream, "^^^", unsigned_cast(approximation)));
+	}
+	return true;
+}
+
 static bool write_object(
 	IWriter& stream,
 	Object const& obj,
@@ -205,6 +220,7 @@ static bool write_tag(
 ) {
 	RETURN_ERROR(
 		io::write_value(stream, ':') &&
+		write_markers(stream, obj) &&
 		write_identifier(stream, object::name(obj))
 	);
 	if (object::has_children(obj)) {
@@ -232,17 +248,7 @@ static bool write_object(
 			io::write(stream, " = ", 3)
 		);
 	}
-	if (object::marker_value_uncertain(obj)) {
-		RETURN_ERROR(io::write_value(stream, '?'));
-	} else if (object::marker_value_guess(obj)) {
-		RETURN_ERROR(io::write(stream, "G~", 2));
-	}
-	{auto approximation = object::value_approximation(obj);
-	if (approximation < 0) {
-		RETURN_ERROR(io::write(stream, "~~~", unsigned_cast(-approximation)));
-	} else if (approximation > 0) {
-		RETURN_ERROR(io::write(stream, "^^^", unsigned_cast(approximation)));
-	}}
+	RETURN_ERROR(write_markers(stream, obj));
 	switch (object::type(obj)) {
 	case ObjectValueType::null:
 		if (

@@ -686,12 +686,12 @@ static void parser_unhold(ObjectParser& p) {
 
 static bool parser_open_scope(ObjectParser& p, unsigned segment) {
 	TOGO_DEBUG_ASSERTE(segment & (PN_S_TAGS | PN_S_CHILDREN | PN_S_QUANTITY));
-	if (p.branch->flags & PN_TAG) {
+	if ((p.branch->flags & PN_TAG) && (~segment & PN_TAG)) {
 		parser_pop(p);
 	}
 	auto scope = parser_scope(p);
 	if (!scope) {
-		if (p.branch->flags & segment) {
+		if (p.branch->flags & (~segment & PN_TAG)) {
 			return PARSER_ERROR_UNEXPECTED(p, "block was already defined");
 		} else if (segment == PN_S_QUANTITY && (p.branch->flags & ~(PN_TAG | PN_S_QUANTITY))) {
 			return PARSER_ERROR_UNEXPECTED(p, "quantity block without value part");
@@ -704,11 +704,15 @@ static bool parser_open_scope(ObjectParser& p, unsigned segment) {
 		parser_push_new(p);
 	}
 	p.branch->flags &= ~PN_CURRENT_SCOPE_MASK;
-	p.branch->flags |= segment | (segment << PN_CURRENT_SCOPE_SHIFT);
+	p.branch->flags |= (segment & ~PN_TAG) | (segment << PN_CURRENT_SCOPE_SHIFT);
 	return true;
 }
 
 static bool parser_close_scope(ObjectParser& p, unsigned segment) {
+	if (p.flags & PF_HELD) {
+		parser_unhold(p);
+		parser_pop(p);
+	}
 	if (parser_scope(p) == segment) {
 		// nothing to do; clears current scope
 	} else if (parser_scope(p)) {

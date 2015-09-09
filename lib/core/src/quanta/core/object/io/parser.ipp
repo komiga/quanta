@@ -816,7 +816,7 @@ static void parser_read_value_part(ObjectParser& p) {
 	if (func_read(p)) {
 		if (
 			p.buffer_type == PB_IDENTIFIER &&
-			(~p.flags & (PF_TAG_LEAD | PF_ACCEPT_UNIT)) &&
+			!(p.flags & (PF_TAG_LEAD | PF_ACCEPT_UNIT)) &&
 			parser_scope_is_open(p)
 		) {
 			/*TOGO_LOG_DEBUGF(
@@ -844,7 +844,7 @@ static bool parser_step(ObjectParser& p) {
 
 	parser_next(p);
 	if (!parser_skip_whitespace(
-		p, (~p.flags & (PF_HELD | PF_ASSIGN | PF_TAG_LEAD)) && parser_scope_is_open(p)
+		p, !(p.flags & (PF_HELD | PF_ASSIGN | PF_TAG_LEAD)) && parser_scope_is_open(p)
 	)) {
 		return false;
 	}

@@ -155,7 +155,7 @@ inline bool source_certain(Object const& obj) {
 
 /// Whether the source and sub-source are certain or unspecified.
 inline bool source_certain_or_unspecified(Object const& obj) {
-	return !(obj.properties & Object::M_BOTH_SOURCE_UNCERTAIN);
+	return obj.source == 0 || !(obj.properties & Object::M_BOTH_SOURCE_UNCERTAIN);
 }
 
 /// Whether the value uncertain marker is set.

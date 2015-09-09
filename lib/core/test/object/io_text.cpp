@@ -101,6 +101,7 @@ struct Test {
 	TSE("-1.1e-1", "-0.11")
 
 	TSE("a", "a")
+	TSE("a\nb", "a\nb")
 	TSE("\"\"", "\"\"")
 	TSE("\"a\"", "a")
 	TSE("``````", "\"\"")
@@ -119,9 +120,21 @@ struct Test {
 	TF(":1")
 	TF(":x=")
 	TF("x=:")
+	TF(":x:")
 	TSE(":x", ":x")
 	TSE("x:y", "x:y")
 	TSE(":x:y", ":x:y")
+
+	TF(":x(")
+	TSE(":x()", ":x")
+	TSE(":x( )", ":x")
+	TSE(":x(\t)", ":x")
+	TSE(":x(\n)", ":x")
+	TSE(":x(1)", ":x(1)")
+	TSE(":x(y)", ":x(y)")
+	TSE(":x(y,z)", ":x(y, z)")
+	TSE(":x(y;z)", ":x(y, z)")
+	TSE(":x(y\nz)", ":x(y, z)")
 
 	TF("=")
 	TF("a=")
@@ -150,6 +163,7 @@ struct Test {
 	TSE("x{}", "x")
 	TSE("x[]", "x")
 	TSE("x[1]", "x[1]")
+	TSE("x[y]", "x[y]")
 };
 
 void check(Test const& test) {

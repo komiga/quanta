@@ -779,7 +779,7 @@ static void parser_read_value_part(ObjectParser& p) {
 
 	case '"':
 		if (p.flags & PF_TAG_LEAD) {
-			PARSER_ERROR_UNEXPECTED(p, "quote string in tag");
+			PARSER_ERROR_EXPECTED(p, "tag name after ':' (identifier)");
 		} else {
 			func_read = parser_read_string_quote;
 		}
@@ -787,7 +787,7 @@ static void parser_read_value_part(ObjectParser& p) {
 
 	case '`':
 		if (p.flags & PF_TAG_LEAD) {
-			PARSER_ERROR_UNEXPECTED(p, "block string in tag");
+			PARSER_ERROR_EXPECTED(p, "tag name after ':' (identifier)");
 		} else {
 			func_read = parser_read_string_block;
 		}
@@ -797,7 +797,11 @@ static void parser_read_value_part(ObjectParser& p) {
 		if (parser_is_identifier_lead(p)) {
 			func_read = parser_read_identifier;
 		} else if (parser_is_number_lead(p)) {
-			func_read = parser_read_number;
+			if (p.flags & PF_TAG_LEAD) {
+				PARSER_ERROR_EXPECTED(p, "tag name after ':' (identifier)");
+			} else {
+				func_read = parser_read_number;
+			}
 		} else {
 			PARSER_ERROR_EXPECTED(p, "value");
 		}
@@ -806,10 +810,7 @@ static void parser_read_value_part(ObjectParser& p) {
 	if (!func_read) {
 		return;
 	}
-	if ((p.flags & PF_TAG_LEAD) && func_read != parser_read_identifier) {
-		PARSER_ERROR_EXPECTED(p, "tag name after ':' (identifier)");
-		return;
-	} else if (p.flags & PF_SOURCE) {
+	if (p.flags & PF_SOURCE) {
 		if (!(p.c == '?' || (p.c >= '0' && p.c <= '9'))) {
 			PARSER_ERROR_EXPECTED(p, "uncertainty marker and/or source ID after '$' ('?' or unsigned number)");
 			return;

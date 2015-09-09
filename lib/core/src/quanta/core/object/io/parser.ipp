@@ -175,6 +175,8 @@ inline static bool parser_is_identifier_lead(ObjectParser const& p) {
 		|| (p.c >= 'A' && p.c <= 'Z')
 		||  p.c == '_'
 		||  p.c == '.'
+		// UTF-8 sequence lead byte
+		||  p.c >= 0xC0
 	;
 }
 

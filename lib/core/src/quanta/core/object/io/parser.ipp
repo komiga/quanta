@@ -365,7 +365,6 @@ static bool parser_read_number(ObjectParser& p) {
 					parts |= PART_NUMERAL;
 				}
 			} else {
-				p.flags |= PF_ACCEPT_UNIT;
 				goto l_assign_value;
 			}
 			break;

@@ -589,7 +589,7 @@ static void parser_push_new(ObjectParser& p) {
 static void parser_apply(ObjectParser& p) {
 	TOGO_DEBUG_ASSERTE(p.buffer_type != PB_NONE);
 	auto& obj = *p.branch->obj;
-	if (p.flags & PF_TAG_LEAD) {
+	if ((p.flags & PF_TAG_LEAD) && p.buffer_type == PB_IDENTIFIER) {
 		p.flags &= ~PF_TAG_LEAD;
 		p.branch->flags |= PN_TAG | PN_S_NAME;
 		object::set_name(obj, parser_buffer_ref(p));

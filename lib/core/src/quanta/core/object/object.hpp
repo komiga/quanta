@@ -143,6 +143,11 @@ inline bool has_source(Object const& obj) {
 	return obj.source != 0;
 }
 
+/// Whether a sub-source is specified.
+inline bool has_sub_source(Object const& obj) {
+	return obj.sub_source != 0;
+}
+
 /// Whether the source and sub-source are certain.
 inline bool source_certain(Object const& obj) {
 	return object::has_source(obj) && !(obj.properties & Object::M_BOTH_SOURCE_UNCERTAIN);

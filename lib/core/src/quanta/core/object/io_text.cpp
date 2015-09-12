@@ -26,31 +26,14 @@ namespace quanta {
 /// Returns false if a parser error occurred. pinfo will have the
 /// position and error message of the parser.
 bool object::read_text(Object& root, IReader& stream, ObjectParserInfo& pinfo) {
-	pinfo.line = 0;
-	pinfo.column = 0;
-	pinfo.message[0] = '\0';
-
 	TempAllocator<4096> allocator{};
-	ObjectParser p{
-		root, stream, pinfo,
-		{allocator},
-		{allocator},
-		1, 0, PC_EOF,
-		PF_NONE,
-		PB_NONE,
-		nullptr
-	};
+	ObjectParser p{stream, pinfo, allocator};
 	array::reserve(p.stack, 32);
 	array::reserve(p.buffer, 4096 - (1 * sizeof(void*)) - (32 * sizeof(ObjectParser::Branch)));
-	object::clear(p.root);
 
-	parser_push(p, p.root, PN_S_CHILDREN | (PN_S_CHILDREN << PN_CURRENT_SCOPE_SHIFT));
-	do {} while (parser_step(p));
-	// TODO: is this necessary?
-	if ((~p.flags & PF_ERROR) && io::status(p.stream).fail()) {
-		PARSER_ERROR(p, "stream read failure");
-	}
-	return ~p.flags & PF_ERROR;
+	object::clear(root);
+	parser_init(p, root);
+	return parser_read(p);
 }
 
 /// Read text-format object from stream (sans parser info).

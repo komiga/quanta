@@ -154,10 +154,10 @@ struct Test {
 	TF(":\"a\"")
 	TF(":```a```")
 	TF(":1")
+	TSE(":x", ":x")
+	TF(":x:")
 	TF(":x=")
 	TF("x=:")
-	TF(":x:")
-	TSE(":x", ":x")
 	TSE("x:y", "x:y")
 	TSE(":x:y", ":x:y")
 

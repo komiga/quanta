@@ -211,9 +211,8 @@ inline static bool parser_is_identifier_lead(ObjectParser const& p) {
 inline static bool parser_is_number_lead(ObjectParser const& p) {
 	return false
 		|| (p.c >= '0' && p.c <= '9')
-		||  p.c == '-'
 		||  p.c == '+'
-		// ||  p.c == '.'
+		||  p.c == '-'
 	;
 }
 
@@ -258,7 +257,7 @@ static bool parser_next(ObjectParser& p) {
 	if (status.eof()) {
 		p.c = PC_EOF;
 	} else if (status.fail()) {
-		return false;
+		return PARSER_ERROR_STREAM(p, "parser_next()");
 	}
 	if (p.c == '\n') {
 		++p.line;
@@ -295,7 +294,7 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 						goto l_continue;
 					}
 				}
-				return PARSER_ERROR_STREAM(p, "in comment");
+				return false;
 			} else if (p.c == '*') {
 				bool tail = false;
 				while (parser_next(p)) {
@@ -316,7 +315,7 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 					default: tail = false; break;
 					}
 				}
-				return PARSER_ERROR_STREAM(p, "in comment block");
+				return false;
 			} else if (p.c == PC_EOF) {
 				return PARSER_ERROR(p, "expected '/' or '*' to continue comment lead, got EOF");
 			} else {
@@ -403,7 +402,7 @@ static bool parser_read_number(ObjectParser& p) {
 		}
 		parser_buffer_add(p);
 	} while (parser_next(p));
-	return PARSER_ERROR_STREAM(p, "in number");
+	return false;
 
 l_complete:
 	// p.flags |= PF_CARRY;
@@ -451,7 +450,7 @@ static bool parser_read_identifier(ObjectParser& p) {
 		}
 		parser_buffer_add(p);
 	} while (parser_next(p));
-	return PARSER_ERROR_STREAM(p, "in identifier");
+	return false;
 }
 
 static bool parser_read_string_quote(ObjectParser& p) {
@@ -466,10 +465,10 @@ static bool parser_read_string_quote(ObjectParser& p) {
 
 		case '"':
 			if (!escaped) {
-				p.buffer_type = PB_STRING;
 				if (!parser_next(p)) {
-					goto l_stream_error;
+					return false;
 				}
+				p.buffer_type = PB_STRING;
 				return true;
 			}
 			break;
@@ -487,9 +486,7 @@ static bool parser_read_string_quote(ObjectParser& p) {
 		}
 		parser_buffer_add(p);
 	}
-
-l_stream_error:
-	return PARSER_ERROR_STREAM(p, "in double-quote bounded string");
+	return false;
 }
 
 static bool parser_read_string_block(ObjectParser& p) {
@@ -503,7 +500,7 @@ static bool parser_read_string_block(ObjectParser& p) {
 			return PARSER_ERROR(p, "incomplete lead block-quote for expected block-quote bounded string");
 		}
 	}
-	goto l_stream_error;
+	return false;
 
 l_parse:
 	count = 0;
@@ -514,11 +511,11 @@ l_parse:
 
 		case '`':
 			if (++count == 3) {
+				if (!parser_next(p)) {
+					return false;
+				}
 				p.buffer_type = PB_STRING;
 				array::resize(p.buffer, array::size(p.buffer) - 2);
-				if (!parser_next(p)) {
-					goto l_stream_error;
-				}
 				return true;
 			}
 			break;
@@ -529,9 +526,7 @@ l_parse:
 		}
 		parser_buffer_add(p);
 	}
-
-l_stream_error:
-	return PARSER_ERROR_STREAM(p, "in block-quote bounded string");
+	return false;
 }
 
 static bool parser_read_uncertainty_marker(ObjectParser& p) {
@@ -1145,7 +1140,7 @@ static bool parser_read(ObjectParser& p) {
 l_step_and_exit:
  	stage_part = (*p.branch->sequence_pos)->exit;
 	if (!parser_next(p)) {
-		return PARSER_ERROR_STREAM(p, "l_step_and_exit");
+		return false;
 	}
 
 l_do_stage_part:

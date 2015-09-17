@@ -284,11 +284,11 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 		case ' ':
 			break;
 
-		case '/':
+		case '\\':
 			if (!parser_next(p)) {
 				return false;
 			}
-			if (p.c == '/') {
+			if (p.c == '\\') {
 				while (parser_next(p)) {
 					if (p.c == '\n' || p.c == PC_EOF) {
 						goto l_continue;
@@ -306,7 +306,7 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 						tail = true;
 						break;
 
-					case '/':
+					case '\\':
 						if (tail) {
 							goto l_continue;
 						}
@@ -317,9 +317,9 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 				}
 				return false;
 			} else if (p.c == PC_EOF) {
-				return PARSER_ERROR(p, "expected '/' or '*' to continue comment lead, got EOF");
+				return PARSER_ERROR(p, "expected '\\' or '*' to continue comment lead, got EOF");
 			} else {
-				return PARSER_ERROR_EXPECTED(p, "'/' or '*' to continue comment lead");
+				return PARSER_ERROR_EXPECTED(p, "'\\' or '*' to continue comment lead");
 			}
 			break;
 		}
@@ -351,7 +351,7 @@ static bool parser_read_number(ObjectParser& p) {
 		case '=': case ':': case '$':
 		case '}': case ']': case ')':
 		case '{': case '[': case '(':
-		case '/':
+		case '\\':
 			goto l_complete;
 
 		case '-': case '+':
@@ -432,7 +432,7 @@ static bool parser_read_identifier(ObjectParser& p) {
 		case '=': case ':': case '$':
 		case '}': case ']': case ')':
 		case '{': case '[': case '(':
-		case '/':
+		case '\\':
 			// p.flags |= PF_CARRY;
 			p.buffer_type = PB_IDENTIFIER;
 			if (array::size(p.buffer) == 4) {

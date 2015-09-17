@@ -99,6 +99,7 @@ struct ObjectParser {
 	struct Branch {
 		Object* obj;
 		Stage const** sequence_pos;
+		bool any_part;
 	};
 
 	IReader& stream;
@@ -234,7 +235,7 @@ inline static StringRef parser_buffer_ref(ObjectParser const& p) {
 }
 
 inline static void parser_push(ObjectParser& p, Object& obj, Stage const** sequence_pos) {
-	p.branch = &array::push_back(p.stack, {&obj, sequence_pos});
+	p.branch = &array::push_back(p.stack, {&obj, sequence_pos, false});
 	// TOGO_LOGF("push: %2lu %s\n", array::size(p.stack), (*sequence_pos)->name.data);
 }
 
@@ -693,6 +694,7 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 	}	break;
 	}
 	parser_buffer_clear(p);
+	p.branch->any_part = true;
 }
 
 extern Stage const
@@ -1022,6 +1024,10 @@ nullptr
 
 STAGE(stage_complete, BF_NONE,
 [](ObjectParser& p) -> Response {
+	if (!p.branch->any_part) {
+		PARSER_ERROR_EXPECTED(p, "object part");
+		RESP(error);
+	}
 	switch (p.c) {
 	case ':':
 	case '}': case ')': case ']':
@@ -1179,10 +1185,12 @@ l_do_stage_part:
 	case Response::exit:
 		TOGO_DEBUG_ASSERTE(stage_part == (*sequence_pos)->enter);
 		p.branch->sequence_pos = sequence_pos;
+		p.branch->any_part = true;
 		goto l_step_and_exit;
 
 	case Response::exit_sub:
 		TOGO_DEBUG_ASSERTE(stage_part == (*p.branch->sequence_pos)->enter);
+		p.branch->any_part = true;
 		goto l_step_and_exit;
 
 	case Response::complete:

@@ -61,6 +61,7 @@ enum : unsigned {
 	BF_S_CHILDREN			= 1 << 2,
 	BF_S_TAG_CHILDREN		= 1 << 3,
 	BF_S_QUANTITY			= 1 << 4,
+	BF_EXPRESSION			= 1 << 5,
 
 	BF_M_SCOPE
 		= BF_S_ROOT
@@ -351,6 +352,7 @@ static bool parser_read_number(ObjectParser& p) {
 		case '=': case ':': case '$':
 		case '}': case ']': case ')':
 		case '{': case '[': case '(':
+		case '*': case '/':
 		case '\\':
 			goto l_complete;
 
@@ -432,6 +434,8 @@ static bool parser_read_identifier(ObjectParser& p) {
 		case '=': case ':': case '$':
 		case '}': case ']': case ')':
 		case '{': case '[': case '(':
+		case '+':
+		case '*': case '/':
 		case '\\':
 			// p.flags |= PF_CARRY;
 			p.buffer_type = PB_IDENTIFIER;
@@ -695,11 +699,14 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 extern Stage const
 * sequence_root[],
 * sequence_base[],
+** jump_base_unnamed,
 ** jump_base_after_marker_uncertainty,
 ** jump_base_after_value,
 
 * sequence_tag[],
 ** jump_tag_after_name,
+
+* sequence_expression[],
 
 // * sub_tentative_child
 * sub_assign,
@@ -1032,26 +1039,72 @@ STAGE(stage_complete, BF_NONE,
 		RESP(error);
 	}
 	switch (p.c) {
-	case ':':
-	case '}': case ')': case ']':
-		p.flags |= PF_CARRY;
+	case '+': case '-':
+	case '*': case '/':
+		if (!((*p.stack[array::size(p.stack) - 2].sequence_pos)->flags & BF_EXPRESSION)) {
+			parser_pop(p);
+			auto& scope = object::children(*p.branch->obj);
+			object::set_expression(array::push_back_inplace(scope));
+			auto lead = end(scope) - 2;
+			object::set_op(*lead, ObjectOperator::none);
+			array::push_back_inplace(object::children(array::back(scope)), rvalue_ref(*lead));
+			array::remove_over(scope, lead);
+			parser_push(p, array::back(scope), sequence_expression);
+			RESP(jump);
+		}
 
 	case PC_EOF:
+	case ':':
 	case ',': case ';': case '\n':
-		break;
-
-	default:
-		PARSER_ERRORF(
-			p, "expected part or terminator following %s, got '%c' (%x)",
-			(*p.branch->sequence_pos)->name,
-			static_cast<char>(p.c), p.c
-		);
-		RESP(error);
+	case '}': case ')': case ']':
+		p.flags |= PF_CARRY;
+		RESP(complete);
 	}
-	RESP(complete);
+	PARSER_ERROR_EXPECTED(p, "object part or terminator");
+	RESP(error);
 },
 nullptr
 );
+
+STAGE(stage_expression, BF_EXPRESSION,
+[](ObjectParser& p) -> Response {
+	p.flags |= PF_CARRY;
+	RESP(exit);
+},
+[](ObjectParser& p) -> Response {
+	auto op = ObjectOperator::none;
+	switch (p.c) {
+	case PC_EOF:
+	case ':':
+	case '}': case ')': case ']':
+	case ',': case ';': case '\n':
+		/*if (array::size(object::children(*p.branch->obj)) == 1) {
+			PARSER_ERROR_EXPECTED(p, "operand following operator");
+			RESP(error);
+		}*/
+		p.flags |= PF_CARRY;
+		RESP(complete);
+
+	case '+': op = ObjectOperator::add; goto l_op;
+	case '-': op = ObjectOperator::sub; goto l_op;
+	case '*': op = ObjectOperator::mul; goto l_op;
+	case '/': op = ObjectOperator::div; goto l_op;
+
+	default:
+		break;
+
+	l_op:
+		RESP_IF(!parser_next(p), error)
+		else {
+			auto& obj = array::push_back_inplace(object::children(*p.branch->obj));
+			object::set_op(obj, op);
+			parser_push(p, obj, jump_base_unnamed);
+			RESP(jump);
+		}
+	}
+	PARSER_ERROR_EXPECTED(p, "operator or terminator");
+	RESP(error);
+});
 
 STAGE(stage_sequence_end, BF_NONE,
 [](ObjectParser& p) -> Response {
@@ -1103,6 +1156,7 @@ Stage const
 	&stage_complete,
 	&stage_sequence_end,
 },
+** jump_base_unnamed = find_stage(sequence_base, &stage_lead) + 1,
 ** jump_base_after_marker_uncertainty = find_stage(sequence_base, &stage_marker_uncertainty) + 1,
 ** jump_base_after_value = find_stage(sequence_base, &stage_value) + 1,
 
@@ -1116,6 +1170,11 @@ Stage const
 	&stage_sequence_end,
 },
 ** jump_tag_after_name = find_stage(sequence_tag, &stage_tag_name) + 1,
+
+* sequence_expression[]{
+	&stage_expression,
+	&stage_sequence_end,
+},
 
 // * sub_tentative_child = &stage_tentative_child,
 * sub_assign = &stage_assign,
@@ -1199,12 +1258,7 @@ l_do_stage_part:
 	case Response::complete:
 		parser_pop(p);
 		sequence_pos = p.branch->sequence_pos;
-		if (p.c == PC_EOF) {
-			stage_part = (*p.branch->sequence_pos)->exit;
-			goto l_do_stage_part;
-		} else {
-			goto l_step_and_exit;
-		}
+		goto l_step_and_exit;
 
 	case Response::error:
 		if (~p.flags & PF_ERROR) {

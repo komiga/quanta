@@ -163,6 +163,10 @@ inline static f64 parse_f64(char const* const cstr) {
 	return parse_f64_adaptor<sizeof(double) == sizeof(f64)>::parse(cstr);
 }
 
+#if defined(TOGO_COMPILER_CLANG) || \
+	defined(TOGO_COMPILER_GCC)
+	__attribute__((__format__ (__printf__, 2, 3)))
+#endif
 static bool parser_error(
 	ObjectParser& p,
 	char const* const format,

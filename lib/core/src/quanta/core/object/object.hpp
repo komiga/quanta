@@ -96,6 +96,9 @@ inline bool is_numeric(Object const& obj) {
 /// Whether type is ObjectValueType::string.
 inline bool is_string(Object const& obj) { return object::is_type(obj, ObjectValueType::string); }
 
+/// Whether type is ObjectValueType::expression.
+inline bool is_expression(Object const& obj) { return object::is_type(obj, ObjectValueType::expression); }
+
 /// Name.
 inline StringRef name(Object const& obj) {
 	return obj.name;
@@ -119,6 +122,18 @@ inline void set_name(Object& obj, StringRef name) {
 /// Clear name.
 inline void clear_name(Object& obj) {
 	unmanaged_string::clear(obj.name, memory::default_allocator());
+}
+
+/// Set operator.
+///
+/// This only has significance when the object is part of an expression.
+inline void set_op(Object& obj, ObjectOperator const op) {
+	internal::set_property(obj, Object::M_OP, Object::S_OP, unsigned_cast(op));
+}
+
+/// Operator.
+inline ObjectOperator op(Object const& obj) {
+	return static_cast<ObjectOperator>(internal::get_property(obj, Object::M_OP, Object::S_OP));
 }
 
 /// Source.
@@ -359,7 +374,17 @@ inline void set_string(Object& obj, StringRef const value) {
 	unmanaged_string::set(obj.value.string, value, memory::default_allocator());
 }
 
+/// Set type to expression.
+///
+/// Expressions do not have value markers, source, tags, or quantity. The
+/// "value part" of an expression is the object's children.
+inline void set_expression(Object& obj) {
+	object::set_type(obj, ObjectValueType::expression);
+}
+
 /// Children.
+///
+/// These are also the elements of an expression.
 inline Array<Object>& children(Object& obj) { return obj.children; }
 inline Array<Object> const& children(Object const& obj) { return obj.children; }
 

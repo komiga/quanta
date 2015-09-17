@@ -25,11 +25,18 @@ bool object::set_type(Object& obj, ObjectValueType const type) {
 	internal::set_property(obj, Object::M_TYPE, 0, unsigned_cast(type));
 	if (type == ObjectValueType::null) {
 		internal::clear_property(obj, Object::M_VALUE_GUESS);
+	} else if (type == ObjectValueType::expression) {
+		object::clear_value_markers(obj);
+		object::clear_source(obj);
+		object::clear_tags(obj);
+		object::clear_quantity(obj);
 	}
 	return true;
 }
 
 /// Reset value to type default.
+///
+/// This does not clear children if the object is an expression.
 void object::clear_value(Object& obj) {
 	auto& a = memory::default_allocator();
 	switch (object::type(obj)) {
@@ -48,6 +55,8 @@ void object::clear_value(Object& obj) {
 		break;
 	case ObjectValueType::string:
 		unmanaged_string::clear(obj.value.string, a);
+		break;
+	case ObjectValueType::expression:
 		break;
 	}
 }
@@ -76,6 +85,8 @@ void object::copy(Object& dst, Object const& src) {
 		break;
 	case ObjectValueType::string:
 		unmanaged_string::set(dst.value.string, src.value.string, a);
+		break;
+	case ObjectValueType::expression:
 		break;
 	}
 	array::copy(dst.tags, src.tags);

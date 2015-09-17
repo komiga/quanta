@@ -68,6 +68,22 @@ enum class ObjectValueType : u32 {
 	decimal		= 1 << 3,
 	/// String.
 	string		= 1 << 4,
+	/// String.
+	expression	= 1 << 5,
+};
+
+/// Object operator.
+enum class ObjectOperator : u32 {
+	/// No operator (technically equivalent to add).
+	none = 0,
+	/// Add.
+	add = none,
+	/// Subtract.
+	sub,
+	/// Multiply.
+	mul,
+	/// Divide.
+	div,
 };
 
 /// Object.
@@ -85,18 +101,20 @@ struct Object {
 	};
 
 	enum : unsigned {
-		M_TYPE = (unsigned_cast(ObjectValueType::string) << 1) - 1,
-		S_VALUE_UNCERTAIN = 5,
+		M_TYPE = (unsigned_cast(ObjectValueType::expression) << 1) - 1,
+		S_VALUE_UNCERTAIN = 6,
 		M_VALUE_UNCERTAIN = 1 << S_VALUE_UNCERTAIN,
-		S_VALUE_GUESS = 6,
+		S_VALUE_GUESS = 7,
 		M_VALUE_GUESS = 1 << S_VALUE_GUESS,
 		// bits: NXX, where: N = negative, X = value (0-3)
-		S_VALUE_APPROXIMATE = 7,
+		S_VALUE_APPROXIMATE = 8,
 		M_VALUE_APPROXIMATE = ((1 << 2) | 3) << S_VALUE_APPROXIMATE,
-		S_SOURCE_UNCERTAIN = 10,
+		S_SOURCE_UNCERTAIN = 11,
 		M_SOURCE_UNCERTAIN = 1 << S_SOURCE_UNCERTAIN,
-		S_SUB_SOURCE_UNCERTAIN = 11,
+		S_SUB_SOURCE_UNCERTAIN = 12,
 		M_SUB_SOURCE_UNCERTAIN = 1 << S_SUB_SOURCE_UNCERTAIN,
+		S_OP = 13,
+		M_OP = 3 << S_OP,
 
 		M_BOTH_SOURCE_UNCERTAIN
 			= M_SOURCE_UNCERTAIN
@@ -120,14 +138,16 @@ struct Object {
 			& M_VALUE_APPROXIMATE
 			& M_SOURCE_UNCERTAIN
 			& M_SUB_SOURCE_UNCERTAIN
+			& M_OP
 		) &&
-		((1 << (S_SUB_SOURCE_UNCERTAIN + 1)) - 1) == (
+		((1 << (S_OP + 2)) - 1) == (
 			  M_TYPE
 			| M_VALUE_UNCERTAIN
 			| M_VALUE_GUESS
 			| M_VALUE_APPROXIMATE
 			| M_SOURCE_UNCERTAIN
 			| M_SUB_SOURCE_UNCERTAIN
+			| M_OP
 		)
 		, "bitjumbo is janked up"
 	);
@@ -172,6 +192,7 @@ using object::ObjectNumericUnitHash;
 using namespace object::hash_literals;
 using object::OBJECT_NAME_NULL;
 using object::ObjectValueType;
+using object::ObjectOperator;
 using object::Object;
 using object::ObjectParserInfo;
 

@@ -220,12 +220,43 @@ static bool write_tag(
 	return true;
 }
 
+inline char const* op_string(ObjectOperator const op) {
+	switch (op) {
+	case ObjectOperator::add: return " + ";
+	case ObjectOperator::sub: return " - ";
+	case ObjectOperator::mul: return " * ";
+	case ObjectOperator::div: return " / ";
+	}
+}
+
+static bool write_expression(
+	IWriter& stream,
+	Object const& obj,
+	unsigned tabs
+) {
+	if (object::has_children(obj)) {
+		auto& children = object::children(obj);
+		auto it = begin(children);
+		auto end = array::end(children);
+		RETURN_ERROR(write_object(stream, *it, tabs));
+		for (++it; it != end; ++it) {
+			RETURN_ERROR(
+				io::write(stream, op_string(object::op(*it)), 3) &&
+				write_object(stream, *it, tabs)
+			);
+		}
+	}
+	return true;
+}
+
 static bool write_object(
 	IWriter& stream,
 	Object const& obj,
 	unsigned tabs
 ) {
-	if (object::is_named(obj)) {
+	if (object::is_expression(obj)) {
+		return write_expression(stream, obj, tabs);
+	} else if (object::is_named(obj)) {
 		RETURN_ERROR(
 			write_identifier(stream, object::name(obj)) &&
 			io::write(stream, " = ", 3)
@@ -261,6 +292,9 @@ static bool write_object(
 
 	case ObjectValueType::string:
 		RETURN_ERROR(write_string(stream, object::string(obj)));
+		break;
+
+	case ObjectValueType::expression:
 		break;
 	}
 	if (object::has_unit(obj)) {

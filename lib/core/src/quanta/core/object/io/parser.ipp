@@ -182,16 +182,16 @@ static bool parser_error(
 }
 
 #define PARSER_ERROR(p, format) \
-	parser_error(p, "(@ %4d) " format, __LINE__)
+	parser_error(p, "(@ %4d) " format " [last: %s]", __LINE__, p.branch ? (*p.branch->sequence_pos)->name.data : "none")
 
 #define PARSER_ERRORF(p, format, ...) \
-	parser_error(p, "(@ %4d) " format, __LINE__, __VA_ARGS__)
+	parser_error(p, "(@ %4d) " format " [last: %s]", __LINE__, __VA_ARGS__, p.branch ? (*p.branch->sequence_pos)->name.data : "none")
 
 #define PARSER_ERROR_EXPECTED(p, what) \
-	PARSER_ERRORF(p, "expected %s, got '%c'", what, static_cast<char>(p.c))
+	PARSER_ERRORF(p, "expected %s, got '%c' (%x)", what, static_cast<char>(p.c), p.c)
 
 #define PARSER_ERROR_UNEXPECTED(p, what) \
-	PARSER_ERRORF(p, "unexpected %s: '%c'", what, static_cast<char>(p.c))
+	PARSER_ERRORF(p, "unexpected %s; got '%c' (%x)", what, static_cast<char>(p.c), p.c)
 
 #define PARSER_ERROR_STREAM(p, what) \
 	PARSER_ERRORF(p, "%s: stream read failure", what)

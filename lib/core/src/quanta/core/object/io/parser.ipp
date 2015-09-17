@@ -567,10 +567,10 @@ static bool parser_read_approximation_marker(ObjectParser& p, unsigned const lea
 			if (++count > 3) {
 				return PARSER_ERROR(p, "max approximation marker count exceeded");
 			}
-			parser_buffer_add(p);
 		} else {
 			// p.flags |= PF_CARRY;
 			p.buffer_type = PB_MARKER_APPROXIMATION;
+			array::resize(p.buffer, count);
 			return true;
 		}
 	}

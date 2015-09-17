@@ -72,9 +72,8 @@ enum : unsigned {
 };
 
 enum class Response {
-	retry,
-	pass,
 	next,
+	pass,
 	jump,
 	jump_sub,
 	exit,
@@ -1162,16 +1161,10 @@ l_do_stage_part:
 	// NB: sequence_pos purposefully retained in *_sub
 	// Response::next from sub-sequence resumes original sequence
 	switch (response) {
-	case Response::retry:
-		goto l_do_stage_part;
-
-	case Response::pass:
-		++sequence_pos;
-		stage_part = (*sequence_pos)->enter;
-		goto l_do_stage_part;
-
 	case Response::next:
 		p.branch->sequence_pos = sequence_pos;
+
+	case Response::pass:
 		++sequence_pos;
 		stage_part = (*sequence_pos)->enter;
 		goto l_do_stage_part;

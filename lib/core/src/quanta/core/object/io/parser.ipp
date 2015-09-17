@@ -727,7 +727,7 @@ nullptr,
 		RESP(eof);
 	} else {
 		parser_push(p, array::push_back_inplace(object::children(*p.branch->obj)), sequence_base);
-		RESP_SEQ(jump, sequence_base);
+		RESP(jump);
 	}
 });
 
@@ -799,14 +799,17 @@ STAGE(stage_assign, BF_NONE,
 		PARSER_ERROR_EXPECTED(p, "right-hand part following assignment");
 		RESP(error);
 	}
-	RESP(pass);
+	RESP(next);
 });
 
 STAGE(stage_marker_uncertainty, BF_NONE,
 [](ObjectParser& p) -> Response {
 	if (p.c == '?') {
 		RESP_IF(!parser_read_uncertainty_marker(p), error)
-		else parser_apply(p);
+		else {
+			parser_apply(p);
+			RESP(next);
+		}
 	}
 	RESP(pass);
 },
@@ -851,7 +854,10 @@ STAGE(stage_marker_approximation, BF_NONE,
 [](ObjectParser& p) -> Response {
 	if (p.c == '~' || p.c == '^') {
 		RESP_IF(!parser_read_approximation_marker(p, p.c), error)
-		else parser_apply(p);
+		else {
+			parser_apply(p);
+			RESP(next);
+		}
 	}
 	RESP(pass);
 },
@@ -887,10 +893,12 @@ STAGE(stage_unit, BF_NONE,
 [](ObjectParser& p) -> Response {
 	if (parser_is_identifier_lead(p)) {
 		RESP_IF(!parser_read_identifier(p), error)
-		else parser_apply(p, ApplyBufferAs::unit);
+		else {
+			parser_apply(p, ApplyBufferAs::unit);
+			RESP(next);
+		}
 	}
-	// resume sequence_base
-	RESP(next);
+	RESP(pass);
 },
 nullptr
 );
@@ -909,7 +917,7 @@ STAGE(stage_source, BF_NONE,
 
 STAGE(stage_sub_source, BF_NONE,
 [](ObjectParser& p) -> Response {
-	RESP_IF_ELSE(p.c == '$', exit_sub, pass)
+	RESP_IF_ELSE(p.c == '$', exit_sub, next)
 },
 [](ObjectParser& p) -> Response {
 	RESP_IF(!parser_read_source(p), error)

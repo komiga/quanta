@@ -460,6 +460,43 @@ inline Object::Object(Object const& other)
 	object::copy(*this, other);
 }
 
+/// Move-construct.
+inline Object::Object(Object&& other)
+	: properties(other.properties)
+	, source(other.source)
+	, sub_source(other.sub_source)
+	, name(other.name)
+	, value(other.value)
+	, tags(rvalue_ref(other.tags))
+	, children(rvalue_ref(other.children))
+	, quantity(other.quantity)
+{
+	switch (object::type(other)) {
+	case ObjectValueType::null:
+		break;
+	case ObjectValueType::boolean:
+		other.value.boolean = false;
+		break;
+	case ObjectValueType::integer:
+		other.value.numeric.integer = 0;
+		other.value.numeric.unit = {};
+		break;
+	case ObjectValueType::decimal:
+		other.value.numeric.decimal = 0.0f;
+		other.value.numeric.unit = {};
+		break;
+	case ObjectValueType::string:
+		other.value.string = {};
+		break;
+	case ObjectValueType::expression:
+		break;
+	}
+	other.properties = unsigned_cast(ObjectValueType::null);
+	other.source = 0;
+	other.sub_source = 0;
+	other.name = {};
+}
+
 inline Object& Object::operator=(Object const& other) {
 	object::copy(*this, other);
 	return *this;

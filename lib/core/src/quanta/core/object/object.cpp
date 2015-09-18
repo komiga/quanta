@@ -62,7 +62,7 @@ void object::clear_value(Object& obj) {
 }
 
 /// Copy an object.
-void object::copy(Object& dst, Object const& src) {
+void object::copy(Object& dst, Object const& src, bool const children IGEN_DEFAULT(true)) {
 	auto& a = memory::default_allocator();
 	object::clear_value(dst);
 	dst.properties = src.properties;
@@ -90,7 +90,9 @@ void object::copy(Object& dst, Object const& src) {
 		break;
 	}
 	array::copy(dst.tags, src.tags);
-	array::copy(dst.children, src.children);
+	if (children) {
+		array::copy(dst.children, src.children);
+	}
 	if (object::has_quantity(src)) {
 		if (object::has_quantity(dst)) {
 			object::copy(*dst.quantity, *src.quantity);

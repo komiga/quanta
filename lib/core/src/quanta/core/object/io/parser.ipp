@@ -190,10 +190,10 @@ static bool parser_error(
 	parser_error(p, "(@ %4d) " format " [last: %s]", __LINE__, __VA_ARGS__, p.branch ? (*p.branch->sequence_pos)->name.data : "none")
 
 #define PARSER_ERROR_EXPECTED(p, what) \
-	PARSER_ERRORF(p, "expected %s, got '%c' (%x)", what, static_cast<char>(p.c), p.c)
+	PARSER_ERRORF(p, "expected %s, got '%c' (%02x)", what, static_cast<char>(p.c), p.c)
 
 #define PARSER_ERROR_UNEXPECTED(p, what) \
-	PARSER_ERRORF(p, "unexpected %s; got '%c' (%x)", what, static_cast<char>(p.c), p.c)
+	PARSER_ERRORF(p, "unexpected %s; got '%c' (%02x)", what, static_cast<char>(p.c), p.c)
 
 #define PARSER_ERROR_STREAM(p, what) \
 	PARSER_ERRORF(p, "%s: stream read failure", what)
@@ -708,7 +708,6 @@ extern Stage const
 
 * sequence_expression[],
 
-// * sub_tentative_child
 * sub_assign,
 * sub_unit,
 * sub_sub_source
@@ -737,19 +736,6 @@ nullptr,
 		RESP(jump);
 	}
 });
-
-/*STAGE(stage_tentative_child, BF_NONE,
-[](ObjectParser& p) -> Response {
-	switch (p.c) {
-	case ',': case ';':
-		PARSER_ERROR_EXPECTED(p, "sub-object");
-		RESP(error);
-	}
-	parser_push(p, array::push_back_inplace(object::children(*p.branch->obj)), sequence_base);
-	RESP_SEQ(jump, sequence_base);
-},
-nullptr
-);*/
 
 STAGE(stage_lead, BF_NONE,
 [](ObjectParser& p) -> Response {
@@ -1176,7 +1162,6 @@ Stage const
 	&stage_sequence_end,
 },
 
-// * sub_tentative_child = &stage_tentative_child,
 * sub_assign = &stage_assign,
 * sub_unit = &stage_unit,
 * sub_sub_source = &stage_sub_source

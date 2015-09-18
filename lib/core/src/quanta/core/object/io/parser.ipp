@@ -417,7 +417,6 @@ static bool parser_read_number(ObjectParser& p) {
 	return false;
 
 l_complete:
-	// p.flags |= PF_CARRY;
 	if (~parts & PART_NUMERAL) {
 		return PARSER_ERROR(p, "missing numeral part in number");
 	} else if (parts & PART_DECIMAL && ~parts & PART_DECIMAL_NUMERAL) {
@@ -447,7 +446,6 @@ static bool parser_read_identifier(ObjectParser& p) {
 		case '+':
 		case '*': case '/':
 		case '\\':
-			// p.flags |= PF_CARRY;
 			p.buffer_type = PB_IDENTIFIER;
 			if (array::size(p.buffer) == 4) {
 				if (std::memcmp(array::begin(p.buffer), "null", 4) == 0) {
@@ -548,7 +546,6 @@ static bool parser_read_uncertainty_marker(ObjectParser& p) {
 	parser_buffer_add(p);
 	while (parser_next(p)) {
 		if (p.c != '?') {
-			// p.flags |= PF_CARRY;
 			p.buffer_type = PB_MARKER_UNCERTAINTY;
 			return true;
 		}
@@ -582,7 +579,6 @@ static bool parser_read_approximation_marker(ObjectParser& p, unsigned const lea
 				return PARSER_ERROR(p, "max approximation marker count exceeded");
 			}
 		} else {
-			// p.flags |= PF_CARRY;
 			p.buffer_type = PB_MARKER_APPROXIMATION;
 			array::resize(p.buffer, count);
 			return true;
@@ -606,7 +602,6 @@ static bool parser_read_source(ObjectParser& p) {
 			parser_buffer_add(p);
 			id = true;
 		} else if (uncertainty_marker || id) {
-			// p.flags |= PF_CARRY;
 			p.buffer_type = PB_SOURCE;
 			return true;
 		} else {

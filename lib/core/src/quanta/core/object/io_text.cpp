@@ -333,12 +333,12 @@ static bool write_object(
 			auto& last_child = array::back(object::children(quantity));
 			for (auto& child : object::children(quantity)) {
 				RETURN_ERROR(
-					write_object(stream, child, 0) &&
+					write_object(stream, child, tabs) &&
 					(&child == &last_child || io::write(stream, ", ", 2))
 				);
 			}
 		} else {
-			RETURN_ERROR(write_object(stream, quantity, 0));
+			RETURN_ERROR(write_object(stream, quantity, tabs));
 		}
 		RETURN_ERROR(io::write_value(stream, ']'));
 	}

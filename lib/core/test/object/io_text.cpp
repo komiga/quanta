@@ -205,12 +205,31 @@ struct Test {
 	TF("{")
 	TF("(")
 	TF("[")
+	TF("x[+")
+	TF("x[,")
+	TF("x[;")
+	TF("x[\n")
 	TSE("{}", "null")
 	TSE("{{}}", "{\n\tnull\n}")
 	TSE("x{}", "x")
 	TSE("x[]", "x")
 	TSE("x[1]", "x[1]")
 	TSE("x[y]", "x[y]")
+	TSE("x[y:a(1){2}, b]", "x[y:a(1){\n\t2\n}, b]")
+
+// expressions
+	TF("x + ")
+	TF("x - ,")
+	TF("x * ;")
+	TF("{x / }")
+	TSE("x + y", "x + y")
+	TSE("a[x - y]", "a[x - y]")
+	TSE("a[x - y, 1 * 2, z]", "a[x - y, 1 * 2, z]")
+	TSE(":a(x * y)", ":a(x * y)")
+	TSE("{x / y}", "{\n\tx / y\n}")
+	TSE("x + y - z", "x + y - z")
+	TSS("x\nz + w")
+	TSE("x + y, z / w", "x + y\nz / w")
 };
 
 void check(Test const& test) {

@@ -17,6 +17,7 @@ signed main() {
 			name_hash(a) == OBJECT_NAME_NULL &&
 			string::compare_equal(name(a), "")
 		);
+		TOGO_ASSERTE(op(a) == ObjectOperator::none);
 		TOGO_ASSERTE(
 			!has_source(a) && source(a) == 0 && sub_source(a) == 0 &&
 			!source_certain(a) && source_certain_or_unspecified(a) &&
@@ -116,6 +117,19 @@ signed main() {
 		auto& t = push_back_inplace(tags(a));
 		set_name(t, "leftover");
 		TOGO_ASSERTE(&t == find_tag(a, "leftover"));
+	}
+
+	{
+		Object a;
+		set_expression(a);
+		TOGO_ASSERTE(is_expression(a));
+		auto& e1 = push_back_inplace(children(a));
+		set_integer(e1, 1);
+		TOGO_ASSERTE(op(e1) == ObjectOperator::none);
+		auto& e2 = push_back_inplace(children(a));
+		set_integer(e2, 2);
+		set_op(e2, ObjectOperator::div);
+		TOGO_ASSERTE(op(e2) == ObjectOperator::div);
 	}
 	return 0;
 }

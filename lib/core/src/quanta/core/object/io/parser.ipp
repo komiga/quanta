@@ -222,7 +222,7 @@ inline static bool parser_is_number_lead(ObjectParser const& p) {
 	;
 }
 
-static void parser_buffer_add(ObjectParser& p) {
+inline static void parser_buffer_add(ObjectParser& p) {
 	TOGO_DEBUG_ASSERTE(p.c != PC_EOF);
 	array::push_back(p.buffer, static_cast<char>(p.c));
 }
@@ -232,11 +232,12 @@ inline static void parser_buffer_clear(ObjectParser& p) {
 	p.buffer_type = PB_NONE;
 }
 
+inline static unsigned parser_buffer_size(ObjectParser const& p) {
+	return static_cast<unsigned>(array::size(p.buffer));
+}
+
 inline static StringRef parser_buffer_ref(ObjectParser const& p) {
-	return StringRef{
-		array::begin(p.buffer),
-		static_cast<unsigned>(array::size(p.buffer))
-	};
+	return StringRef{array::begin(p.buffer), parser_buffer_size(p)};
 }
 
 inline static void parser_push(ObjectParser& p, Object& obj, Stage const** sequence_pos) {

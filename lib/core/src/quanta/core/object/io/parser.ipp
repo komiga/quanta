@@ -308,23 +308,39 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 				}
 				return false;
 			} else if (p.c == '*') {
+				bool head = false;
 				bool tail = false;
+				unsigned count = 1;
 				while (parser_next(p)) {
 					switch (p.c) {
 					case PC_EOF:
 						return PARSER_ERROR(p, "expected end of block comment, got EOF");
 
 					case '*':
-						tail = true;
+						if (head) {
+							++count;
+							head = false;
+						} else {
+							tail = true;
+						}
 						break;
 
 					case '\\':
 						if (tail) {
-							goto l_continue;
+							--count;
+							tail = false;
+							if (count == 0) {
+								goto l_continue;
+							}
+						} else {
+							head = true;
 						}
 						break;
 
-					default: tail = false; break;
+					default:
+						head = false;
+						tail = false;
+						break;
 					}
 				}
 				return false;

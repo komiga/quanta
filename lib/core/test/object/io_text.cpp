@@ -30,11 +30,15 @@ struct Test {
 	TSN(" \t\n")
 
 // comments
-	TF("/")
-	TF("/*")
-	TSN("//")
-	TSN("/**/")
-	TSN("/*\nblah\n*/")
+	TF("\\")
+	TF("\\*")
+	TSN("\\\\")
+	TSN("\\**\\")
+	TSN("\\*\nblah\n*\\")
+
+	// nested
+	TF("\\* \\* *\\")
+	TSN("\\* \\**\\ *\\")
 
 // constants
 	TSE("null", "null")
@@ -86,13 +90,11 @@ struct Test {
 
 	TSE("x$?$?", "x$?$?")
 
-// numerics
+// integer & decimal
 	TSE(" 1",  "1")
 	TSE("+1",  "1")
 	TSE("-1", "-1")
 
-	// . is actually a valid identifier lead here, so this is not true
-	// TSE(" .1", "0.1")
 	TSE("+.1",  "0.1")
 	TSE("-.1", "-0.1")
 

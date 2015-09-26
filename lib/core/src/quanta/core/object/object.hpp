@@ -23,6 +23,7 @@
 
 #include <quanta/core/string/unmanaged_string.hpp>
 #include <quanta/core/object/types.hpp>
+#include <quanta/core/object/internal.hpp>
 #include <quanta/core/object/object.gen_interface>
 
 namespace quanta {
@@ -63,7 +64,7 @@ inline ObjectNameHash hash_name(StringRef const& name) {
 
 /// Value type.
 inline ObjectValueType type(Object const& obj) {
-	return static_cast<ObjectValueType>(internal::get_property(obj, Object::M_TYPE, 0));
+	return static_cast<ObjectValueType>(internal::get_property(obj, M_TYPE, 0));
 }
 
 /// Whether type is type.
@@ -128,12 +129,12 @@ inline void clear_name(Object& obj) {
 ///
 /// This only has significance when the object is part of an expression.
 inline void set_op(Object& obj, ObjectOperator const op) {
-	internal::set_property(obj, Object::M_OP, Object::S_OP, unsigned_cast(op));
+	internal::set_property(obj, M_OP, S_OP, unsigned_cast(op));
 }
 
 /// Operator.
 inline ObjectOperator op(Object const& obj) {
-	return static_cast<ObjectOperator>(internal::get_property(obj, Object::M_OP, Object::S_OP));
+	return static_cast<ObjectOperator>(internal::get_property(obj, M_OP, S_OP));
 }
 
 /// Source.
@@ -143,7 +144,7 @@ inline unsigned source(Object const& obj) {
 
 /// Whether source uncertainty marker is set.
 inline bool marker_source_uncertain(Object const& obj) {
-	return internal::get_property(obj, Object::M_SOURCE_UNCERTAIN, Object::S_SOURCE_UNCERTAIN);
+	return internal::get_property(obj, M_SOURCE_UNCERTAIN, S_SOURCE_UNCERTAIN);
 }
 
 /// Sub-source.
@@ -153,7 +154,7 @@ inline unsigned sub_source(Object const& obj) {
 
 /// Whether sub-source uncertainty marker is set.
 inline bool marker_sub_source_uncertain(Object const& obj) {
-	return internal::get_property(obj, Object::M_SUB_SOURCE_UNCERTAIN, Object::S_SUB_SOURCE_UNCERTAIN);
+	return internal::get_property(obj, M_SUB_SOURCE_UNCERTAIN, S_SUB_SOURCE_UNCERTAIN);
 }
 
 /// Whether a source is specified.
@@ -168,27 +169,27 @@ inline bool has_sub_source(Object const& obj) {
 
 /// Whether the source and sub-source are certain.
 inline bool source_certain(Object const& obj) {
-	return object::has_source(obj) && !(obj.properties & Object::M_BOTH_SOURCE_UNCERTAIN);
+	return object::has_source(obj) && !(obj.properties & M_BOTH_SOURCE_UNCERTAIN);
 }
 
 /// Whether the source and sub-source are certain or unspecified.
 inline bool source_certain_or_unspecified(Object const& obj) {
-	return obj.source == 0 || !(obj.properties & Object::M_BOTH_SOURCE_UNCERTAIN);
+	return obj.source == 0 || !(obj.properties & M_BOTH_SOURCE_UNCERTAIN);
 }
 
 /// Whether the value uncertain marker is set.
 inline bool marker_value_uncertain(Object const& obj) {
-	return internal::get_property(obj, Object::M_VALUE_UNCERTAIN, Object::S_VALUE_UNCERTAIN);
+	return internal::get_property(obj, M_VALUE_UNCERTAIN, S_VALUE_UNCERTAIN);
 }
 
 /// Whether the value guess marker is set.
 inline bool marker_value_guess(Object const& obj) {
-	return internal::get_property(obj, Object::M_VALUE_GUESS, Object::S_VALUE_GUESS);
+	return internal::get_property(obj, M_VALUE_GUESS, S_VALUE_GUESS);
 }
 
 /// Value approximation marker value.
 inline signed value_approximation(Object const& obj) {
-	unsigned const value = internal::get_property(obj, Object::M_VALUE_APPROXIMATE, Object::S_VALUE_APPROXIMATE);
+	unsigned const value = internal::get_property(obj, M_VALUE_APPROXIMATE, S_VALUE_APPROXIMATE);
 	return (value & (1 << 2)) ? -(signed_cast(value) & 3) : signed_cast(value);
 }
 
@@ -199,7 +200,7 @@ inline signed value_approximation(Object const& obj) {
 /// If the value is null, the value uncertainty and approximation markers can
 /// still be set.
 inline bool value_certain(Object const& obj) {
-	return !(obj.properties & Object::M_VALUE_MARKERS);
+	return !(obj.properties & M_VALUE_MARKERS);
 }
 
 /// Boolean value.
@@ -245,12 +246,12 @@ inline StringRef string(Object const& obj) {
 
 /// Clear source and sub-source uncertainty markers.
 inline void clear_source_uncertainty(Object& obj) {
-	internal::clear_property(obj, Object::M_SOURCE_UNCERTAIN | Object::M_SUB_SOURCE_UNCERTAIN);
+	internal::clear_property(obj, M_SOURCE_UNCERTAIN | M_SUB_SOURCE_UNCERTAIN);
 }
 
 /// Set source certainty marker.
 inline void set_source_certain(Object& obj, bool const certain) {
-	internal::set_property(obj, Object::M_SOURCE_UNCERTAIN, Object::S_SOURCE_UNCERTAIN, !certain);
+	internal::set_property(obj, M_SOURCE_UNCERTAIN, S_SOURCE_UNCERTAIN, !certain);
 }
 
 /// Set source.
@@ -270,7 +271,7 @@ inline void set_source(Object& obj, unsigned const source) {
 
 /// Set sub-source certainty marker.
 inline void set_sub_source_certain(Object& obj, bool const certain) {
-	internal::set_property(obj, Object::M_SUB_SOURCE_UNCERTAIN, Object::S_SUB_SOURCE_UNCERTAIN, !certain);
+	internal::set_property(obj, M_SUB_SOURCE_UNCERTAIN, S_SUB_SOURCE_UNCERTAIN, !certain);
 }
 
 /// Set sub-source.
@@ -292,7 +293,7 @@ inline void clear_source(Object& obj) {
 ///
 /// This clears the value guess marker.
 inline void set_value_certain(Object& obj, bool const certain) {
-	internal::set_property(obj, Object::M_VALUE_UNCERTAIN_AND_GUESS, Object::S_VALUE_UNCERTAIN, !certain);
+	internal::set_property(obj, M_VALUE_UNCERTAIN_AND_GUESS, S_VALUE_UNCERTAIN, !certain);
 }
 
 /// Set value guess marker.
@@ -301,7 +302,7 @@ inline void set_value_certain(Object& obj, bool const certain) {
 /// This clears the value uncertainty marker.
 inline void set_value_guess(Object& obj, bool const guess) {
 	if (object::is_null(obj)) {
-		internal::set_property(obj, Object::M_VALUE_UNCERTAIN_AND_GUESS, Object::S_VALUE_GUESS, guess);
+		internal::set_property(obj, M_VALUE_UNCERTAIN_AND_GUESS, S_VALUE_GUESS, guess);
 	}
 }
 
@@ -315,12 +316,12 @@ inline void set_value_guess(Object& obj, bool const guess) {
 inline void set_value_approximation(Object& obj, signed const value) {
 	unsigned property_value = value < 0;
 	property_value = unsigned_cast(min(property_value ? -value : value, 3)) | (property_value << 2);
-	internal::set_property(obj, Object::M_VALUE_APPROXIMATE, Object::S_VALUE_APPROXIMATE, property_value);
+	internal::set_property(obj, M_VALUE_APPROXIMATE, S_VALUE_APPROXIMATE, property_value);
 }
 
 /// Clear value uncertainty, guess, and approximation markers.
 inline void clear_value_markers(Object& obj) {
-	internal::clear_property(obj, Object::M_VALUE_MARKERS);
+	internal::clear_property(obj, M_VALUE_MARKERS);
 }
 
 /// Set value to null.

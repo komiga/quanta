@@ -266,7 +266,7 @@ static bool write_object(
 	switch (object::type(obj)) {
 	case ObjectValueType::null:
 		if (
-			!(obj.properties & Object::M_VALUE_MARKERS) &&
+			!(obj.properties & object::M_VALUE_MARKERS) &&
 			!object::has_children(obj) &&
 			!object::has_tags(obj)
 		) {

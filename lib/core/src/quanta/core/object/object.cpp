@@ -10,6 +10,7 @@
 #include <togo/core/memory/memory.hpp>
 
 #include <quanta/core/string/unmanaged_string.hpp>
+#include <quanta/core/object/internal.hpp>
 #include <quanta/core/object/object.hpp>
 
 namespace quanta {
@@ -22,9 +23,9 @@ bool object::set_type(Object& obj, ObjectValueType const type) {
 		return false;
 	}
 	object::clear_value(obj);
-	internal::set_property(obj, Object::M_TYPE, 0, unsigned_cast(type));
+	internal::set_property(obj, M_TYPE, 0, unsigned_cast(type));
 	if (type == ObjectValueType::null) {
-		internal::clear_property(obj, Object::M_VALUE_GUESS);
+		internal::clear_property(obj, M_VALUE_GUESS);
 	} else if (type == ObjectValueType::expression) {
 		object::clear_value_markers(obj);
 		object::clear_source(obj);

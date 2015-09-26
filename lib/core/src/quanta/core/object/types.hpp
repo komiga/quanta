@@ -15,7 +15,6 @@
 #include <togo/core/utility/tags.hpp>
 #include <togo/core/utility/traits.hpp>
 #include <togo/core/utility/utility.hpp>
-#include <togo/core/math/types.hpp>
 #include <togo/core/collection/types.hpp>
 #include <togo/core/string/types.hpp>
 #include <togo/core/hash/hash.hpp>
@@ -57,7 +56,7 @@ enum : ObjectNameHash {
 };
 
 /// Object value type.
-enum class ObjectValueType : u32 {
+enum class ObjectValueType : unsigned {
 	/// Empty value.
 	null		= 1 << 0,
 	/// Boolean.
@@ -73,7 +72,7 @@ enum class ObjectValueType : u32 {
 };
 
 /// Object operator.
-enum class ObjectOperator : u32 {
+enum class ObjectOperator : unsigned {
 	/// No operator (technically equivalent to add).
 	none = 0,
 	/// Add.

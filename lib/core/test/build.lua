@@ -13,3 +13,7 @@ togo.make_tests("object", {
 togo.make_tests("string", {
 	["general"] = {nil, configs},
 })
+
+togo.make_tests("chrono", {
+	["time"] = {nil, configs},
+})

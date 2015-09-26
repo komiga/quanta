@@ -23,6 +23,7 @@ namespace {
 
 enum : unsigned {
 	PC_EOF = ~0u,
+	PC_PEEK_EMPTY = PC_EOF - 1u,
 };
 
 enum : unsigned {
@@ -115,6 +116,7 @@ struct ObjectParser {
 	unsigned line;
 	unsigned column;
 	unsigned c;
+	unsigned nc;
 	unsigned flags;
 	ParserBufferType buffer_type;
 	Branch* branch;
@@ -261,8 +263,13 @@ static bool parser_next(ObjectParser& p) {
 	if (p.flags & PF_CARRY) {
 		p.flags &= ~PF_CARRY;
 		return true;
+	} else if (p.nc != PC_PEEK_EMPTY) {
+		p.c = p.nc;
+		p.nc = PC_PEEK_EMPTY;
+		goto l_return;
 	}
-	char c = '\0';
+
+	{char c = '\0';
 	do {} while (io::read_value(p.stream, c) && c == '\r');
 	p.c = c;
 	IOStatus const& status = io::status(p.stream);
@@ -270,12 +277,30 @@ static bool parser_next(ObjectParser& p) {
 		p.c = PC_EOF;
 	} else if (status.fail()) {
 		return PARSER_ERROR_STREAM(p, "parser_next()");
-	}
+	}}
+
+l_return:
 	if (p.c == '\n') {
 		++p.line;
 		p.column = 0;
 	} else {
 		++p.column;
+	}
+	return true;
+}
+
+static bool parser_peek(ObjectParser& p) {
+	if (p.nc != PC_PEEK_EMPTY) {
+		return p.nc;
+	}
+	char c = '\0';
+	do {} while (io::read_value(p.stream, c) && c == '\r');
+	p.nc = c;
+	IOStatus const& status = io::status(p.stream);
+	if (status.eof()) {
+		p.nc = PC_EOF;
+	} else if (status.fail()) {
+		return PARSER_ERROR_STREAM(p, "parser_peek()");
 	}
 	return true;
 }
@@ -1275,6 +1300,7 @@ static void parser_init(ObjectParser& p, Object& root) {
 	p.line = 1;
 	p.column = 0;
 	p.c = PC_EOF;
+	p.nc = PC_PEEK_EMPTY;
 	p.flags = PF_NONE;
 	p.buffer_type  = PB_NONE;
 	p.branch = nullptr;

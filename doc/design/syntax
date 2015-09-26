@@ -1,12 +1,11 @@
 
-// root is an untyped collection
+\\ root is an untyped collection
 
-// C++-style comments
+\\ C++-style comments.. with \ instead of /
+\* yeehaw *\
 
-name = xyz // can be named
-
-// can contain inner '-', but not leading or trailing
-// cannot lead with number
+\\ can contain inner '-', but not leading or trailing
+\\ cannot lead with number
 this.is-a_freeform8string1
 "quoted"
 ```
@@ -15,84 +14,95 @@ r
     w
 ```
 
-1 // integer
-1.0 // floating-point
-1unit_type // unit type follows numeric value
+1 \\ integer
+1.0 \\ floating-point
+1unit_type \\ unit type follows numeric value
 
-// value markers (left-leaning):
-	? // uncertain
-	G~ // guess
-	~ // approximate, maybe less than (sense intensified by repetition)
-	^ // approximate, maybe more than (sense intensified by repetition)
+\\ time (loose ISO 8601)
+	15:30:45 \\ clock/relative time
+	15:30 \\ seconds can be unspecified, but hours and minutes must be specified
+	+00:02:30 \\ explicit duration
 
-// ~ and ^ can be repeated up to two times (a 0-3 scale)
-// ? and ~ and ^ are valid without a value part (e.g.: ?, x[^^], ~~~)
-// ~ and ^ are mutually exclusive
-// ? and G~ are mutually exclusive
-// G~ cannot be applied to null
+	2015-09-24 \\ date
+	09-24 \\ date, context-relative to: year
+	24T \\ date, context-relative to: year and month
+	-0004-01-01 \\ BCE date
 
-// operators:
-	// arithmetic
-	x + y // addition; unary: positive
-	x - y // subtraction (requires whitespace separation if between two strings); unary: negative
-	x * y // multiplication
-	x / y // division
-	x % y // modulo
+	2015-09-24T15:30:45 \\ fully-specified date
+	09-24T15:30 \\ combined, context-relative to: year
+	24T15:30 \\ combined, context-relative to: year and month
 
-	// bitwise
-	(^x) // bitwise NOT
-	x & y // bitwise AND
-	x | y // bitwise OR
-	x ^ y // bitwise XOR
-	x << y // bitwise left-shift
-	x >> y // bitwise right-shift
+	\\ time zones
+	15:30Z \\ UTC ("Zulu time")
+	15:30+01 \\ +01h00m
+	15:30+0200 \\ +02h00m
+	15:30-04:00 \\ -04h00m
 
-	// logical
-	!x // logical NOT
-	x && y // logical AND
-	x || y // logical OR
+\\ time resolution is in seconds.
+\\ times that do not specify a timezone are context-relative.
+\\ if only the day is specified, the T marker must be present to disambiguate it;
+\\ thus, an integer value cannot be constructed with the unit type "T".
+\\ the Gregorian calendar is used for calendar dates.
 
-	// comparison
-	x == y // equal-to test
-	x != y // not-equal-to test
-	x <  y // less-than test
-	x >  y // greater-than test
-	x <= y // less-than-or-equal-to test
-	x >= y // greater-than-or-equal-to test
+\\ times of any specification completeness can be considered durations relative
+\\ to 0001-01-01T00:00:00Z (the beginning instant of the Common Era); the values
+\\ thereof are not required to be within the bounds of the Gregorian calendar
+\\ and clock time. this is up to the governing system (i.e., contextual). sub-
+\\ orders should be normalized to higher orders regardless (thus, 00:61:63 =
+\\ 01:02:03), instead of retaining raw form.
 
-// operators form an expression object, a type of collection
+\\ value markers (left-leaning):
+	? \\ uncertain
+	G~ \\ guess
+	~ \\ approximate, maybe less than (sense intensified by repetition)
+	^ \\ approximate, maybe more than (sense intensified by repetition)
 
-// sources (IDs must be numbers from [0, 0xFFFF) (start-exclusive, end-inclusive))
-	glitter$1 // source ID (1)
-	glitter$1$2 // source ID (1) and sub-source ID (2)
-	// uncertainty marker only applies here
+\\ ~ and ^ can be repeated up to two times (a 0-3 scale)
+\\ ? and ~ and ^ are valid without a value part (e.g.: ?, x[^^], ~~~)
+\\ ~ and ^ are mutually exclusive
+\\ ? and G~ are mutually exclusive
+\\ G~ cannot be applied to null
+
+\\ operators:
+	x = y \\ name object
+	x + y \\ addition; unary: positive
+	x - y \\ subtraction (requires whitespace separation if between two strings); unary: negative
+	x * y \\ multiplication
+	x / y \\ division ("alternative measurement" in quantity)
+
+\\ operators form an expression object, a type of collection
+
+\\ sources (IDs must be numbers from [0, 0xFFFF) (start-exclusive, end-inclusive))
+	glitter$1 \\ source ID (1)
+	glitter$1$2 \\ source ID (1) and sub-source ID (2)
+	\\ uncertainty marker only applies here
 	x$?1
 	x$1$?
 
-type{} // collection; type is optional and just a string
+str{a, b} \\ sub-objects; str is the string value of the object
 
-glitter[~10g] // quantity
-x[1u / 42g] // '/' forms an expression, but is used in this context to mean "alternative measurement"
-x[1u, 2u] // quantity object is expanded to a collection when multiple values are specified
-xxx{d = "ghosts"}[^^^374ghost-grams] // quantity is an attachment to the object, not the object's type
+glitter[~10g] \\ quantity: single-valued sub-object
+x[1u / 42g] \\ '/' forms an expression, but is used in this context to mean "alternative measurement"
+x[1u, 2u] \\ quantity object is expanded to a collection when multiple values are specified
+x{d = "ghosts"}[^^^374ghost-grams]
 
-// terminators are ',', ';', and '\n'
+\\ terminators are ',', ';', and '\n'
 {
 	w, x; y
 	z
 }
 
-// tags
+\\ tags
 	x:name
 	x:~~markers
-	y:name{} // comes before collection
-	z:name[1] // comes before quantity
-	:name // can tag a value-less object
-	:collection("goats", x = 4) // tags can be collections
+	y:name{} \\ comes before collection
+	z:name[1] \\ comes before quantity
+	:name \\ can tag a value-less object
+	:collection("goats", x = 4) \\ tags can be collections
 	u:v(w:x()){y}[z]
 
-// basic composition
-// ! means a singular match where at least one of the !-marked elements must occur
+\\ basic composition
+\\ ! means a singular match where at least one of the !-marked elements must occur
 
 Elements = {
 
@@ -101,18 +111,24 @@ Number = [\-+]? [0-9]* \.? [0-9]+ ([eE][\-+]? [0-9]* \.? [0-9]+)?
 ValueMarkers = ("?" | "G~")? | ("~" | "~~" | "~~~" | "^" | "^^" | "^^^")?
 Name = Identifier "="
 TagName = ":" Identifier
-Tag = TagName TagChildren?
-Tags = Tag+
+Tag = ValueMarkers? TagName TagChildren?
+PreTags = Tag+
+PostTags = Tag+
 TagChildren = "(" Object* ")"
 Children = "{" Object* "}"
 Quantity = "[" Object* "]"
 Unit = Identifier
 Null = "null"
 Boolean = "false" | "true"
+SourceMarker = "$" [0-9]*
+Source = SourceMarker
+SubSource = SourceMarker
+Sources = Source? SubSource?
 ValueConstant = Null | Boolean
 ValueNumber = Number Unit?
 ValueString = Identifier | "\"" (.*|\\\")* "\"" | "```" [.\s\n]* "```"
 Value = ValueConstant | ValueNumber | ValueString
-Object = Name? ValueMarkers! Value! Tags? Children? Quantity?
+
+Object = Name? ValueMarkers! Value! Sources! PreTags! Children! PostTags? Quantity?
 
 }

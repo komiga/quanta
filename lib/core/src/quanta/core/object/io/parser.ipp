@@ -1084,7 +1084,6 @@ STAGE(stage_assign, BF_NONE,
 [](ObjectParser& p) -> Response {
 	switch (p.c) {
 	case PC_EOF:
-	case '+': case '-':
 	case '*': case '/':
 	case '}': case ')': case ']':
 	case ',': case ';': case '\n':

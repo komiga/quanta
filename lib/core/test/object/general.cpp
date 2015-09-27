@@ -3,6 +3,7 @@
 #include <togo/core/string/string.hpp>
 #include <togo/support/test.hpp>
 
+#include <quanta/core/chrono/time.hpp>
 #include <quanta/core/object/object.hpp>
 
 using namespace quanta;
@@ -117,6 +118,35 @@ signed main() {
 		auto& t = push_back_inplace(tags(a));
 		set_name(t, "leftover");
 		TOGO_ASSERTE(&t == find_tag(a, "leftover"));
+	}
+
+	{
+		Time wow{};
+		// treated as local when resolve_time() is called (from unzoned)
+		time::set(wow, 10,16,0);
+
+		Object a;
+		set_time_value(a, wow);
+		TOGO_ASSERTE(is_zoned(a));
+		TOGO_ASSERTE(!is_year_contextual(a) && !is_month_contextual(a));
+		TOGO_ASSERTE(has_date(a) && has_clock(a) && time_type(a) == ObjectTimeType::date_and_clock);
+
+		set_zoned(a, false);
+		TOGO_ASSERTE(!is_zoned(a));
+		set_time_type(a, ObjectTimeType::date);
+		TOGO_ASSERTE(has_date(a) && !has_clock(a) && time_type(a) == ObjectTimeType::date);
+		set_time_type(a, ObjectTimeType::clock);
+		TOGO_ASSERTE(!has_date(a) && has_clock(a) && time_type(a) == ObjectTimeType::clock);
+
+		wow = {};
+		time::set_zone_clock(wow, -4);
+		time::gregorian::set(wow, 1977,8,15);
+		resolve_time(a, wow);
+		TOGO_ASSERTE(is_zoned(a));
+		TOGO_ASSERTE(has_date(a) && has_clock(a) && time_type(a) == ObjectTimeType::date_and_clock);
+
+		time::set(wow, 10,16,0);
+		TOGO_ASSERTE(time::compare_equal(time_value(a), wow));
 	}
 
 	{

@@ -34,9 +34,13 @@ inline void set_zone_offset(Time& t, s32 zone_offset) {
 
 /// Set zone offset (clock).
 ///
+/// Negative hour implies negative minute.
 /// Does not adjust the time referred to, only its offset from UTC.
-inline void set_zone_clock(Time& t, signed h, signed m = 0, signed s = 0) {
-	time::set_zone_offset(t, h * SECS_PER_HOUR + m * SECS_PER_MINUTE + s);
+inline void set_zone_clock(Time& t, signed h, signed m = 0) {
+	if (h < 0) {
+		m = -m;
+	}
+	time::set_zone_offset(t, h * SECS_PER_HOUR + m * SECS_PER_MINUTE);
 }
 
 /// Set zone offset to UTC.
@@ -55,8 +59,11 @@ inline void adjust_zone_offset(Time& t, s32 zone_offset) {
 /// Adjust zone offset (clock).
 ///
 /// Applies the difference between the current and new zone offsets.
-inline void adjust_zone_clock(Time& t, signed h, signed m = 0, signed s = 0) {
-	time::adjust_zone_offset(t, h * SECS_PER_HOUR + m * SECS_PER_MINUTE + s);
+inline void adjust_zone_clock(Time& t, signed h, signed m = 0) {
+	if (h < 0) {
+		m = -m;
+	}
+	time::adjust_zone_offset(t, h * SECS_PER_HOUR + m * SECS_PER_MINUTE);
 }
 
 /// Adjust zone offset to UTC.

@@ -18,6 +18,7 @@
 #include <togo/core/hash/hash.hpp>
 
 #include <quanta/core/string/types.hpp>
+#include <quanta/core/chrono/types.hpp>
 
 namespace quanta {
 namespace object {
@@ -63,10 +64,12 @@ enum class ObjectValueType : unsigned {
 	integer		= 1 << 2,
 	/// 64-bit floating-point number.
 	decimal		= 1 << 3,
+	/// Time.
+	time		= 1 << 4,
 	/// String.
-	string		= 1 << 4,
-	/// String.
-	expression	= 1 << 5,
+	string		= 1 << 5,
+	/// Expression.
+	expression	= 1 << 6,
 };
 
 /// Object operator.
@@ -83,6 +86,16 @@ enum class ObjectOperator : unsigned {
 	div,
 };
 
+/// Object time type.
+enum class ObjectTimeType : unsigned {
+	/// Date and clock.
+	date_and_clock,
+	/// Date.
+	date,
+	/// Clock.
+	clock,
+};
+
 /// Object.
 struct Object {
 	union Value {
@@ -94,6 +107,7 @@ struct Object {
 			};
 			HashedUnmanagedString<ObjectNumericUnitHash> unit;
 		} numeric;
+		Time time;
 		UnmanagedString string;
 	};
 
@@ -137,6 +151,7 @@ using object::ObjectNumericUnitHash;
 using namespace object::hash_literals;
 using object::OBJECT_NAME_NULL;
 using object::ObjectValueType;
+using object::ObjectTimeType;
 using object::ObjectOperator;
 using object::Object;
 using object::ObjectParserInfo;

@@ -22,6 +22,7 @@
 #include <togo/core/io/types.hpp>
 
 #include <quanta/core/string/unmanaged_string.hpp>
+#include <quanta/core/chrono/time.hpp>
 #include <quanta/core/object/types.hpp>
 #include <quanta/core/object/internal.hpp>
 #include <quanta/core/object/object.gen_interface>
@@ -33,29 +34,6 @@ namespace object {
 	@addtogroup lib_core_object
 	@{
 */
-
-namespace {
-	static constexpr ObjectValueType const type_mask_numeric
-		= ObjectValueType::integer
-		| ObjectValueType::decimal
-	;
-} // anonymous namespace
-
-namespace internal {
-
-inline unsigned get_property(Object const& obj, unsigned mask, unsigned shift) {
-	return (obj.properties & mask) >> shift;
-}
-
-inline void set_property(Object& obj, unsigned mask, unsigned shift, unsigned value) {
-	obj.properties = (obj.properties & ~mask) | (value << shift);
-}
-
-inline void clear_property(Object& obj, unsigned mask) {
-	obj.properties &= ~mask;
-}
-
-} // namespace internal
 
 /// Calculate object name hash of string.
 inline ObjectNameHash hash_name(StringRef const& name) {
@@ -144,7 +122,7 @@ inline unsigned source(Object const& obj) {
 
 /// Whether source uncertainty marker is set.
 inline bool marker_source_uncertain(Object const& obj) {
-	return internal::get_property(obj, M_SOURCE_UNCERTAIN, S_SOURCE_UNCERTAIN);
+	return internal::get_property(obj, M_SOURCE_UNCERTAIN, 0);
 }
 
 /// Sub-source.
@@ -154,7 +132,7 @@ inline unsigned sub_source(Object const& obj) {
 
 /// Whether sub-source uncertainty marker is set.
 inline bool marker_sub_source_uncertain(Object const& obj) {
-	return internal::get_property(obj, M_SUB_SOURCE_UNCERTAIN, S_SUB_SOURCE_UNCERTAIN);
+	return internal::get_property(obj, M_SUB_SOURCE_UNCERTAIN, 0);
 }
 
 /// Whether a source is specified.
@@ -179,12 +157,12 @@ inline bool source_certain_or_unspecified(Object const& obj) {
 
 /// Whether the value uncertain marker is set.
 inline bool marker_value_uncertain(Object const& obj) {
-	return internal::get_property(obj, M_VALUE_UNCERTAIN, S_VALUE_UNCERTAIN);
+	return internal::get_property(obj, M_VALUE_UNCERTAIN, 0);
 }
 
 /// Whether the value guess marker is set.
 inline bool marker_value_guess(Object const& obj) {
-	return internal::get_property(obj, M_VALUE_GUESS, S_VALUE_GUESS);
+	return internal::get_property(obj, M_VALUE_GUESS, 0);
 }
 
 /// Value approximation marker value.
@@ -236,6 +214,65 @@ inline ObjectNumericUnitHash unit_hash(Object const& obj) {
 /// Whether the numeric value has a unit.
 inline bool has_unit(Object const& obj) {
 	return object::is_type_any(obj, type_mask_numeric) && unmanaged_string::any(obj.value.numeric.unit);
+}
+
+// NB: calling the accessors "time" makes them ambiguous with the time
+// namespace >_>
+
+/// Time value.
+inline Time& time_value(Object& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	return obj.value.time;
+}
+
+/// Time value.
+inline Time const& time_value(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	return obj.value.time;
+}
+
+/// Time type.
+inline ObjectTimeType time_type(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	return static_cast<ObjectTimeType>(internal::get_property(obj, M_TM_TYPE, S_TM_TYPE));
+}
+
+/// Whether the time value specifies a date (by time type).
+inline bool has_date(Object const& obj) {
+	return object::time_type(obj) != ObjectTimeType::clock;
+}
+
+/// Whether the time value specifies a clock (by time type).
+inline bool has_clock(Object const& obj) {
+	return object::time_type(obj) != ObjectTimeType::date;
+}
+
+/// Whether the time value specifies a zone offset (UTC or relative to UTC).
+///
+/// The zoned object property is overridden if the time value has a zone offset.
+inline bool is_zoned(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	return obj.value.time.zone_offset != 0 || !internal::get_property(obj, M_TM_UNZONED, 0);
+}
+
+/// Whether the time value is context-relative to year.
+inline bool is_year_contextual(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	return
+		object::has_date(obj) &&
+		internal::get_property(obj, M_TM_CONTEXTUAL_YEAR | M_TM_CONTEXTUAL_MONTH, 0)
+	;
+}
+
+/// Whether the time value is context-relative to month.
+///
+/// This implies is_year_contextual().
+inline bool is_month_contextual(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	return
+		object::has_date(obj) &&
+		internal::get_property(obj, M_TM_CONTEXTUAL_MONTH, 0)
+	;
 }
 
 /// String value.
@@ -369,6 +406,74 @@ inline void set_decimal(Object& obj, f64 const value, StringRef const unit) {
 	object::set_unit(obj, unit);
 }
 
+/// Set whether the time value specifies a zone offset (UTC or relative to UTC).
+///
+/// If zoned is false and the value has a zone offset, it is adjusted to UTC
+/// unless no_adjust is false.
+inline void set_zoned(Object& obj, bool zoned, bool adjust = true) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	if (!zoned && adjust && obj.value.time.zone_offset != 0) {
+		time::adjust_zone_utc(obj.value.time);
+	}
+	internal::set_property(obj, M_TM_UNZONED, S_TM_UNZONED, !zoned);
+}
+
+/// Set whether the time value is context-relative to year.
+///
+/// Does nothing if the time type does not include date.
+inline void set_year_contextual(Object& obj, bool year_contextual) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	if (object::has_date(obj)) {
+		internal::set_property(obj, M_TM_CONTEXTUAL_YEAR, S_TM_CONTEXTUAL_YEAR, year_contextual);
+	}
+}
+
+/// Set whether the time value is context-relative to month.
+///
+/// This implies context-relative to year.
+/// Does nothing if the time type does not include date.
+inline void set_month_contextual(Object& obj, bool month_contextual) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	if (object::has_date(obj)) {
+		internal::set_property(obj, M_TM_CONTEXTUAL_MONTH, S_TM_CONTEXTUAL_MONTH, month_contextual);
+	}
+}
+
+/// Set time type.
+inline void set_time_type(Object& obj, ObjectTimeType const type) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	internal::set_property(obj, M_TM_TYPE, S_TM_TYPE, unsigned_cast(type));
+}
+
+/// Set time value without changing time type.
+///
+/// If the new value has a zone offset, the time is zoned.
+inline void set_time_value(Object& obj, Time const& value) {
+	object::set_type(obj, ObjectValueType::time);
+	obj.value.time = value;
+	if (value.zone_offset != 0) {
+		object::set_zoned(obj, true);
+	}
+}
+
+/// Set time value as date and clock.
+inline void set_time(Object& obj, Time const& value) {
+	object::set_time_value(obj, value);
+	object::set_time_type(obj, ObjectTimeType::date_and_clock);
+}
+
+/// Set time value as date.
+inline void set_time_date(Object& obj, Time const& value) {
+	object::set_time_value(obj, value);
+	object::set_time_type(obj, ObjectTimeType::date);
+}
+
+/// Set time value as clock.
+inline void set_time_clock(Object& obj, Time const& value) {
+	object::set_time_value(obj, value);
+	object::set_time_type(obj, ObjectTimeType::clock);
+}
+
 /// Set string value.
 inline void set_string(Object& obj, StringRef const value) {
 	object::set_type(obj, ObjectValueType::string);
@@ -485,6 +590,9 @@ inline Object::Object(Object&& other)
 	case ObjectValueType::decimal:
 		other.value.numeric.decimal = 0.0f;
 		other.value.numeric.unit = {};
+		break;
+	case ObjectValueType::time:
+		other.value.time = {};
 		break;
 	case ObjectValueType::string:
 		other.value.string = {};

@@ -54,6 +54,10 @@ void object::clear_value(Object& obj) {
 		obj.value.numeric.decimal = 0.0f;
 		unmanaged_string::clear(obj.value.numeric.unit, a);
 		break;
+	case ObjectValueType::time:
+		obj.value.time = {};
+		internal::clear_property(obj, M_TM_PROPERTIES);
+		break;
 	case ObjectValueType::string:
 		unmanaged_string::clear(obj.value.string, a);
 		break;
@@ -83,6 +87,9 @@ void object::copy(Object& dst, Object const& src, bool const children IGEN_DEFAU
 	case ObjectValueType::decimal:
 		dst.value.numeric.decimal = src.value.numeric.decimal;
 		unmanaged_string::set(dst.value.numeric.unit, src.value.numeric.unit, a);
+		break;
+	case ObjectValueType::time:
+		dst.value.time = src.value.time;
 		break;
 	case ObjectValueType::string:
 		unmanaged_string::set(dst.value.string, src.value.string, a);
@@ -122,6 +129,40 @@ void object::clear(Object& obj) {
 	object::clear_tags(obj);
 	object::clear_children(obj);
 	object::clear_quantity(obj);
+}
+
+/// Resolve time value from context.
+///
+/// Relative date parts are taken from the context time.
+/// If the time value does not specify a zone offset, it is adjusted to the
+/// zone offset of the context (time assumed to be zone-local).
+void object::resolve_time(Object& obj, Time context) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+	if (!object::is_zoned(obj)) {
+		time::adjust_zone_offset(obj.value.time, context.zone_offset);
+	}
+	// context is only used as a date, so we don't want the zone offset to shove
+	// our value into another date as we apply it
+	time::adjust_zone_utc(context);
+	auto ct = time::clock_seconds_utc(obj.value.time);
+	unsigned rel_parts = internal::get_property(obj, M_TM_CONTEXTUAL_YEAR | M_TM_CONTEXTUAL_MONTH, 0);
+	if (!object::has_date(obj)) {
+		obj.value.time.sec = time::date_seconds_utc(context) + ct;
+	} else if (rel_parts) {
+		Date date = time::gregorian::date_utc(obj.value.time);
+		Date const context_date = time::gregorian::date_utc(context);
+		if (rel_parts & M_TM_CONTEXTUAL_MONTH) {
+			date.month = context_date.month;
+			date.year = context_date.year; // implied
+		} else/* if (rel_parts & M_TM_CONTEXTUAL_YEAR)*/ {
+			date.year = context_date.year;
+		}
+		time::gregorian::set_utc(obj.value.time, date);
+		if (object::has_clock(obj)) {
+			obj.value.time.sec = time::date_seconds_utc(obj.value.time) + ct;
+		}
+	}
+	internal::clear_property(obj, M_TM_TYPE | M_TM_UNZONED | M_TM_CONTEXTUAL_MONTH | M_TM_CONTEXTUAL_YEAR);
 }
 
 IGEN_PRIVATE

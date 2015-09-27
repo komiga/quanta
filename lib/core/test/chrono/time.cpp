@@ -58,7 +58,7 @@ signed main() {
 
 	{
 		Time t{};
-		adjust_zone_clock(t, 1);
+		adjust_zone_clock(t, +1);
 		time::gregorian::set(t, 2,3,4);
 		ASSERT_BOTH(t, 2,3,4, 31+28+4, 0,0,0);
 

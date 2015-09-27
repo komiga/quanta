@@ -35,10 +35,9 @@ static signed const days_before[]{
 } // anonymous namespace
 
 IGEN_PRIVATE
-Date gregorian::date_internal(Time const& t, bool const full) {
+Date gregorian::date_internal(u64 abs, bool const full) {
 	Date date{};
 	{
-	u64 abs = time::abs(t);
 	u64 n;
 	u64 y = 0;
 	u64 d = abs / SECS_PER_DAY;
@@ -103,10 +102,10 @@ Date gregorian::date_internal(Time const& t, bool const full) {
 	return date;
 }
 
-/// Set the Gregorian calendar date.
-void gregorian::set(Time& t, signed year, signed month, signed day) {
+/// Set the Gregorian calendar date (UTC).
+void gregorian::set_utc(Time& t, signed year, signed month, signed day) {
 	--month;
-	normalize(year, month, 12);
+	internal::normalize(year, month, 12);
 	++month;
 
 	// accumulate days
@@ -141,13 +140,15 @@ void gregorian::set(Time& t, signed year, signed month, signed day) {
 	// days from month
 	d += static_cast<u64>(day - 1);
 
-	if (t.sec < 0) {
-		t.sec = -(-t.sec % SECS_PER_DAY);
-	} else {
-		t.sec = t.sec % SECS_PER_DAY;
-	}
-	t.sec += d * SECS_PER_DAY;
-	t.sec += ABSOLUTE_TO_QUANTA;
+	t.sec = time::clock_seconds_utc(t);
+	t.sec += d * SECS_PER_DAY + ABSOLUTE_TO_QUANTA;
+}
+
+/// Set the Gregorian calendar date.
+void gregorian::set(Time& t, signed year, signed month, signed day) {
+	t.sec += t.zone_offset;
+	gregorian::set_utc(t, year, month, day);
+	t.sec -= t.zone_offset;
 }
 
 /// Set the Gregorian calendar date and clock time (UTC).
@@ -156,10 +157,10 @@ void gregorian::set_utc(
 	signed year, signed month, signed day,
 	signed clock_h, signed clock_m, signed clock_s
 ) {
-	normalize(clock_m, clock_s, 60);
-	normalize(clock_h, clock_m, 60);
-	normalize(day, clock_h, 24);
-	gregorian::set(t, year, month, day);
+	internal::normalize(clock_m, clock_s, 60);
+	internal::normalize(clock_h, clock_m, 60);
+	internal::normalize(day, clock_h, 24);
+	gregorian::set_utc(t, year, month, day);
 	time::set_utc(t, clock_h, clock_m, clock_s);
 }
 
@@ -172,6 +173,11 @@ void gregorian::set(
 	t.sec += t.zone_offset;
 	gregorian::set_utc(t, year, month, day, clock_h, clock_m, clock_s);
 	t.sec -= t.zone_offset;
+}
+
+/// Construct a time point from a Gregorian calendar date (UTC).
+void gregorian::set_utc(Time& t, Date const& date) {
+	gregorian::set_utc(t, date.year, date.month, date.day);
 }
 
 /// Construct a time point from a Gregorian calendar date.

@@ -96,46 +96,100 @@ inline void sub(Time& t, Duration d) {
 	t.sec -= d;
 }
 
+/// Compare two times for equality (UTC).
+inline bool compare_equal(Time& l, Time& r) {
+	return l.sec == r.sec;
+}
+
 /// Seconds relative to the POSIX epoch.
 inline s64 posix(Time const& t) {
 	return t.sec + QUANTA_TO_POSIX;
 }
 
+/// Hour on clock (UTC).
+inline signed hour_utc(Time const& t) {
+	return (internal::abs_utc(t) % SECS_PER_DAY) / SECS_PER_HOUR;
+}
+
+/// Minute on clock (UTC).
+inline signed minute_utc(Time const& t) {
+	return (internal::abs_utc(t) % SECS_PER_HOUR) / SECS_PER_MINUTE;
+}
+
+/// Second on clock (UTC).
+inline signed second_utc(Time const& t) {
+	return (internal::abs_utc(t) % SECS_PER_MINUTE);
+}
+
 /// Hour on clock.
 inline signed hour(Time const& t) {
-	return (time::abs(t) % SECS_PER_DAY) / SECS_PER_HOUR;
+	return (internal::abs(t) % SECS_PER_DAY) / SECS_PER_HOUR;
 }
 
 /// Minute on clock.
 inline signed minute(Time const& t) {
-	return (time::abs(t) % SECS_PER_HOUR) / SECS_PER_MINUTE;
+	return (internal::abs(t) % SECS_PER_HOUR) / SECS_PER_MINUTE;
 }
 
 /// Second on clock.
 inline signed second(Time const& t) {
-	return time::abs(t) % SECS_PER_MINUTE;
+	return (internal::abs(t) % SECS_PER_MINUTE);
+}
+
+/// Clock time (UTC).
+inline void clock_utc(Time const& t, signed& h, signed& m, signed& s) {
+	u64 abs = internal::abs_utc(t);
+	h = (abs % SECS_PER_DAY) / SECS_PER_HOUR;
+	m = (abs % SECS_PER_HOUR) / SECS_PER_MINUTE;
+	s = (abs % SECS_PER_MINUTE);
+}
+
+/// Clock time.
+inline void clock(Time const& t, signed& h, signed& m, signed& s) {
+	u64 abs = internal::abs(t);
+	h = (abs % SECS_PER_DAY) / SECS_PER_HOUR;
+	m = (abs % SECS_PER_HOUR) / SECS_PER_MINUTE;
+	s = (abs % SECS_PER_MINUTE);
+}
+
+/// Clock time in seconds (UTC).
+inline Duration clock_seconds_utc(Time const& t) {
+	return internal::abs_utc(t) % SECS_PER_DAY;
+}
+
+/// Clock time in seconds.
+inline Duration clock_seconds(Time const& t) {
+	return internal::abs(t) % SECS_PER_DAY;
+}
+
+/// Non-clock part in seconds (UTC).
+inline Duration date_seconds_utc(Time const& t) {
+	u64 abs = internal::abs_utc(t);
+	abs -= abs % SECS_PER_DAY;
+	return static_cast<s64>(abs) + ABSOLUTE_TO_QUANTA;
+}
+
+/// Non-clock part in seconds.
+inline Duration date_seconds(Time const& t) {
+	u64 abs = internal::abs(t);
+	abs -= abs % SECS_PER_DAY;
+	return static_cast<s64>(abs) + ABSOLUTE_TO_QUANTA;
 }
 
 /// Set the clock time (UTC).
 ///
-/// This sets the clock time independent of the zone offset.
-/// If the current time is negative, it is retained when setting the clock time.
+/// This sets the clock time independent of the zone offset (input is UTC).
 inline void set_utc(Time& t, signed h, signed m, signed s) {
-	s64 ct = h * SECS_PER_HOUR + m * SECS_PER_MINUTE + s;
-	if (t.sec < 0) {
-		t.sec += -t.sec % SECS_PER_DAY;
-		t.sec -= ct;
-	} else {
-		t.sec -= t.sec % SECS_PER_DAY;
-		t.sec += ct;
-	}
+	t.sec += QUANTA_TO_ABSOLUTE;
+	t.sec -= t.sec % SECS_PER_DAY;
+	t.sec += h * SECS_PER_HOUR + m * SECS_PER_MINUTE + s;
+	t.sec += ABSOLUTE_TO_QUANTA;
 }
 
 /// Set the clock time (zone-local time).
 inline void set(Time& t, signed h, signed m, signed s) {
 	t.sec += t.zone_offset;
-	time::set_utc(t, h, m, s);
-	t.sec -= t.zone_offset;
+	time::set_utc(t, h, m, s - t.zone_offset);
 }
 
 namespace gregorian {
@@ -145,29 +199,56 @@ inline bool is_leap_year(signed const year) {
 	return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 }
 
-/// Whether the time specified is in a Gregorian leap year.
-inline bool is_leap_year(Time const& t) {
-	return gregorian::is_leap_year(gregorian::date_internal(t, false).year);
-}
+
 
 /// Gregorian calendar date.
 inline Date date(Time const& t) {
-	return gregorian::date_internal(t, true);
+	return gregorian::date_internal(internal::abs(t), true);
 }
 
 /// Gregorian calendar year.
 inline signed year(Time const& t) {
-	return gregorian::date_internal(t, false).year;
+	return gregorian::date_internal(internal::abs(t), false).year;
 }
 
 /// Gregorian calendar month.
 inline signed month(Time const& t) {
-	return gregorian::date_internal(t, true).month;
+	return gregorian::date(t).month;
 }
 
 /// Gregorian calendar day.
 inline signed day(Time const& t) {
-	return gregorian::date_internal(t, true).day;
+	return gregorian::date(t).day;
+}
+
+/// Whether the time specified is in a Gregorian leap year.
+inline bool is_leap_year(Time const& t) {
+	return gregorian::is_leap_year(gregorian::year(t));
+}
+
+/// Gregorian calendar date (UTC).
+inline Date date_utc(Time const& t) {
+	return gregorian::date_internal(internal::abs_utc(t), true);
+}
+
+/// Gregorian calendar year (UTC).
+inline signed year_utc(Time const& t) {
+	return gregorian::date_internal(internal::abs_utc(t), false).year;
+}
+
+/// Gregorian calendar month (UTC).
+inline signed month_utc(Time const& t) {
+	return gregorian::date_utc(t).month;
+}
+
+/// Gregorian calendar day (UTC).
+inline signed day_utc(Time const& t) {
+	return gregorian::date_utc(t).day;
+}
+
+/// Whether the time specified is in a Gregorian leap year (UTC).
+inline bool is_leap_year_utc(Time const& t) {
+	return gregorian::is_leap_year(gregorian::year_utc(t));
 }
 
 } // namespace gregorian

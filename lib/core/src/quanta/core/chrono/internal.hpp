@@ -37,6 +37,8 @@ enum : s64 {
 	POSIX_TO_QUANTA = -QUANTA_TO_POSIX,
 };
 
+namespace internal {
+
 // normalize value into higher-order multiples
 inline void normalize(signed& h, signed& l, signed m) {
 	signed n;
@@ -52,10 +54,15 @@ inline void normalize(signed& h, signed& l, signed m) {
 	}
 }
 
+inline u64 abs_utc(Time const& t) {
+	return static_cast<u64>(t.sec + QUANTA_TO_ABSOLUTE);
+}
+
 inline u64 abs(Time const& t) {
 	return static_cast<u64>((t.sec + t.zone_offset) + QUANTA_TO_ABSOLUTE);
 }
 
+} // namespace internal
 } // anonymous namespace
 
 } // namespace time

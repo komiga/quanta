@@ -122,7 +122,7 @@ signed main() {
 
 	{
 		Time wow{};
-		// treated as local when resolve_time() is called (from unzoned)
+		// treated as local when resolve_time() is called (from unzoned to -04:00)
 		time::set(wow, 10,16,0);
 
 		Object a;
@@ -138,15 +138,35 @@ signed main() {
 		set_time_type(a, ObjectTimeType::clock);
 		TOGO_ASSERTE(!has_date(a) && has_clock(a) && time_type(a) == ObjectTimeType::clock);
 
-		wow = {};
-		time::set_zone_clock(wow, -4);
+		time::adjust_zone_clock(wow, -4);
 		time::gregorian::set(wow, 1977,8,15);
 		resolve_time(a, wow);
 		TOGO_ASSERTE(is_zoned(a));
 		TOGO_ASSERTE(has_date(a) && has_clock(a) && time_type(a) == ObjectTimeType::date_and_clock);
 
-		time::set(wow, 10,16,0);
 		TOGO_ASSERTE(time::compare_equal(time_value(a), wow));
+	}
+
+	{
+		Date d;
+		Time t{};
+		time::gregorian::set(t, 1,10,15);
+
+		Object a;
+		set_time_value(a, t);
+
+		t = {};
+		set_year_contextual(a, true);
+		time::gregorian::set(t, 2,3,10);
+		resolve_time(a, t);
+		d = time::gregorian::date(time_value(a));
+		TOGO_ASSERTE(d.year == 2 && d.month == 10 && d.day == 15);
+
+		set_month_contextual(a, true); // implies contextual year
+		time::gregorian::set(t, 4,6,20);
+		resolve_time(a, t);
+		d = time::gregorian::date(time_value(a));
+		TOGO_ASSERTE(d.year == 4 && d.month == 6 && d.day == 15);
 	}
 
 	{

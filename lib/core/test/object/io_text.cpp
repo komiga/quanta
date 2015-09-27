@@ -172,6 +172,8 @@ struct Test {
 	TSE("a=b", "a = b")
 	TSE("a = 1", "a = 1")
 	TSE("a = b", "a = b")
+	TSE("a = +1", "a = 1")
+	TSS("a = -1")
 
 	TSE("a=\"\"", "a = \"\"")
 	TSE("a=\"ab\"", "a = ab")

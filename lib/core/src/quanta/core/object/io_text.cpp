@@ -14,6 +14,7 @@
 #include <togo/core/io/io.hpp>
 #include <togo/core/io/file_stream.hpp>
 
+#include <quanta/core/chrono/time.hpp>
 #include <quanta/core/object/object.hpp>
 #include <quanta/core/object/io/parser.ipp>
 
@@ -289,6 +290,35 @@ static bool write_object(
 	case ObjectValueType::decimal:
 		RETURN_ERROR(writef(stream, "%.6lg", obj.value.numeric.decimal));
 		break;
+
+	case ObjectValueType::time: {
+		Time const& t = object::time_value(obj);
+		bool has_clock = object::has_clock(obj);
+		if (object::has_date(obj)) {
+			bool month_contextual = object::is_month_contextual(obj);
+			Date date = time::gregorian::date(t);
+			if (!object::is_year_contextual(obj)) {
+				RETURN_ERROR(writef(stream, "%04d-", date.year));
+			}
+			if (!month_contextual) {
+				RETURN_ERROR(writef(stream, "%02d-", date.month));
+			}
+			RETURN_ERROR(writef(stream, (month_contextual || has_clock) ? "%02dT" : "%02d", date.day));
+		}
+		if (has_clock) {
+			signed h, m, s;
+			time::clock(t, h, m, s);
+			RETURN_ERROR(writef(stream, "%02d:%02d:%02d", h, m, s));
+			if (!object::is_zoned(obj)) {
+				// no zone to write
+			} else if (t.zone_offset == 0) {
+				RETURN_ERROR(io::write(stream, "Z", 1));
+			} else {
+				time::clock(Time{t.zone_offset, 0}, h, m, s);
+				RETURN_ERROR(writef(stream, "%.*s%02d%02d", 1, t.zone_offset < 0 ? "-" : "+", h, m));
+			}
+		}
+	}	break;
 
 	case ObjectValueType::string:
 		RETURN_ERROR(write_string(stream, object::string(obj)));

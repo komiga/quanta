@@ -45,6 +45,7 @@ enum ParserBufferType : unsigned {
 	PB_DECIMAL,
 	PB_IDENTIFIER,
 	PB_STRING,
+	PB_TIME,
 };
 
 enum class ApplyBufferAs : unsigned {
@@ -53,6 +54,28 @@ enum class ApplyBufferAs : unsigned {
 	unit,
 	source,
 	sub_source,
+};
+
+enum : unsigned {
+	TSP_D_YYYY		= 1 << 0,
+	TSP_D_MM		= 1 << 1,
+	TSP_D_DD		= 1 << 2,
+
+	TSP_DIVIDER		= 1 << 3,
+	TSP_T_HH		= 1 << 4,
+	TSP_T_MM		= 1 << 5,
+	TSP_T_SS		= 1 << 6,
+
+	TSP_D_ALL
+		= TSP_D_YYYY
+		| TSP_D_MM
+		| TSP_D_DD
+	,
+	TSP_T_ALL
+		= TSP_T_HH
+		| TSP_T_MM
+		| TSP_T_SS
+	,
 };
 
 enum : unsigned {
@@ -119,6 +142,7 @@ struct ObjectParser {
 	unsigned nc;
 	unsigned flags;
 	ParserBufferType buffer_type;
+	unsigned time_parts;
 	Branch* branch;
 
 	ObjectParser(IReader& stream, ObjectParserInfo& info, Allocator& allocator)
@@ -382,6 +406,161 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 	return false;
 }
 
+static bool parser_read_time(ObjectParser& p) {
+	// [YYYY-]MM-DD
+	// [[[YYYY-]MM-]DDT]HH:MM[:SS]
+	// T must be present if only DD is specified
+	// from parser_read_number():
+	//   YYYY- or MM-
+	//   DDT
+	//   HH:
+	if (!parser_peek(p)) {
+		return false;
+	}
+	if (p.nc < '0' || p.nc > '9') {
+		if (p.c == 'T' && p.nc == PC_EOF) {
+			parser_buffer_add(p);
+			parser_next(p);
+			p.buffer_type = PB_TIME;
+			p.time_parts = TSP_D_DD | TSP_DIVIDER;
+		} else if (p.c == '-') {
+			parser_next(p);
+			return PARSER_ERROR_EXPECTED(p, "date part following date lead");
+		} else {
+			// T must be a unit
+			// : must specify a tag
+			p.buffer_type = PB_INTEGER;
+		}
+		return true;
+	}
+
+#define SET_PART(part) do { \
+	parts |= part; last = now + 1; \
+} while (false)
+
+	unsigned now;
+	unsigned part_length;
+	unsigned last = 0;
+	unsigned parts = 0;
+	p.buffer_type = PB_TIME;
+	do {
+		now = static_cast<unsigned>(parser_buffer_size(p));
+		part_length = now - last;
+		switch (p.c) {
+		case '-':
+			if (parts & (TSP_DIVIDER | TSP_T_ALL)) {
+				return PARSER_ERROR_UNEXPECTED(p, "date part separator in daytime segment");
+			} else if (parts == TSP_D_ALL) {
+				return PARSER_ERROR_EXPECTED(p, "date part separator after complete date segment");
+			} else if (part_length == 4) { // YYYY-
+				if (!parts) {
+					SET_PART(TSP_D_YYYY);
+				} else {
+					return PARSER_ERROR_UNEXPECTED(p, "non-leading year in date segment");
+				}
+			} else if (part_length == 2) {
+				if (~parts & TSP_D_MM) { // YYYY-MM- or MM-
+					SET_PART(TSP_D_MM);
+				} else { // YYYY-MM-DD-
+					return PARSER_ERROR_UNEXPECTED(p, "date part separator after day in date segment");
+				}
+			} else {
+				return PARSER_ERROR(p, "date part must be 4 (YYYY) or 2 (MM, DD) numerals long");
+			}
+			if (!parser_peek(p)) {
+				return false;
+			}
+			if (p.nc < '0' || p.nc > '9') {
+				parser_next(p);
+				return PARSER_ERROR_EXPECTED(p, "date part following separator");
+			}
+			break;
+
+		case 'T':
+			if (parts & (TSP_DIVIDER | TSP_T_ALL)) {
+				return PARSER_ERROR_UNEXPECTED(p, "daytime marker in daytime segment");
+			} else if (part_length == 0) { // [YYYY-][MM][-]T
+				return PARSER_ERROR(p, "day must be present in date segment for daytime segment to be specified");
+			} else if (part_length != 2) {
+				return PARSER_ERROR(p, "day must be 2 numerals long");
+			} else if ((parts & (TSP_D_YYYY | TSP_D_MM)) == TSP_D_YYYY) { // YYYY-XXT
+				return PARSER_ERROR(p, "day unspecified in date segment before daytime marker");
+			} else { // [YYYY-][MM-]DDT
+				SET_PART(TSP_D_DD | TSP_DIVIDER);
+			}
+			break;
+
+		case ':':
+			if (parts && !(parts & (TSP_DIVIDER | TSP_T_ALL))) {
+				return PARSER_ERROR_UNEXPECTED(p, "daytime part separator in date segment");
+			} else if (part_length != 2) {
+				return PARSER_ERROR(p, "daytime part must be 2 numerals long");
+			} else if (parts & TSP_T_MM) { // HH:MM:SS:
+				SET_PART(TSP_T_SS);
+				// assume tag
+				p.time_parts = parts;
+				return true;
+			} else if (parts & TSP_T_HH) { // HH:MM:
+				SET_PART(TSP_T_MM);
+			} else { // HH:
+				SET_PART(TSP_T_HH);
+			}
+			if (!parser_peek(p)) {
+				return false;
+			}
+			if (p.nc < '0' || p.nc > '9') {
+				// assume tag
+				p.time_parts = parts;
+				return true;
+			}
+			break;
+
+		case PC_EOF:
+		case '\t':
+		case '\n':
+		case ' ':
+		case ',': case ';':
+		case '=': case '$':
+		case '}': case ']': case ')':
+		case '{': case '[': case '(':
+		case '+':
+		case '*': case '/':
+		case '\\':
+			if (part_length == 0) {
+				// complete
+			} else if (part_length != 2) {
+				return PARSER_ERROR(p, "trailing part must be 2 numerals long");
+			} else if (parts & (TSP_DIVIDER | TSP_T_ALL)) {
+				if (parts & TSP_T_MM) { // HH:MM:SS
+					SET_PART(TSP_T_SS);
+				} else if (parts & TSP_T_HH) { // HH:MM
+					SET_PART(TSP_T_MM);
+				} else { // HH
+					return PARSER_ERROR(p, "missing minute part in daytime segment");
+				}
+			} else {
+				if (parts & TSP_D_MM) { // [YYYY-]MM-DD
+					SET_PART(TSP_D_DD);
+				} else /*if (parts & TSP_D_YYYY)*/ { // YYYY-XX
+					return PARSER_ERROR(p, "missing day part in date segment");
+				}
+			}
+			p.time_parts = parts;
+			return true;
+
+		default:
+			if (p.c < '0' || p.c > '9') {
+				return PARSER_ERROR_EXPECTED(p, "time part or terminator");
+			}
+			break;
+		}
+		parser_buffer_add(p);
+	} while (parser_next(p));
+	return false;
+
+#undef SET_PART
+}
+
 static bool parser_read_number(ObjectParser& p) {
 	enum : unsigned {
 		PART_SIGN				= 1 << 0,
@@ -401,32 +580,39 @@ static bool parser_read_number(ObjectParser& p) {
 		case '\n':
 		case ' ':
 		case ',': case ';':
-		case '=': case ':': case '$':
+		case '=': case '$':
 		case '}': case ']': case ')':
 		case '{': case '[': case '(':
 		case '*': case '/':
 		case '\\':
 			goto l_complete;
 
-		case '-': case '+':
+		case '-': // YYYY- or MM-
+			if (parts == PART_NUMERAL && (parser_buffer_size(p) == 4 || parser_buffer_size(p) == 2)) {
+				return parser_read_time(p);
+			}
+
+		case '+':
 			if (
 				parts & PART_EXPONENT_SIGN ||
 				(~parts & PART_EXPONENT && parts & PART_SIGN)
 			) {
 				return PARSER_ERROR(p, "sign already specified for number part");
 			} else if (parts & PART_EXPONENT_NUMERAL) {
-				return PARSER_ERROR(p, "unexpected non-leading sign in number exponent");
+				return PARSER_ERROR_UNEXPECTED(p, "non-leading sign in number exponent");
 			}
 			if (parts & PART_EXPONENT) {
 				parts |= PART_EXPONENT_SIGN;
-			} else {
+			} else if (parts == 0) {
 				parts |= PART_SIGN;
+			} else {
+				return PARSER_ERROR_UNEXPECTED(p, "non-leading sign in number");
 			}
 			break;
 
 		case '.':
 			if (parts & PART_EXPONENT) {
-				return PARSER_ERROR(p, "unexpected decimal point in number exponent");
+				return PARSER_ERROR_UNEXPECTED(p, "decimal point in number exponent");
 			} else if (parts & PART_DECIMAL) {
 				return PARSER_ERROR(p, "decimal point in number specified twice");
 			}
@@ -439,6 +625,14 @@ static bool parser_read_number(ObjectParser& p) {
 			}
 			parts |= PART_EXPONENT;
 			break;
+
+		case ':': // HH:
+		case 'T': // DDT
+			if (parts == PART_NUMERAL && parser_buffer_size(p) == 2) {
+				return parser_read_time(p);
+			} else {
+				goto l_complete;
+			}
 
 		default:
 			if (p.c >= '0' && p.c <= '9') {
@@ -653,6 +847,16 @@ static bool parser_read_source(ObjectParser& p) {
 	return false;
 }
 
+static unsigned parse_integer(char const*& it, char const* end) {
+	signed value = 0;
+	for (; it != end && *it == '0'; ++it) {}
+	for (; it != end; ++it) {
+		value *= 10;
+		value += *it - '0';
+	}
+	return value;
+}
+
 static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBufferAs::value) {
 	// TOGO_LOGF("apply %u\n", unsigned_cast(p.buffer_type));
 	TOGO_DEBUG_ASSERTE(p.buffer_type != PB_NONE);
@@ -705,6 +909,51 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 		case PB_STRING:
 			object::set_string(obj, parser_buffer_ref(p));
 			break;
+
+		case PB_TIME: {
+			bool has_date = false;
+			bool has_clock = false;
+			Date date{};
+			signed h, m, s;
+			h = m = s = 0;
+
+			object::set_time_value(obj, {});
+			object::set_zoned(obj, false);
+			StringRef str = parser_buffer_ref(p);
+			auto it = begin(str);
+			switch (p.time_parts & TSP_D_ALL) {
+			case TSP_D_ALL:
+				date.year = parse_integer(it, it + 4); ++it;
+			case TSP_D_MM | TSP_D_DD:
+				date.month = parse_integer(it, it + 2); ++it;
+			case TSP_D_DD:
+				date.day = parse_integer(it, it + 2); ++it;
+				has_date = true;
+			}
+			if (~p.time_parts & TSP_D_MM) {
+				object::set_month_contextual(obj, true);
+			} else if (~p.time_parts & TSP_D_YYYY) {
+				object::set_year_contextual(obj, true);
+			}
+			if (p.time_parts & TSP_T_ALL) {
+				h = parse_integer(it, it + 2); ++it;
+				m = parse_integer(it, it + 2); ++it;
+				if (p.time_parts & TSP_T_SS) {
+					s = parse_integer(it, it + 2); ++it;
+				}
+				has_clock = true;
+			}
+			if (has_date && has_clock) {
+				object::set_time_type(obj, ObjectTimeType::date_and_clock);
+				time::gregorian::set(object::time_value(obj), date, h, m, s);
+			} else if (has_date) {
+				object::set_time_type(obj, ObjectTimeType::date);
+				time::gregorian::set_utc(object::time_value(obj), date);
+			} else if (has_clock) {
+				object::set_time_type(obj, ObjectTimeType::clock);
+				time::set_utc(object::time_value(obj), h, m, s);
+			}
+		}	break;
 		}
 		break;
 
@@ -918,7 +1167,7 @@ STAGE(stage_value, BF_NONE,
 		parser_read_identifier(p);
 	} else if (parser_is_number_lead(p)) {
 		parser_read_number(p);
-		is_numeric = true;
+		is_numeric = p.buffer_type == PB_INTEGER || p.buffer_type == PB_DECIMAL;
 	} else {
 		RESP(pass);
 	}
@@ -1303,6 +1552,7 @@ static void parser_init(ObjectParser& p, Object& root) {
 	p.nc = PC_PEEK_EMPTY;
 	p.flags = PF_NONE;
 	p.buffer_type  = PB_NONE;
+	p.time_parts = 0;
 	p.branch = nullptr;
 	array::clear(p.stack);
 	array::clear(p.buffer);

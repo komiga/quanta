@@ -147,7 +147,13 @@ void object::resolve_time(Object& obj, Time context) {
 	auto ct = time::clock_seconds_utc(obj.value.time);
 	unsigned rel_parts = internal::get_property(obj, M_TM_CONTEXTUAL_YEAR | M_TM_CONTEXTUAL_MONTH, 0);
 	if (!object::has_date(obj)) {
-		obj.value.time.sec = time::date_seconds_utc(context) + ct;
+		obj.value.time.sec = time::date_seconds_utc(context);
+		if (object::has_clock(obj)) {
+			obj.value.time.sec += ct;
+			object::set_time_type(obj, ObjectTimeType::date_and_clock);
+		} else {
+			object::set_time_type(obj, ObjectTimeType::date);
+		}
 	} else if (rel_parts) {
 		Date date = time::gregorian::date_utc(obj.value.time);
 		Date const context_date = time::gregorian::date_utc(context);
@@ -162,7 +168,7 @@ void object::resolve_time(Object& obj, Time context) {
 			obj.value.time.sec = time::date_seconds_utc(obj.value.time) + ct;
 		}
 	}
-	internal::clear_property(obj, M_TM_TYPE | M_TM_UNZONED | M_TM_CONTEXTUAL_MONTH | M_TM_CONTEXTUAL_YEAR);
+	internal::clear_property(obj, M_TM_UNZONED | M_TM_CONTEXTUAL_MONTH | M_TM_CONTEXTUAL_YEAR);
 }
 
 IGEN_PRIVATE

@@ -246,6 +246,8 @@ static bool write_expression(
 				write_object(stream, *it, tabs)
 			);
 		}
+	} else {
+		RETURN_ERROR(io::write(stream, "{}", 2));
 	}
 	return true;
 }

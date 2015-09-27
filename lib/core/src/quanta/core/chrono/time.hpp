@@ -78,7 +78,7 @@ inline Time as_utc(Time const& t) {
 
 /// Make a copy in UTC (zone-adjusted).
 inline Time as_utc_adjusted(Time const& t) {
-	return {t.sec - t.zone_offset, 0};
+	return {t.sec + t.zone_offset, 0};
 }
 
 /// The difference between two time points.

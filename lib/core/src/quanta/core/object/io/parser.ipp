@@ -1115,10 +1115,12 @@ STAGE(stage_marker_guess, BF_NONE,
 	else if (!object::value_certain(*p.branch->obj)) {
 		PARSER_ERROR(p, "lead marker '?' was already met; guess marker invalid here");
 		RESP(error);
+	} else if (p.buffer_type != PB_MARKER_GUESS) {
+		parser_apply(p);
+		RESP_SEQ(jump, jump_base_after_value);
 	} else {
 		parser_apply(p);
-		RESP_SEQ_IF(p.buffer_type != PB_MARKER_GUESS, jump, jump_base_after_value)
-		else RESP(next);
+		RESP(next);
 	}
 },
 nullptr

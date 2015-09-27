@@ -996,7 +996,7 @@ extern Stage const
 * sequence_root[],
 * sequence_base[],
 ** jump_base_unnamed,
-** jump_base_after_marker_uncertainty,
+** jump_base_after_marker_guess,
 ** jump_base_after_value,
 ** jump_base_quantity,
 ** jump_base_complete,
@@ -1046,7 +1046,7 @@ STAGE(stage_lead, BF_NONE,
 		RESP_IF(!parser_read_guess_marker(p), error)
 		if (p.buffer_type == PB_MARKER_GUESS) {
 			parser_apply(p);
-			RESP_SEQ(jump, jump_base_after_marker_uncertainty);
+			RESP_SEQ(jump, jump_base_after_marker_guess);
 		}
 		break;
 
@@ -1518,7 +1518,7 @@ Stage const
 	&stage_sequence_end,
 },
 ** jump_base_unnamed = find_stage(sequence_base, &stage_lead) + 1,
-** jump_base_after_marker_uncertainty = find_stage(sequence_base, &stage_marker_uncertainty) + 1,
+** jump_base_after_marker_guess = find_stage(sequence_base, &stage_marker_uncertainty) + 1,
 ** jump_base_after_value = find_stage(sequence_base, &stage_value) + 1,
 ** jump_base_quantity = find_stage(sequence_base, &stage_quantity),
 ** jump_base_complete = find_stage(sequence_base, &stage_complete),

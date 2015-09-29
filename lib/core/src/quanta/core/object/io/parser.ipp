@@ -236,7 +236,7 @@ inline static bool parser_is_identifier_lead(ObjectParser const& p) {
 		||  p.c == '_'
 		||  p.c == '.'
 		// UTF-8 sequence lead byte.. but not EOF
-		||  (p.c >= 0xC0 && p.c != PC_EOF)
+		|| (p.c >= 0xC0 && p.c != PC_EOF)
 	;
 }
 
@@ -1588,7 +1588,7 @@ l_exec:
 	case StagePart::enter: response = (*p.branch->sequence_pos)->enter(p); break;
 	case StagePart::exit : response = (*p.branch->sequence_pos)->exit(p); break;
 	}
-	char c = static_cast<char>(p.c);
+	/*char c = static_cast<char>(p.c);
 	TOGO_LOGF("FROM(%-26s) [%.*s %02x] <%.*s>\n",
 		(*base_pos)->name.data,
 		p.c == PC_EOF ? 3 : 1,
@@ -1596,7 +1596,7 @@ l_exec:
 		unsigned_cast(p.c),
 		static_cast<unsigned>(array::size(p.buffer)),
 		array::begin(p.buffer)
-	);
+	);*/
 
 	p.branch->any_part |= unsigned_cast(response) > unsigned_cast(Response::pass);
 	switch (response) {

@@ -604,6 +604,7 @@ inline Object::Object(Object&& other)
 	other.source = 0;
 	other.sub_source = 0;
 	other.name = {};
+	other.quantity = nullptr;
 }
 
 inline Object& Object::operator=(Object const& other) {

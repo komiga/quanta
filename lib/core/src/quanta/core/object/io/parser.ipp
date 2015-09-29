@@ -346,6 +346,9 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 			break;
 
 		case '\\':
+			if (!filter_completers) {
+				return true;
+			}
 			if (!parser_next(p)) {
 				return false;
 			}
@@ -1417,6 +1420,7 @@ STAGE(stage_complete, BF_NONE,
 		}
 
 	case PC_EOF:
+	case '\\':
 	case ':':
 	case '}': case ')': case ']':
 	case ',': case ';': case '\n':
@@ -1438,6 +1442,7 @@ STAGE(stage_expression, BF_EXPRESSION,
 	auto op = ObjectOperator::none;
 	switch (p.c) {
 	case PC_EOF:
+	case '\\':
 	case '}': case ')': case ']':
 	case ',': case ';': case '\n':
 		/*if (array::size(object::children(*p.branch->obj)) == 1) {

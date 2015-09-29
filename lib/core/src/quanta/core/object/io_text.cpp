@@ -114,13 +114,21 @@ static bool writef(IWriter& stream, char const* const format, ...) {
 inline static unsigned quote_level(StringRef const& str) {
 	unsigned level = str.empty() ? 1 : 0;
 	if (str.size >= 1) {
-		char const c = str.data[0];
-		if ((c >= '0' && c <= '9') || c == '-' || c == '+') {
+		u8 c = reinterpret_cast<u8 const*>(str.data)[0];
+		if (
+			(c >= '0' && c <= '9')
+			|| !(false
+				|| (c >= 'a' && c <= 'z')
+				|| (c >= 'A' && c <= 'Z')
+				||  c == '_' || c == '.'
+				||  c >= 0xC0
+			)
+		) {
 			level = 1;
 		}
 	}
 	auto const it_end = end(str);
-	for (auto it = begin(str); it != it_end && level < 2; ++it) {
+	for (auto it = begin(str); it != it_end; ++it) {
 		switch (*it) {
 		case '\t':
 		case ' ':
@@ -130,17 +138,21 @@ inline static unsigned quote_level(StringRef const& str) {
 		case '{': case '}':
 		case '[': case ']':
 		case '(': case ')':
-		case '/':
+		case '+': case '-':
+		case '*': case '/':
 		case '`':
 			level = 1;
 			break;
 
-		case '\"': // fall-through
+		case '\\':
+		case '\"':
 		case '\n':
 			level = 2;
-			break;
+			goto l_return;
 		}
 	}
+
+l_return:
 	return level;
 }
 

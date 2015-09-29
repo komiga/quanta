@@ -5,6 +5,7 @@
 #include <togo/core/collection/array.hpp>
 #include <togo/core/string/string.hpp>
 #include <togo/core/io/memory_stream.hpp>
+#include <togo/core/io/io.hpp>
 
 #include <quanta/core/object/object.hpp>
 
@@ -312,11 +313,51 @@ void check(Test const& test) {
 	TOGO_LOG("\n");
 }
 
-signed main() {
+bool rewrite_file(MemoryStream& out_stream, StringRef path) {
+	Object root;
+	if (!object::read_text_file(root, path)) {
+		TOGO_LOG("\\\\ failed to read\n");
+		return false;
+	}
+	if (!object::write_text(root, out_stream)) {
+		TOGO_LOG("\\\\ failed to rewrite\n");
+		return false;
+	}
+	io::seek_to(out_stream, 0);
+	if (!object::read_text(root, out_stream)) {
+		TOGO_LOG("\\\\ failed to reread\n");
+		return false;
+	}
+	return true;
+}
+
+signed main(signed argc, char* argv[]) {
 	memory_init();
 
-	for (auto& test : tests) {
-		check(test);
+	if (argc > 1) {
+		bool print = true;
+		signed i = 1;
+		if (string::compare_equal({argv[i], cstr_tag{}}, "--noprint")) {
+			print = false;
+			++i;
+		}
+
+		MemoryStream out_stream{memory::default_allocator(), 4096 * 16};
+		for (; i < argc; ++i) {
+			StringRef path{argv[i], cstr_tag{}};
+			TOGO_LOGF("\n\\\\ file: %.*s\n", path.size, path.data);
+			if (rewrite_file(out_stream, path) && print) {
+				TOGO_LOGF("%.*s",
+					static_cast<unsigned>(out_stream.size()),
+					reinterpret_cast<char*>(array::begin(out_stream.data()))
+				);
+			}
+			out_stream.clear();
+		}
+	} else {
+		for (auto& test : tests) {
+			check(test);
+		}
 	}
 	return 0;
 }

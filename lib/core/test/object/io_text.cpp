@@ -36,6 +36,7 @@ struct Test {
 	TSN("\\\\")
 	TSN("\\**\\")
 	TSN("\\*\nblah\n*\\")
+	TSE("x\\\\\ny", "x\ny")
 
 	// nested
 	TF("\\* \\* *\\")
@@ -267,6 +268,7 @@ struct Test {
 	TSE("x + y - z", "x + y - z")
 	TSS("x\nz + w")
 	TSE("x + y, z / w", "x + y\nz / w")
+	TSS("x[y] + z")
 };
 
 void check(Test const& test) {

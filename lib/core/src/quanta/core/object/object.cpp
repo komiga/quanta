@@ -223,26 +223,26 @@ Object const* object::find_tag(Object const& obj, ObjectNameHash const name_hash
 	return object::find_impl(obj.tags, StringRef{}, name_hash);
 }
 
-/// Find tag by name.
+/// Find child by name.
 Object* object::find_child(Object& obj, StringRef const& name) {
 	ObjectNameHash const name_hash = object::hash_name(name);
 	return const_cast<Object*>(object::find_impl(obj.children, name, name_hash));
 }
 
-/// Find tag by name.
+/// Find child by name.
 Object const* object::find_child(Object const& obj, StringRef const& name) {
 	ObjectNameHash const name_hash = object::hash_name(name);
 	return object::find_impl(obj.children, name, name_hash);
 }
 
-/// Find tag by name hash.
+/// Find child by name hash.
 Object* object::find_child(Object& obj, ObjectNameHash const name_hash) {
 	return const_cast<Object*>(
 		object::find_impl(obj.children, StringRef{}, name_hash)
 	);
 }
 
-/// Find tag by name hash.
+/// Find child by name hash.
 Object const* object::find_child(Object const& obj, ObjectNameHash const name_hash) {
 	return object::find_impl(obj.children, StringRef{}, name_hash);
 }

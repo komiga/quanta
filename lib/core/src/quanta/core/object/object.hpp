@@ -13,6 +13,11 @@
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
+#include <quanta/core/string/unmanaged_string.hpp>
+#include <quanta/core/chrono/time.hpp>
+#include <quanta/core/object/types.hpp>
+#include <quanta/core/object/internal.hpp>
+
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/memory/memory.hpp>
@@ -21,10 +26,7 @@
 #include <togo/core/hash/hash.hpp>
 #include <togo/core/io/types.hpp>
 
-#include <quanta/core/string/unmanaged_string.hpp>
-#include <quanta/core/chrono/time.hpp>
-#include <quanta/core/object/types.hpp>
-#include <quanta/core/object/internal.hpp>
+
 #include <quanta/core/object/object.gen_interface>
 
 namespace quanta {

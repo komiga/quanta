@@ -12,13 +12,13 @@
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
+#include <quanta/core/string/types.hpp>
+#include <quanta/core/chrono/types.hpp>
+
 #include <togo/core/utility/traits.hpp>
 #include <togo/core/collection/types.hpp>
 #include <togo/core/string/types.hpp>
 #include <togo/core/hash/hash.hpp>
-
-#include <quanta/core/string/types.hpp>
-#include <quanta/core/chrono/types.hpp>
 
 namespace quanta {
 namespace object {

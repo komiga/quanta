@@ -11,10 +11,11 @@
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
-#include <togo/core/utility/utility.hpp>
-
 #include <quanta/core/chrono/types.hpp>
 #include <quanta/core/chrono/internal.hpp>
+
+#include <togo/core/utility/utility.hpp>
+
 #include <quanta/core/chrono/time.gen_interface>
 
 namespace quanta {

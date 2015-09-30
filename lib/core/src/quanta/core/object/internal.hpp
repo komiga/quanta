@@ -12,9 +12,9 @@
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
-#include <togo/core/utility/utility.hpp>
-
 #include <quanta/core/object/types.hpp>
+
+#include <togo/core/utility/utility.hpp>
 
 namespace quanta {
 namespace object {

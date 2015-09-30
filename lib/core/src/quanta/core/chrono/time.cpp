@@ -5,10 +5,10 @@
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
-#include <togo/core/utility/utility.hpp>
-
 #include <quanta/core/chrono/internal.hpp>
 #include <quanta/core/chrono/time.hpp>
+
+#include <togo/core/utility/utility.hpp>
 
 namespace quanta {
 

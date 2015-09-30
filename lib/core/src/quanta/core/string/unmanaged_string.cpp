@@ -4,12 +4,12 @@
 */
 
 #include <quanta/core/config.hpp>
+#include <quanta/core/string/unmanaged_string.hpp>
+
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/memory/memory.hpp>
 #include <togo/core/string/string.hpp>
-
-#include <quanta/core/string/unmanaged_string.hpp>
 
 namespace quanta {
 

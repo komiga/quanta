@@ -4,14 +4,14 @@
 */
 
 #include <quanta/core/config.hpp>
+#include <quanta/core/string/unmanaged_string.hpp>
+#include <quanta/core/object/internal.hpp>
+#include <quanta/core/object/object.hpp>
+
 #include <togo/core/log/log.hpp>
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/memory/memory.hpp>
-
-#include <quanta/core/string/unmanaged_string.hpp>
-#include <quanta/core/object/internal.hpp>
-#include <quanta/core/object/object.hpp>
 
 namespace quanta {
 

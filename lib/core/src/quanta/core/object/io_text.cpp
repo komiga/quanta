@@ -4,6 +4,9 @@
 */
 
 #include <quanta/core/config.hpp>
+#include <quanta/core/chrono/time.hpp>
+#include <quanta/core/object/object.hpp>
+
 #include <togo/core/error/assert.hpp>
 #include <togo/core/log/log.hpp>
 #include <togo/core/memory/memory.hpp>
@@ -14,8 +17,6 @@
 #include <togo/core/io/io.hpp>
 #include <togo/core/io/file_stream.hpp>
 
-#include <quanta/core/chrono/time.hpp>
-#include <quanta/core/object/object.hpp>
 #include <quanta/core/object/io/parser.ipp>
 
 #include <cstdio>

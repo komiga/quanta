@@ -108,16 +108,16 @@ inline void clear_name(Object& obj) {
 	unmanaged_string::clear(obj.name, memory::default_allocator());
 }
 
+/// Operator.
+inline ObjectOperator op(Object const& obj) {
+	return static_cast<ObjectOperator>(internal::get_property(obj, M_OP, S_OP));
+}
+
 /// Set operator.
 ///
 /// This only has significance when the object is part of an expression.
 inline void set_op(Object& obj, ObjectOperator const op) {
 	internal::set_property(obj, M_OP, S_OP, unsigned_cast(op));
-}
-
-/// Operator.
-inline ObjectOperator op(Object const& obj) {
-	return static_cast<ObjectOperator>(internal::get_property(obj, M_OP, S_OP));
 }
 
 /// Source.
@@ -160,6 +160,51 @@ inline bool source_certain_or_unspecified(Object const& obj) {
 	return obj.source == 0 || !(obj.properties & M_BOTH_SOURCE_UNCERTAIN);
 }
 
+/// Clear source and sub-source uncertainty markers.
+inline void clear_source_uncertainty(Object& obj) {
+	internal::clear_property(obj, M_SOURCE_UNCERTAIN | M_SUB_SOURCE_UNCERTAIN);
+}
+
+/// Set source certainty marker.
+inline void set_source_certain(Object& obj, bool const certain) {
+	internal::set_property(obj, M_SOURCE_UNCERTAIN, S_SOURCE_UNCERTAIN, !certain);
+}
+
+/// Set source.
+///
+/// If source is 0, sub-source is also set to 0 (same effect as clear_source()).
+/// This clears the source uncertainty marker.
+inline void set_source(Object& obj, unsigned const source) {
+	if (source == 0) {
+		obj.source = 0;
+		obj.sub_source = 0;
+		object::clear_source_uncertainty(obj);
+	} else {
+		obj.source = static_cast<u16>(min(source, 0xFFFFu));
+		object::set_source_certain(obj, true);
+	}
+}
+
+/// Set sub-source certainty marker.
+inline void set_sub_source_certain(Object& obj, bool const certain) {
+	internal::set_property(obj, M_SUB_SOURCE_UNCERTAIN, S_SUB_SOURCE_UNCERTAIN, !certain);
+}
+
+/// Set sub-source.
+///
+/// The source must be non-0 for the sub-source to take a non-0 value.
+inline void set_sub_source(Object& obj, unsigned const sub_source) {
+	if (object::has_source(obj)) {
+		obj.sub_source = static_cast<u16>(min(sub_source, 0xFFFFu));
+	}
+}
+
+/// Clear source and sub-source and their uncertainty markers.
+inline void clear_source(Object& obj) {
+	object::set_source(obj, 0);
+	object::clear_source_uncertainty(obj);
+}
+
 /// Whether the value uncertain marker is set.
 inline bool marker_value_uncertain(Object const& obj) {
 	return internal::get_property(obj, M_VALUE_UNCERTAIN, 0);
@@ -186,10 +231,56 @@ inline bool value_certain(Object const& obj) {
 	return !(obj.properties & M_VALUE_MARKERS);
 }
 
+/// Set value certainty.
+///
+/// This clears the value guess marker.
+inline void set_value_certain(Object& obj, bool const certain) {
+	internal::set_property(obj, M_VALUE_UNCERTAIN_AND_GUESS, S_VALUE_UNCERTAIN, !certain);
+}
+
+/// Set value guess marker.
+///
+/// If the value is null, this has no effect.
+/// This clears the value uncertainty marker.
+inline void set_value_guess(Object& obj, bool const guess) {
+	if (object::is_null(obj)) {
+		internal::set_property(obj, M_VALUE_UNCERTAIN_AND_GUESS, S_VALUE_GUESS, guess);
+	}
+}
+
+/// Set value approximation value.
+///
+/// value is bound to [-3, 3]. value of:
+///
+/// - <0 = approximately less than
+/// -  0 = absolute
+/// - >0 = approximately more than
+inline void set_value_approximation(Object& obj, signed const value) {
+	unsigned property_value = value < 0;
+	property_value = unsigned_cast(min(property_value ? -value : value, 3)) | (property_value << 2);
+	internal::set_property(obj, M_VALUE_APPROXIMATE, S_VALUE_APPROXIMATE, property_value);
+}
+
+/// Clear value uncertainty, guess, and approximation markers.
+inline void clear_value_markers(Object& obj) {
+	internal::clear_property(obj, M_VALUE_MARKERS);
+}
+
+/// Set value to null.
+inline void set_null(Object& obj) {
+	object::set_type(obj, ObjectValueType::null);
+}
+
 /// Boolean value.
 inline bool boolean(Object const& obj) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::boolean));
 	return obj.value.boolean;
+}
+
+/// Set boolean value.
+inline void set_boolean(Object& obj, bool const value) {
+	object::set_type(obj, ObjectValueType::boolean);
+	obj.value.boolean = value;
 }
 
 /// Integer value.
@@ -202,6 +293,18 @@ inline s64 integer(Object const& obj) {
 inline f64 decimal(Object const& obj) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::decimal));
 	return obj.value.numeric.decimal;
+}
+
+/// Set integer value.
+inline void set_integer(Object& obj, s64 const value) {
+	object::set_type(obj, ObjectValueType::integer);
+	obj.value.numeric.integer = value;
+}
+
+/// Set decimal value.
+inline void set_decimal(Object& obj, f64 const value) {
+	object::set_type(obj, ObjectValueType::decimal);
+	obj.value.numeric.decimal = value;
 }
 
 /// Numeric value unit.
@@ -219,6 +322,28 @@ inline ObjectNumericUnitHash unit_hash(Object const& obj) {
 /// Whether the numeric value has a unit.
 inline bool has_unit(Object const& obj) {
 	return object::is_type_any(obj, type_mask_numeric) && unmanaged_string::any(obj.value.numeric.unit);
+}
+
+/// Set numeric value unit.
+///
+/// Type must be numeric.
+inline void set_unit(Object& obj, StringRef const unit) {
+	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
+	unmanaged_string::set(obj.value.numeric.unit, unit, memory::default_allocator());
+}
+
+/// Set integer value and unit.
+inline void set_integer(Object& obj, s64 const value, StringRef const unit) {
+	object::set_type(obj, ObjectValueType::integer);
+	obj.value.numeric.integer = value;
+	object::set_unit(obj, unit);
+}
+
+/// Set decimal value and unit.
+inline void set_decimal(Object& obj, f64 const value, StringRef const unit) {
+	object::set_type(obj, ObjectValueType::decimal);
+	obj.value.numeric.decimal = value;
+	object::set_unit(obj, unit);
 }
 
 // NB: calling the accessors "time" makes them ambiguous with the time
@@ -280,141 +405,10 @@ inline bool is_month_contextual(Object const& obj) {
 	;
 }
 
-/// String value.
-inline StringRef string(Object const& obj) {
-	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));
-	return obj.value.string;
-}
-
-/// Clear source and sub-source uncertainty markers.
-inline void clear_source_uncertainty(Object& obj) {
-	internal::clear_property(obj, M_SOURCE_UNCERTAIN | M_SUB_SOURCE_UNCERTAIN);
-}
-
-/// Set source certainty marker.
-inline void set_source_certain(Object& obj, bool const certain) {
-	internal::set_property(obj, M_SOURCE_UNCERTAIN, S_SOURCE_UNCERTAIN, !certain);
-}
-
-/// Set source.
-///
-/// If source is 0, sub-source is also set to 0 (same effect as clear_source()).
-/// This clears the source uncertainty marker.
-inline void set_source(Object& obj, unsigned const source) {
-	if (source == 0) {
-		obj.source = 0;
-		obj.sub_source = 0;
-		object::clear_source_uncertainty(obj);
-	} else {
-		obj.source = static_cast<u16>(min(source, 0xFFFFu));
-		object::set_source_certain(obj, true);
-	}
-}
-
-/// Set sub-source certainty marker.
-inline void set_sub_source_certain(Object& obj, bool const certain) {
-	internal::set_property(obj, M_SUB_SOURCE_UNCERTAIN, S_SUB_SOURCE_UNCERTAIN, !certain);
-}
-
-/// Set sub-source.
-///
-/// The source must be non-0 for the sub-source to take a non-0 value.
-inline void set_sub_source(Object& obj, unsigned const sub_source) {
-	if (object::has_source(obj)) {
-		obj.sub_source = static_cast<u16>(min(sub_source, 0xFFFFu));
-	}
-}
-
-/// Clear source and sub-source and their uncertainty markers.
-inline void clear_source(Object& obj) {
-	object::set_source(obj, 0);
-	object::clear_source_uncertainty(obj);
-}
-
-/// Set value certainty.
-///
-/// This clears the value guess marker.
-inline void set_value_certain(Object& obj, bool const certain) {
-	internal::set_property(obj, M_VALUE_UNCERTAIN_AND_GUESS, S_VALUE_UNCERTAIN, !certain);
-}
-
-/// Set value guess marker.
-///
-/// If the value is null, this has no effect.
-/// This clears the value uncertainty marker.
-inline void set_value_guess(Object& obj, bool const guess) {
-	if (object::is_null(obj)) {
-		internal::set_property(obj, M_VALUE_UNCERTAIN_AND_GUESS, S_VALUE_GUESS, guess);
-	}
-}
-
-/// Set value approximation value.
-///
-/// value is bound to [-3, 3]. value of:
-///
-/// - <0 = approximately less than
-/// -  0 = absolute
-/// - >0 = approximately more than
-inline void set_value_approximation(Object& obj, signed const value) {
-	unsigned property_value = value < 0;
-	property_value = unsigned_cast(min(property_value ? -value : value, 3)) | (property_value << 2);
-	internal::set_property(obj, M_VALUE_APPROXIMATE, S_VALUE_APPROXIMATE, property_value);
-}
-
-/// Clear value uncertainty, guess, and approximation markers.
-inline void clear_value_markers(Object& obj) {
-	internal::clear_property(obj, M_VALUE_MARKERS);
-}
-
-/// Set value to null.
-inline void set_null(Object& obj) {
-	object::set_type(obj, ObjectValueType::null);
-}
-
-/// Set boolean value.
-inline void set_boolean(Object& obj, bool const value) {
-	object::set_type(obj, ObjectValueType::boolean);
-	obj.value.boolean = value;
-}
-
-/// Set integer value.
-inline void set_integer(Object& obj, s64 const value) {
-	object::set_type(obj, ObjectValueType::integer);
-	obj.value.numeric.integer = value;
-}
-
-/// Set decimal value.
-inline void set_decimal(Object& obj, f64 const value) {
-	object::set_type(obj, ObjectValueType::decimal);
-	obj.value.numeric.decimal = value;
-}
-
-/// Set numeric value unit.
-///
-/// Type must be numeric.
-inline void set_unit(Object& obj, StringRef const unit) {
-	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
-	unmanaged_string::set(obj.value.numeric.unit, unit, memory::default_allocator());
-}
-
-/// Set integer value and unit.
-inline void set_integer(Object& obj, s64 const value, StringRef const unit) {
-	object::set_type(obj, ObjectValueType::integer);
-	obj.value.numeric.integer = value;
-	object::set_unit(obj, unit);
-}
-
-/// Set decimal value and unit.
-inline void set_decimal(Object& obj, f64 const value, StringRef const unit) {
-	object::set_type(obj, ObjectValueType::decimal);
-	obj.value.numeric.decimal = value;
-	object::set_unit(obj, unit);
-}
-
 /// Set whether the time value specifies a zone offset (UTC or relative to UTC).
 ///
 /// If zoned is false and the value has a zone offset, it is adjusted to UTC
-/// unless no_adjust is false.
+/// unless adjust is false.
 inline void set_zoned(Object& obj, bool zoned, bool adjust = true) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
 	if (!zoned && adjust && obj.value.time.zone_offset != 0) {
@@ -479,6 +473,12 @@ inline void set_time_clock(Object& obj, Time const& value) {
 	object::set_time_type(obj, ObjectTimeType::clock);
 }
 
+/// String value.
+inline StringRef string(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));
+	return obj.value.string;
+}
+
 /// Set string value.
 inline void set_string(Object& obj, StringRef const value) {
 	object::set_type(obj, ObjectValueType::string);
@@ -499,27 +499,23 @@ inline void set_expression(Object& obj) {
 inline Array<Object>& children(Object& obj) { return obj.children; }
 inline Array<Object> const& children(Object const& obj) { return obj.children; }
 
-/// Tags.
-inline Array<Object>& tags(Object& obj) { return obj.tags; }
-inline Array<Object> const& tags(Object const& obj) { return obj.tags; }
-
-/// Quantity.
-inline Object* quantity(Object& obj) { return obj.quantity; }
-inline Object const* quantity(Object const& obj) { return obj.quantity; }
-
-/// Whether the object has tags.
-inline bool has_tags(Object const& obj) {
-	return array::any(obj.tags);
-}
-
 /// Whether the object has children.
 inline bool has_children(Object const& obj) {
 	return array::any(obj.children);
 }
 
-/// Whether the object has a quantity.
-inline bool has_quantity(Object const& obj) {
-	return obj.quantity;
+/// Clear children.
+inline void clear_children(Object& obj) {
+	array::clear(obj.children);
+}
+
+/// Tags.
+inline Array<Object>& tags(Object& obj) { return obj.tags; }
+inline Array<Object> const& tags(Object const& obj) { return obj.tags; }
+
+/// Whether the object has tags.
+inline bool has_tags(Object const& obj) {
+	return array::any(obj.tags);
 }
 
 /// Clear tags.
@@ -527,9 +523,13 @@ inline void clear_tags(Object& obj) {
 	array::clear(obj.tags);
 }
 
-/// Clear children.
-inline void clear_children(Object& obj) {
-	array::clear(obj.children);
+/// Quantity.
+inline Object* quantity(Object& obj) { return obj.quantity; }
+inline Object const* quantity(Object const& obj) { return obj.quantity; }
+
+/// Whether the object has a quantity.
+inline bool has_quantity(Object const& obj) {
+	return obj.quantity;
 }
 
 /// Clear quantity.

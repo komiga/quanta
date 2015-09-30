@@ -26,7 +26,6 @@
 #include <togo/core/hash/hash.hpp>
 #include <togo/core/io/types.hpp>
 
-
 #include <quanta/core/object/object.gen_interface>
 
 namespace quanta {
@@ -289,16 +288,16 @@ inline s64 integer(Object const& obj) {
 	return obj.value.numeric.integer;
 }
 
-/// Decimal value.
-inline f64 decimal(Object const& obj) {
-	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::decimal));
-	return obj.value.numeric.decimal;
-}
-
 /// Set integer value.
 inline void set_integer(Object& obj, s64 const value) {
 	object::set_type(obj, ObjectValueType::integer);
 	obj.value.numeric.integer = value;
+}
+
+/// Decimal value.
+inline f64 decimal(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::decimal));
+	return obj.value.numeric.decimal;
 }
 
 /// Set decimal value.

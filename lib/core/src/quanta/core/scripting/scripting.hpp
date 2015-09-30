@@ -32,6 +32,20 @@ namespace lua {
 	@{
 */
 
+/// Get an argument from the stack as light userdata.
+inline void* arg_lud(lua_State* L, signed narg, bool require = true) {
+	luaL_checktype(L, narg, LUA_TLIGHTUSERDATA);
+	auto p = lua_touserdata(L, narg);
+	TOGO_ASSERTE(!require || p);
+	return p;
+}
+
+/// Get an argument from the stack as a boolean.
+inline bool arg_boolean(lua_State* L, signed narg) {
+	luaL_checktype(L, narg, LUA_TBOOLEAN);
+	return lua_toboolean(L, narg);
+}
+
 /// Get a string from the stack as a string reference.
 inline StringRef arg_string(lua_State* L, signed narg, bool require = true) {
 	size_t size = 0;
@@ -45,12 +59,9 @@ inline void push_string_ref(lua_State* L, StringRef str) {
 	lua_pushlstring(L, str.data ? str.data : "", unsigned_cast(str.size));
 }
 
-/// Get an object from the stack as an Object (LUD).
+/// Get an argument from the stack as an Object (LUD).
 inline object::Object* arg_object(lua_State* L, signed narg, bool require = true) {
-	luaL_checktype(L, narg, LUA_TLIGHTUSERDATA);
-	auto obj = static_cast<object::Object*>(lua_touserdata(L, narg));
-	TOGO_ASSERTE(!require || obj);
-	return obj;
+	return static_cast<object::Object*>(arg_lud(L, narg, require));
 }
 
 /** @} */ // end of doc-group lua

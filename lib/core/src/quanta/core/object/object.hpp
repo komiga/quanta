@@ -72,6 +72,9 @@ inline bool is_numeric(Object const& obj) {
 	return object::is_type_any(obj, type_mask_numeric);
 }
 
+/// Whether type is ObjectValueType::time.
+inline bool is_time(Object const& obj) { return object::is_type(obj, ObjectValueType::time); }
+
 /// Whether type is ObjectValueType::string.
 inline bool is_string(Object const& obj) { return object::is_type(obj, ObjectValueType::string); }
 

@@ -22,6 +22,12 @@ LI_FUNC_DEF(hash_name) {
 	return 1;
 }
 
+LI_FUNC_DEF(hash_unit) {
+	auto name = lua::arg_string(L, 1, false);
+	lua_pushinteger(L, object::hash_unit(name));
+	return 1;
+}
+
 LI_FUNC_DEF(create) {
 	Object* obj = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
 	lua_pushlightuserdata(L, obj);
@@ -37,6 +43,13 @@ LI_FUNC_DEF(destroy) {
 LI_FUNC_DEF(type) {
 	auto obj = lua::arg_object(L, 1);
 	lua_pushinteger(L, unsigned_cast(object::type(*obj)));
+	return 1;
+}
+
+LI_FUNC_DEF(set_type) {
+	auto obj = lua::arg_object(L, 1);
+	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
+	lua_pushboolean(L, object::set_type(*obj, type));
 	return 1;
 }
 
@@ -276,6 +289,25 @@ LI_FUNC_DEF(clear_value_markers) {
 	return 0;
 }
 
+LI_FUNC_DEF(clear_value) {
+	auto obj = lua::arg_object(L, 1);
+	object::clear_value(*obj);
+	return 0;
+}
+
+LI_FUNC_DEF(clear) {
+	auto obj = lua::arg_object(L, 1);
+	object::clear(*obj);
+	return 0;
+}
+
+LI_FUNC_DEF(copy) {
+	auto a = lua::arg_object(L, 1);
+	auto b = lua::arg_object(L, 2);
+	object::copy(*a, *b);
+	return 0;
+}
+
 LI_FUNC_DEF(set_null) {
 	auto obj = lua::arg_object(L, 1);
 	object::set_null(*obj);
@@ -447,6 +479,13 @@ LI_FUNC_DEF(set_time_clock) {
 	return 0;
 }
 
+LI_FUNC_DEF(resolve_time) {
+	auto obj = lua::arg_object(L, 1);
+	auto t = static_cast<Time const*>(lua::arg_lud(L, 2));
+	object::resolve_time(*obj, *t);
+	return 0;
+}
+
 LI_FUNC_DEF(string) {
 	auto obj = lua::arg_object(L, 1);
 	lua::push_string_ref(L, object::string(*obj));
@@ -477,6 +516,18 @@ LI_FUNC_DEF(clear_children) {
 	return 0;
 }
 
+LI_FUNC_DEF(find_child) {
+	auto obj = lua::arg_object(L, 1);
+	Object* result = nullptr;
+	if (lua_type(L, 2) == LUA_TSTRING) {
+		result = object::find_child(*obj, lua::arg_string(L, 2));
+	} else {
+		result = object::find_child(*obj, static_cast<ObjectNameHash>(luaL_checkinteger(L, 2)));
+	}
+	lua_pushlightuserdata(L, result);
+	return 1;
+}
+
 LI_FUNC_DEF(has_tags) {
 	auto obj = lua::arg_object(L, 1);
 	lua_pushboolean(L, object::has_tags(*obj));
@@ -487,6 +538,18 @@ LI_FUNC_DEF(clear_tags) {
 	auto obj = lua::arg_object(L, 1);
 	object::clear_tags(*obj);
 	return 0;
+}
+
+LI_FUNC_DEF(find_tag) {
+	auto obj = lua::arg_object(L, 1);
+	Object* result = nullptr;
+	if (lua_type(L, 2) == LUA_TSTRING) {
+		result = object::find_tag(*obj, lua::arg_string(L, 2));
+	} else {
+		result = object::find_tag(*obj, static_cast<ObjectNameHash>(luaL_checkinteger(L, 2)));
+	}
+	lua_pushlightuserdata(L, result);
+	return 1;
 }
 
 LI_FUNC_DEF(quantity) {
@@ -507,6 +570,12 @@ LI_FUNC_DEF(clear_quantity) {
 	return 0;
 }
 
+LI_FUNC_DEF(make_quantity) {
+	auto obj = lua::arg_object(L, 1);
+	lua_pushlightuserdata(L, &object::make_quantity(*obj));
+	return 1;
+}
+
 LI_FUNC_DEF(release_quantity) {
 	auto obj = lua::arg_object(L, 1);
 	object::release_quantity(*obj);
@@ -517,10 +586,13 @@ LI_FUNC_DEF(release_quantity) {
 
 static luaL_reg const lua_interface[]{
 	LI_FUNC_REF(hash_name)
+	LI_FUNC_REF(hash_unit)
+
 	LI_FUNC_REF(create)
 	LI_FUNC_REF(destroy)
 
 	LI_FUNC_REF(type)
+	LI_FUNC_REF(set_type)
 	LI_FUNC_REF(is_type)
 	LI_FUNC_REF(is_type_any)
 	LI_FUNC_REF(is_null)
@@ -564,6 +636,9 @@ static luaL_reg const lua_interface[]{
 	LI_FUNC_REF(set_value_guess)
 	LI_FUNC_REF(set_value_approximation)
 	LI_FUNC_REF(clear_value_markers)
+	LI_FUNC_REF(clear_value)
+	LI_FUNC_REF(clear)
+	LI_FUNC_REF(copy)
 
 	LI_FUNC_REF(set_null)
 
@@ -595,6 +670,7 @@ static luaL_reg const lua_interface[]{
 	LI_FUNC_REF(set_time)
 	LI_FUNC_REF(set_time_date)
 	LI_FUNC_REF(set_time_clock)
+	LI_FUNC_REF(resolve_time)
 
 	LI_FUNC_REF(string)
 	LI_FUNC_REF(set_string)
@@ -603,13 +679,16 @@ static luaL_reg const lua_interface[]{
 
 	LI_FUNC_REF(has_children)
 	LI_FUNC_REF(clear_children)
+	LI_FUNC_REF(find_child)
 
 	LI_FUNC_REF(has_tags)
 	LI_FUNC_REF(clear_tags)
+	LI_FUNC_REF(find_tag)
 
 	LI_FUNC_REF(quantity)
 	LI_FUNC_REF(has_quantity)
 	LI_FUNC_REF(clear_quantity)
+	LI_FUNC_REF(make_quantity)
 	LI_FUNC_REF(release_quantity)
 
 	{nullptr, nullptr}

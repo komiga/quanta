@@ -10,6 +10,7 @@
 #pragma once
 
 // igen-source: object/io_text.cpp
+// igen-source: object/lua_interface.cpp
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
@@ -17,6 +18,7 @@
 #include <quanta/core/chrono/time.hpp>
 #include <quanta/core/object/types.hpp>
 #include <quanta/core/object/internal.hpp>
+#include <quanta/core/scripting/scripting.hpp>
 
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>

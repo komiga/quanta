@@ -38,9 +38,14 @@ namespace object {
 	@{
 */
 
-/// Calculate object name hash of string.
+/// Calculate object name hash of a string.
 inline ObjectNameHash hash_name(StringRef const& name) {
 	return hash::calc_generic<ObjectNameHash>(name);
+}
+
+/// Calculate unit hash of a string.
+inline ObjectNumericUnitHash hash_unit(StringRef const& name) {
+	return hash::calc_generic<ObjectNumericUnitHash>(name);
 }
 
 /// Value type.

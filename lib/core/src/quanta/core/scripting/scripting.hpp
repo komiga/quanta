@@ -31,7 +31,7 @@ namespace lua {
 */
 
 /// Get an argument from the stack as light userdata.
-inline void* arg_lud(lua_State* L, signed narg, bool require = true) {
+inline void* get_lud(lua_State* L, signed narg, bool require = true) {
 	luaL_checktype(L, narg, LUA_TLIGHTUSERDATA);
 	auto p = lua_touserdata(L, narg);
 	TOGO_ASSERTE(!require || p);
@@ -40,18 +40,18 @@ inline void* arg_lud(lua_State* L, signed narg, bool require = true) {
 
 /// Get an argument from the stack (typed).
 template<class T>
-inline T* arg_lud_t(lua_State* L, signed narg, bool require = true) {
-	return static_cast<T*>(arg_lud(L, narg, require));
+inline T* get_lud_t(lua_State* L, signed narg, bool require = true) {
+	return static_cast<T*>(get_lud(L, narg, require));
 }
 
 /// Get an argument from the stack as a boolean.
-inline bool arg_boolean(lua_State* L, signed narg) {
+inline bool get_boolean(lua_State* L, signed narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
 	return lua_toboolean(L, narg);
 }
 
 /// Get a string from the stack as a string reference.
-inline StringRef arg_string(lua_State* L, signed narg, bool require = true) {
+inline StringRef get_string(lua_State* L, signed narg, bool require = true) {
 	size_t size = 0;
 	auto data = luaL_checklstring(L, narg, &size);
 	TOGO_ASSERTE(!require || data);

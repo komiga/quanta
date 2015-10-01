@@ -18,13 +18,13 @@ namespace object {
 #define LI_FUNC_DEF(name) static signed LI_FUNC(name)(lua_State* L)
 
 LI_FUNC_DEF(hash_name) {
-	auto name = lua::arg_string(L, 1, false);
+	auto name = lua::get_string(L, 1, false);
 	lua_pushinteger(L, object::hash_name(name));
 	return 1;
 }
 
 LI_FUNC_DEF(hash_unit) {
-	auto name = lua::arg_string(L, 1, false);
+	auto name = lua::get_string(L, 1, false);
 	lua_pushinteger(L, object::hash_unit(name));
 	return 1;
 }
@@ -32,8 +32,8 @@ LI_FUNC_DEF(hash_unit) {
 LI_FUNC_DEF(create) {
 	Object* obj = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
 	if (lua_type(L, 1) == LUA_TSTRING) {
-		auto text = lua::arg_string(L, 1);
-		bool single_value = luaL_opt(L, lua::arg_boolean, 2, true);
+		auto text = lua::get_string(L, 1);
+		bool single_value = luaL_opt(L, lua::get_boolean, 2, true);
 		if (!object::read_text_string(*obj, text, single_value)) {
 			// soft error (log will help debug)
 			object::clear(*obj);
@@ -44,323 +44,323 @@ LI_FUNC_DEF(create) {
 }
 
 LI_FUNC_DEF(destroy) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	TOGO_DESTROY(memory::default_allocator(), obj);
 	return 0;
 }
 
 LI_FUNC_DEF(type) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, unsigned_cast(object::type(*obj)));
 	return 1;
 }
 
 LI_FUNC_DEF(set_type) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
 	lua_pushboolean(L, object::set_type(*obj, type));
 	return 1;
 }
 
 LI_FUNC_DEF(is_type) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
 	lua_pushboolean(L, object::is_type(*obj, type));
 	return 1;
 }
 
 LI_FUNC_DEF(is_type_any) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
 	lua_pushboolean(L, object::is_type_any(*obj, type));
 	return 1;
 }
 
 LI_FUNC_DEF(is_null) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_null(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_boolean) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_boolean(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_integer) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_integer(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_decimal) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_decimal(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_numeric) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_numeric(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_time) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_time(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_string) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_string(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_expression) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_expression(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(name) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua::push_string_ref(L, object::name(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(name_hash) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, object::name_hash(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_named) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_named(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_name) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_name(*obj, lua::arg_string(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_name(*obj, lua::get_string(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(clear_name) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_name(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(op) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, unsigned_cast(object::op(*obj)));
 	return 1;
 }
 
 LI_FUNC_DEF(set_op) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_op(*obj, static_cast<ObjectOperator>(luaL_checkinteger(L, 2)));
 	return 0;
 }
 
 LI_FUNC_DEF(source) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, object::source(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(marker_source_uncertain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::marker_source_uncertain(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(sub_source) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, object::sub_source(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(marker_sub_source_uncertain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::marker_sub_source_uncertain(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(has_source) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_source(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(has_sub_source) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_sub_source(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(source_certain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::source_certain(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(source_certain_or_unspecified) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::source_certain_or_unspecified(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(clear_source_uncertainty) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_source_uncertainty(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(set_source_certain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_source_certain(*obj, lua::arg_boolean(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_source_certain(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_source) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_source(*obj, luaL_checkinteger(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_sub_source_certain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_sub_source_certain(*obj, lua::arg_boolean(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_sub_source_certain(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_sub_source) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_sub_source(*obj, luaL_checkinteger(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(clear_source) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_source(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(marker_value_uncertain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::marker_value_uncertain(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(marker_value_guess) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::marker_value_guess(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(value_approximation) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, object::value_approximation(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(value_certain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::value_certain(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_value_certain) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_value_certain(*obj, lua::arg_boolean(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_value_certain(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_value_guess) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_value_guess(*obj, lua::arg_boolean(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_value_guess(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_value_approximation) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_value_approximation(*obj, luaL_checkinteger(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(clear_value_markers) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_value_markers(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(clear_value) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_value(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(clear) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(copy) {
-	auto a = lua::arg_lud_t<Object>(L, 1);
-	auto b = lua::arg_lud_t<Object>(L, 2);
+	auto a = lua::get_lud_t<Object>(L, 1);
+	auto b = lua::get_lud_t<Object>(L, 2);
 	object::copy(*a, *b);
 	return 0;
 }
 
 LI_FUNC_DEF(set_null) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_null(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(boolean) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::boolean(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_boolean) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_boolean(*obj, lua::arg_boolean(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_boolean(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(integer) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, object::integer(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_integer) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_integer(*obj, luaL_checkinteger(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(decimal) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushnumber(L, object::decimal(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_decimal) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_decimal(*obj, luaL_checknumber(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(numeric) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	if (object::is_decimal(*obj)) {
 		lua_pushnumber(L, object::decimal(*obj));
 	} else {
@@ -371,165 +371,165 @@ LI_FUNC_DEF(numeric) {
 }
 
 LI_FUNC_DEF(unit) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua::push_string_ref(L, object::unit(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(unit_hash) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, object::unit_hash(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(has_unit) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_unit(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_unit) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_unit(*obj, lua::arg_string(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_unit(*obj, lua::get_string(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(time) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushlightuserdata(L, &object::time_value(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(time_type) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushinteger(L, unsigned_cast(object::time_type(*obj)));
 	return 1;
 }
 
 LI_FUNC_DEF(has_date) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_date(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(has_clock) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_clock(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_zoned) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_zoned(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_year_contextual) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_year_contextual(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(is_month_contextual) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_month_contextual(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_zoned) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_zoned(*obj, lua::arg_boolean(L, 2), /*adjust = */luaL_opt(L, lua::arg_boolean, 3, true));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_zoned(*obj, lua::get_boolean(L, 2), /*adjust = */luaL_opt(L, lua::get_boolean, 3, true));
 	return 0;
 }
 
 LI_FUNC_DEF(set_year_contextual) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_year_contextual(*obj, lua::arg_boolean(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_year_contextual(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_month_contextual) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_month_contextual(*obj, lua::arg_boolean(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_month_contextual(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_time_type) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_time_type(*obj, static_cast<ObjectTimeType>(luaL_checkinteger(L, 2)));
 	return 0;
 }
 
 LI_FUNC_DEF(set_time_value) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto t = lua::arg_lud_t<Time const>(L, 2);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto t = lua::get_lud_t<Time const>(L, 2);
 	object::set_time_value(*obj, *t);
 	return 0;
 }
 
 LI_FUNC_DEF(set_time) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto t = lua::arg_lud_t<Time const>(L, 2);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto t = lua::get_lud_t<Time const>(L, 2);
 	object::set_time(*obj, *t);
 	return 0;
 }
 
 LI_FUNC_DEF(set_time_date) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto t = lua::arg_lud_t<Time const>(L, 2);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto t = lua::get_lud_t<Time const>(L, 2);
 	object::set_time_date(*obj, *t);
 	return 0;
 }
 
 LI_FUNC_DEF(set_time_clock) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto t = lua::arg_lud_t<Time const>(L, 2);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto t = lua::get_lud_t<Time const>(L, 2);
 	object::set_time_clock(*obj, *t);
 	return 0;
 }
 
 LI_FUNC_DEF(resolve_time) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto t = lua::arg_lud_t<Time const>(L, 2);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto t = lua::get_lud_t<Time const>(L, 2);
 	object::resolve_time(*obj, *t);
 	return 0;
 }
 
 LI_FUNC_DEF(string) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua::push_string_ref(L, object::string(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(set_string) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	object::set_string(*obj, lua::arg_string(L, 2));
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_string(*obj, lua::get_string(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_expression) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_expression(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(has_children) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_children(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(clear_children) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_children(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(find_child) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	Object* result = nullptr;
 	if (lua_type(L, 2) == LUA_TSTRING) {
-		result = object::find_child(*obj, lua::arg_string(L, 2));
+		result = object::find_child(*obj, lua::get_string(L, 2));
 	} else {
 		result = object::find_child(*obj, static_cast<ObjectNameHash>(luaL_checkinteger(L, 2)));
 	}
@@ -538,22 +538,22 @@ LI_FUNC_DEF(find_child) {
 }
 
 LI_FUNC_DEF(has_tags) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_tags(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(clear_tags) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_tags(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(find_tag) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	Object* result = nullptr;
 	if (lua_type(L, 2) == LUA_TSTRING) {
-		result = object::find_tag(*obj, lua::arg_string(L, 2));
+		result = object::find_tag(*obj, lua::get_string(L, 2));
 	} else {
 		result = object::find_tag(*obj, static_cast<ObjectNameHash>(luaL_checkinteger(L, 2)));
 	}
@@ -562,62 +562,62 @@ LI_FUNC_DEF(find_tag) {
 }
 
 LI_FUNC_DEF(quantity) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushlightuserdata(L, object::quantity(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(has_quantity) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_quantity(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(clear_quantity) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_quantity(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(make_quantity) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushlightuserdata(L, &object::make_quantity(*obj));
 	return 1;
 }
 
 LI_FUNC_DEF(release_quantity) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
+	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::release_quantity(*obj);
 	return 0;
 }
 
 LI_FUNC_DEF(read_text_file) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto path = lua::arg_string(L, 2);
-	bool single_value = luaL_opt(L, lua::arg_boolean, 3, false);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto path = lua::get_string(L, 2);
+	bool single_value = luaL_opt(L, lua::get_boolean, 3, false);
 	lua_pushboolean(L, object::read_text_file(*obj, path, single_value));
 	return 1;
 }
 
 LI_FUNC_DEF(read_text_string) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto text = lua::arg_string(L, 2);
-	bool single_value = luaL_opt(L, lua::arg_boolean, 3, false);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto text = lua::get_string(L, 2);
+	bool single_value = luaL_opt(L, lua::get_boolean, 3, false);
 	lua_pushboolean(L, object::read_text_string(*obj, text, single_value));
 	return 1;
 }
 
 LI_FUNC_DEF(write_text_file) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	auto path = lua::arg_string(L, 2);
-	bool single_value = luaL_opt(L, lua::arg_boolean, 3, false);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	auto path = lua::get_string(L, 2);
+	bool single_value = luaL_opt(L, lua::get_boolean, 3, false);
 	lua_pushboolean(L, object::write_text_file(*obj, path, single_value));
 	return 1;
 }
 
 LI_FUNC_DEF(write_text_string) {
-	auto obj = lua::arg_lud_t<Object>(L, 1);
-	bool single_value = luaL_opt(L, lua::arg_boolean, 2, false);
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	bool single_value = luaL_opt(L, lua::get_boolean, 2, false);
 	MemoryStream stream{
 		memory::default_allocator(),
 		static_cast<unsigned>(luaL_opt(L, luaL_checkinteger, 3, 512))

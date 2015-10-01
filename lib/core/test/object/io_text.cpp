@@ -15,13 +15,24 @@
 
 using namespace quanta;
 
-#define TSN(d) {true, d, {}},
-#define TSE(d, e) {true, d, e},
-#define TSS(d) {true, d, d},
-#define TF(d) {false, d, {}},
+#define M_TSN(d)	{true, false, d, {}},
+#define M_TSE(d, e)	{true, false, d, e},
+#define M_TSS(d)	{true, false, d, d},
+#define M_TF(d)		{false, false, d, {}},
+
+#define S_TSN(d)	{true, true, d, {}},
+#define S_TSE(d, e)	{true, true, d, e},
+#define S_TSS(d)	{true, true, d, d},
+#define S_TF(d)		{false, true, d, {}},
+
+#define TSN(d)		M_TSN(d) S_TSN(d)
+#define TSE(d, e)	M_TSE(d, e) S_TSE(d, e)
+#define TSS(d)		M_TSS(d) S_TSS(d)
+#define TF(d)		M_TF(d) S_TF(d)
 
 struct Test {
 	bool success;
+	bool single_value;
 	StringRef data;
 	StringRef expected_output;
 } const tests[]{
@@ -37,7 +48,8 @@ struct Test {
 	TSN("\\\\")
 	TSN("\\**\\")
 	TSN("\\*\nblah\n*\\")
-	TSE("x\\\\\ny", "x\ny")
+	M_TSE("x\\\\\ny", "x\ny")
+	S_TF("x\\\\\ny")
 
 	// nested
 	TF("\\* \\* *\\")
@@ -53,7 +65,12 @@ struct Test {
 	TSE("á", "á")
 	TSE(".á", ".á")
 	TSE("_", "_")
-	TSE("a\nb", "a\nb")
+
+	M_TSE("a\nb", "a\nb")
+
+	S_TSE("\n\\**\\a\n", "a")
+	S_TSE("a\n", "a")
+	S_TF("a\nb")
 
 // markers
 	TSE("~", "~")
@@ -160,6 +177,9 @@ struct Test {
 	TSE("\"a\"", "a")
 	TSE("``````", "\"\"")
 	TSE("```a```", "a")
+	TSE("```a b```", "\"a b\"")
+	TSE("```a\"b```", "```a\"b```")
+	TSE("```\na\n```", "```\na\n```")
 
 	TSE("\"\\t\"", "\"\t\"")
 	TSE("\"\\n\"", "```\n```")
@@ -267,8 +287,10 @@ struct Test {
 	TSE(":a(x * y)", ":a(x * y)")
 	TSE("{x / y}", "{\n\tx / y\n}")
 	TSE("x + y - z", "x + y - z")
-	TSS("x\nz + w")
-	TSE("x + y, z / w", "x + y\nz / w")
+	M_TSS("x\nz + w")
+	S_TF("x\nz + w")
+	M_TSE("x + y, z / w", "x + y\nz / w")
+	S_TF("x + y, z / w")
 	TSS("x[y] + z")
 };
 
@@ -280,9 +302,9 @@ void check(Test const& test) {
 	Object root;
 	MemoryReader in_stream{test.data};
 	ObjectParserInfo pinfo;
-	if (object::read_text(root, in_stream, pinfo)) {
+	if (object::read_text(root, in_stream, pinfo, test.single_value)) {
 		MemoryStream out_stream{memory::default_allocator(), test.expected_output.size + 1};
-		TOGO_ASSERTE(object::write_text(root, out_stream));
+		TOGO_ASSERTE(object::write_text(root, out_stream, test.single_value));
 		StringRef output{
 			reinterpret_cast<char*>(array::begin(out_stream.data())),
 			static_cast<unsigned>(out_stream.size())
@@ -293,7 +315,12 @@ void check(Test const& test) {
 		);
 		TOGO_ASSERT(test.success, "read succeeded when it should have failed");
 		TOGO_ASSERT(
-			string::compare_equal(test.expected_output, output),
+			string::compare_equal(
+				test.single_value && test.expected_output.empty()
+				? StringRef{"null"}
+				: test.expected_output,
+				output
+			),
 			"output does not match"
 		);
 	} else {

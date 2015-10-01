@@ -11,7 +11,7 @@ using namespace quanta;
 signed main() {
 	memory_init();
 
-	lua_State* L = lua::new_state(memory::default_allocator());
+	lua_State* L = lua::new_state();
 	luaL_openlibs(L);
 	object::register_lua_interface(L);
 	lua_close(L);

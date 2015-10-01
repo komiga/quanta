@@ -8,6 +8,7 @@
 #include <quanta/core/scripting/scripting.hpp>
 
 #include <togo/core/utility/utility.hpp>
+#include <togo/core/io/memory_stream.hpp>
 
 namespace quanta {
 
@@ -590,6 +591,48 @@ LI_FUNC_DEF(release_quantity) {
 	return 0;
 }
 
+LI_FUNC_DEF(read_text_file) {
+	auto obj = lua::arg_object(L, 1);
+	auto path = lua::arg_string(L, 2);
+	bool single_value = luaL_opt(L, lua::arg_boolean, 3, false);
+	lua_pushboolean(L, object::read_text_file(*obj, path, single_value));
+	return 1;
+}
+
+LI_FUNC_DEF(read_text_string) {
+	auto obj = lua::arg_object(L, 1);
+	auto text = lua::arg_string(L, 2);
+	bool single_value = luaL_opt(L, lua::arg_boolean, 3, false);
+	lua_pushboolean(L, object::read_text_string(*obj, text, single_value));
+	return 1;
+}
+
+LI_FUNC_DEF(write_text_file) {
+	auto obj = lua::arg_object(L, 1);
+	auto path = lua::arg_string(L, 2);
+	bool single_value = luaL_opt(L, lua::arg_boolean, 3, false);
+	lua_pushboolean(L, object::write_text_file(*obj, path, single_value));
+	return 1;
+}
+
+LI_FUNC_DEF(write_text_string) {
+	auto obj = lua::arg_object(L, 1);
+	bool single_value = luaL_opt(L, lua::arg_boolean, 2, false);
+	MemoryStream stream{
+		memory::default_allocator(),
+		static_cast<unsigned>(luaL_opt(L, luaL_checkinteger, 3, 512))
+	};
+	if (object::write_text(*obj, stream, single_value)) {
+		lua::push_string_ref(L, {
+			reinterpret_cast<char*>(array::begin(stream.data())),
+			static_cast<unsigned>(stream.size())
+		});
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
 #define LI_FUNC_REF(name) {#name, object:: LI_FUNC(name)},
 
 static luaL_reg const lua_interface[]{
@@ -698,6 +741,11 @@ static luaL_reg const lua_interface[]{
 	LI_FUNC_REF(clear_quantity)
 	LI_FUNC_REF(make_quantity)
 	LI_FUNC_REF(release_quantity)
+
+	LI_FUNC_REF(read_text_file)
+	LI_FUNC_REF(read_text_string)
+	LI_FUNC_REF(write_text_file)
+	LI_FUNC_REF(write_text_string)
 
 	{nullptr, nullptr}
 };

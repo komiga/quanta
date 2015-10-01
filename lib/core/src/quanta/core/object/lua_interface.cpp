@@ -33,8 +33,9 @@ static signed li_create_base(lua_State* L, bool single_value) {
 	Object* obj = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
 	if (lua_type(L, 1) == LUA_TSTRING) {
 		if (!object::read_text_string(*obj, lua::get_string(L, 1), single_value)) {
-			// soft error (log will help debug)
-			object::clear(*obj);
+			TOGO_DESTROY(memory::default_allocator(), obj);
+			lua_pushnil(L);
+			return 1;
 		}
 	}
 	lua_pushlightuserdata(L, obj);

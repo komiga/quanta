@@ -16,7 +16,11 @@
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/string/types.hpp>
 
-#include <luajit-2.0/lua.hpp>
+extern "C" {
+	#include <luajit-2.0/lua.h>
+	#include <luajit-2.0/lauxlib.h>
+	#include <luajit-2.0/lualib.h>
+}
 
 namespace quanta {
 

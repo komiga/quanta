@@ -30,6 +30,14 @@ LI_FUNC_DEF(hash_unit) {
 
 LI_FUNC_DEF(create) {
 	Object* obj = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
+	if (lua_type(L, 1) == LUA_TSTRING) {
+		auto text = lua::arg_string(L, 1);
+		bool single_value = luaL_opt(L, lua_toboolean, 2, true);
+		if (!object::read_text_string(*obj, text, single_value)) {
+			// soft error (log will help debug)
+			object::clear(*obj);
+		}
+	}
 	lua_pushlightuserdata(L, obj);
 	return 1;
 }

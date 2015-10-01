@@ -34,11 +34,10 @@ static signed li_create_base(lua_State* L, bool single_value) {
 	if (lua_type(L, 1) == LUA_TSTRING) {
 		if (!object::read_text_string(*obj, lua::get_string(L, 1), single_value)) {
 			TOGO_DESTROY(memory::default_allocator(), obj);
-			lua_pushnil(L);
-			return 1;
+			obj = nullptr;
 		}
 	}
-	lua_pushlightuserdata(L, obj);
+	lua::push_lud(L, obj);
 	return 1;
 }
 
@@ -404,7 +403,7 @@ LI_FUNC_DEF(set_unit) {
 
 LI_FUNC_DEF(time) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua_pushlightuserdata(L, &object::time_value(*obj));
+	lua::push_lud(L, &object::time_value(*obj));
 	return 1;
 }
 
@@ -541,7 +540,7 @@ LI_FUNC_DEF(find_child) {
 	} else {
 		result = object::find_child(*obj, static_cast<ObjectNameHash>(luaL_checkinteger(L, 2)));
 	}
-	lua_pushlightuserdata(L, result);
+	lua::push_lud(L, result);
 	return 1;
 }
 
@@ -565,13 +564,13 @@ LI_FUNC_DEF(find_tag) {
 	} else {
 		result = object::find_tag(*obj, static_cast<ObjectNameHash>(luaL_checkinteger(L, 2)));
 	}
-	lua_pushlightuserdata(L, result);
+	lua::push_lud(L, result);
 	return 1;
 }
 
 LI_FUNC_DEF(quantity) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua_pushlightuserdata(L, object::quantity(*obj));
+	lua::push_lud(L, object::quantity(*obj));
 	return 1;
 }
 
@@ -589,7 +588,7 @@ LI_FUNC_DEF(clear_quantity) {
 
 LI_FUNC_DEF(make_quantity) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua_pushlightuserdata(L, &object::make_quantity(*obj));
+	lua::push_lud(L, &object::make_quantity(*obj));
 	return 1;
 }
 

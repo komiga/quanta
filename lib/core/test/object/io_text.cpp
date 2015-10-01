@@ -287,10 +287,6 @@ void check(Test const& test) {
 			reinterpret_cast<char*>(array::begin(out_stream.data())),
 			static_cast<unsigned>(out_stream.size())
 		};
-		// Remove trailing newline
-		if (output.size > 0) {
-			--output.size;
-		}
 		TOGO_LOGF(
 			"rewritten (%3u): <%.*s>\n",
 			output.size, output.size, output.data

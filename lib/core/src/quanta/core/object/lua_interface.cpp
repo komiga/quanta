@@ -630,10 +630,8 @@ LI_FUNC_DEF(write_text_file) {
 LI_FUNC_DEF(write_text_string) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	bool single_value = luaL_opt(L, lua::get_boolean, 2, false);
-	MemoryStream stream{
-		memory::default_allocator(),
-		static_cast<unsigned>(luaL_opt(L, luaL_checkinteger, 3, 512))
-	};
+	auto size = luaL_opt(L, luaL_checkinteger, 3, 512);
+	MemoryStream stream{memory::scratch_allocator(), static_cast<unsigned>(size)};
 	if (object::write_text(*obj, stream, single_value)) {
 		lua::push_string(L, {
 			reinterpret_cast<char*>(array::begin(stream.data())),

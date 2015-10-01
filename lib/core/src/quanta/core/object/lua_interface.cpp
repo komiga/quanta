@@ -29,18 +29,25 @@ LI_FUNC_DEF(hash_unit) {
 	return 1;
 }
 
-LI_FUNC_DEF(create) {
+static signed li_create_base(lua_State* L, bool single_value) {
 	Object* obj = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
 	if (lua_type(L, 1) == LUA_TSTRING) {
-		auto text = lua::get_string(L, 1);
-		bool single_value = luaL_opt(L, lua::get_boolean, 2, true);
-		if (!object::read_text_string(*obj, text, single_value)) {
+		if (!object::read_text_string(*obj, lua::get_string(L, 1), single_value)) {
 			// soft error (log will help debug)
 			object::clear(*obj);
 		}
 	}
 	lua_pushlightuserdata(L, obj);
 	return 1;
+}
+
+// text, single_value = true
+LI_FUNC_DEF(create) {
+	return li_create_base(L, luaL_opt(L, lua::get_boolean, 3, true));
+}
+
+LI_FUNC_DEF(create_mv) {
+	return li_create_base(L, false);
 }
 
 LI_FUNC_DEF(destroy) {
@@ -591,6 +598,7 @@ LI_FUNC_DEF(release_quantity) {
 	return 0;
 }
 
+// obj, path, single_value = false
 LI_FUNC_DEF(read_text_file) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	auto path = lua::get_string(L, 2);
@@ -599,6 +607,7 @@ LI_FUNC_DEF(read_text_file) {
 	return 1;
 }
 
+// obj, text, single_value = false
 LI_FUNC_DEF(read_text_string) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	auto text = lua::get_string(L, 2);
@@ -607,6 +616,7 @@ LI_FUNC_DEF(read_text_string) {
 	return 1;
 }
 
+// obj, path, single_value = false
 LI_FUNC_DEF(write_text_file) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	auto path = lua::get_string(L, 2);
@@ -615,6 +625,7 @@ LI_FUNC_DEF(write_text_file) {
 	return 1;
 }
 
+// obj, single_value = false, capacity = 512
 LI_FUNC_DEF(write_text_string) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	bool single_value = luaL_opt(L, lua::get_boolean, 2, false);
@@ -640,6 +651,7 @@ static luaL_reg const lua_interface[]{
 	LI_FUNC_REF(hash_unit)
 
 	LI_FUNC_REF(create)
+	LI_FUNC_REF(create_mv)
 	LI_FUNC_REF(destroy)
 
 	LI_FUNC_REF(type)

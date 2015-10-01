@@ -768,7 +768,7 @@ static luaL_reg const lua_interface[]{
 
 /// Register the Lua interface.
 void object::register_lua_interface(lua_State* L) {
-	luaL_register(L, "Object", object::lua_interface);
+	luaL_register(L, "Quanta.Object", object::lua_interface);
 
 #define SET_INT(name_, value_) do { \
 	lua_pushliteral(L, name_); \

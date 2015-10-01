@@ -8,7 +8,7 @@ local configs = {
 togo.make_tests("object", {
 	["general"] = {nil, configs},
 	["io_text"] = {nil, configs},
-	["lua"] = {nil, configs},
+	["lua_interface"] = {nil, configs},
 })
 
 togo.make_tests("string", {

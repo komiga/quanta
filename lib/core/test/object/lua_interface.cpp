@@ -15,7 +15,7 @@ signed main() {
 	lua_State* L = lua::new_state();
 	luaL_openlibs(L);
 	object::register_lua_interface(L);
-	if (luaL_dofile(L, "object/lua.lua")) {
+	if (luaL_dofile(L, "object/lua_interface.lua")) {
 		auto error = lua::get_string(L, -1);
 		TOGO_LOG_ERRORF("script error: %.*s\n", error.size, error.data);
 		lua_pop(L, 1);

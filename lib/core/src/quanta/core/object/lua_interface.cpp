@@ -32,7 +32,7 @@ LI_FUNC_DEF(create) {
 	Object* obj = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
 	if (lua_type(L, 1) == LUA_TSTRING) {
 		auto text = lua::arg_string(L, 1);
-		bool single_value = luaL_opt(L, lua_toboolean, 2, true);
+		bool single_value = luaL_opt(L, lua::arg_boolean, 2, true);
 		if (!object::read_text_string(*obj, text, single_value)) {
 			// soft error (log will help debug)
 			object::clear(*obj);
@@ -437,7 +437,7 @@ LI_FUNC_DEF(is_month_contextual) {
 
 LI_FUNC_DEF(set_zoned) {
 	auto obj = lua::arg_object(L, 1);
-	object::set_zoned(*obj, lua::arg_boolean(L, 2), /*adjust = */luaL_opt(L, lua_toboolean, 3, true));
+	object::set_zoned(*obj, lua::arg_boolean(L, 2), /*adjust = */luaL_opt(L, lua::arg_boolean, 3, true));
 	return 0;
 }
 

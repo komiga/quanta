@@ -58,8 +58,8 @@ inline StringRef get_string(lua_State* L, signed narg, bool require = true) {
 	return {data, static_cast<unsigned>(size)};
 }
 
-/// Push a string reference to the stack.
-inline void push_string_ref(lua_State* L, StringRef str) {
+/// Push a string to the stack.
+inline void push_string(lua_State* L, StringRef str) {
 	lua_pushlstring(L, str.data ? str.data : "", unsigned_cast(str.size));
 }
 

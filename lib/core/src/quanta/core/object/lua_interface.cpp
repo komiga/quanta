@@ -126,7 +126,7 @@ LI_FUNC_DEF(is_expression) {
 
 LI_FUNC_DEF(name) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua::push_string_ref(L, object::name(*obj));
+	lua::push_string(L, object::name(*obj));
 	return 1;
 }
 
@@ -372,7 +372,7 @@ LI_FUNC_DEF(numeric) {
 
 LI_FUNC_DEF(unit) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua::push_string_ref(L, object::unit(*obj));
+	lua::push_string(L, object::unit(*obj));
 	return 1;
 }
 
@@ -497,7 +497,7 @@ LI_FUNC_DEF(resolve_time) {
 
 LI_FUNC_DEF(string) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua::push_string_ref(L, object::string(*obj));
+	lua::push_string(L, object::string(*obj));
 	return 1;
 }
 
@@ -623,7 +623,7 @@ LI_FUNC_DEF(write_text_string) {
 		static_cast<unsigned>(luaL_opt(L, luaL_checkinteger, 3, 512))
 	};
 	if (object::write_text(*obj, stream, single_value)) {
-		lua::push_string_ref(L, {
+		lua::push_string(L, {
 			reinterpret_cast<char*>(array::begin(stream.data())),
 			static_cast<unsigned>(stream.size())
 		});

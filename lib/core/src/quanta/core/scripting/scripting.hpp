@@ -66,6 +66,15 @@ inline void push_string(lua_State* L, StringRef str) {
 	lua_pushlstring(L, str.data ? str.data : "", unsigned_cast(str.size));
 }
 
+/// Push a light userdata to the stack or nil if the pointer is null.
+inline void push_lud(lua_State* L, void* p) {
+	if (p) {
+		lua_pushlightuserdata(L, p);
+	} else {
+		lua_pushnil(L);
+	}
+}
+
 /** @} */ // end of doc-group lua
 
 } // namespace lua

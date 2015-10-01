@@ -39,4 +39,9 @@ lua_State* lua::new_state(Allocator& allocator) {
 	return lua_newstate(alloc_func, &allocator);
 }
 
+/// Create a new state with Lua's allocator.
+lua_State* lua::new_state() {
+	return luaL_newstate();
+}
+
 } // namespace quanta

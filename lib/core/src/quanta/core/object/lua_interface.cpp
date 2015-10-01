@@ -713,14 +713,14 @@ void object::register_lua_interface(lua_State* L) {
 	luaL_register(L, "Object", object::lua_interface);
 
 #define SET_INT(name_, value_) do { \
-	lua::push_string_ref(L, name_); \
+	lua_pushliteral(L, name_); \
 	lua_pushinteger(L, value_); \
 	lua_rawset(L, -3); \
 	} while (false)
 
 	SET_INT("NAME_NULL", OBJECT_NAME_NULL);
 
-	lua::push_string_ref(L, "Type");
+	lua_pushliteral(L, "Type");
 	lua_createtable(L, 0, 7);
 	lua_rawset(L, -3);
 	SET_INT("null", unsigned_cast(ObjectValueType::null));
@@ -732,7 +732,7 @@ void object::register_lua_interface(lua_State* L) {
 	SET_INT("expression", unsigned_cast(ObjectValueType::expression));
 	lua_pop(L, 1); // Type
 
-	lua::push_string_ref(L, "Operator");
+	lua_pushliteral(L, "Operator");
 	lua_createtable(L, 0, 5);
 	lua_rawset(L, -3);
 	SET_INT("none", unsigned_cast(ObjectOperator::none));
@@ -742,7 +742,7 @@ void object::register_lua_interface(lua_State* L) {
 	SET_INT("div", unsigned_cast(ObjectOperator::div));
 	lua_pop(L, 1); // Operator
 
-	lua::push_string_ref(L, "TimeType");
+	lua_pushliteral(L, "TimeType");
 	lua_createtable(L, 0, 3);
 	lua_rawset(L, -3);
 	SET_INT("date_and_clock", unsigned_cast(ObjectTimeType::date_and_clock));

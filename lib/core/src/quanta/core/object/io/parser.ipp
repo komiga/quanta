@@ -87,6 +87,7 @@ enum : unsigned {
 	BF_QUANTITY					= 1 << 4,
 	BF_S_QUANTITY_COLLECTION	= 1 << 5,
 	BF_EXPRESSION				= 1 << 6,
+	BF_SINGLE_VALUE				= 1 << 7,
 
 	BF_M_SCOPE
 		= BF_S_ROOT
@@ -281,6 +282,27 @@ inline static void parser_pop(ObjectParser& p) {
 inline static unsigned parser_parent_flags(ObjectParser const& p) {
 	TOGO_DEBUG_ASSERTE(array::size(p.stack) > 1);
 	return (*p.stack[array::size(p.stack) - 2].sequence_pos)->flags;
+}
+
+static void parser_move_object_into_child(Object& obj) {
+	auto& children = object::children(obj);
+	object::copy(array::push_back_inplace(children), obj, false);
+	// Copy children
+	if (array::size(children) > 1) {
+		auto last = end(children) - 1;
+		auto& last_children = object::children(*last);
+		for (auto it = begin(children); it != last; ++it) {
+			array::push_back_inplace(last_children, rvalue_ref(*it));
+		}
+		array::remove_over(children, 0);
+		array::resize(children, 1);
+	}
+	object::clear_name(obj);
+	object::set_null(obj);
+	object::clear_value_markers(obj);
+	object::clear_source(obj);
+	object::clear_tags(obj);
+	object::clear_quantity(obj);
 }
 
 static bool parser_next(ObjectParser& p) {
@@ -997,6 +1019,7 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 
 extern Stage const
 * sequence_root[],
+* sequence_root_single_value[],
 * sequence_base[],
 ** jump_base_unnamed,
 ** jump_base_after_marker_guess,
@@ -1034,6 +1057,29 @@ nullptr,
 	} else {
 		parser_push(p, array::push_back_inplace(object::children(*p.branch->obj)), sequence_base);
 		RESP(jump);
+	}
+});
+
+// To skip lead junk
+STAGE(stage_sv_leader, BF_S_ROOT | BF_SINGLE_VALUE,
+nullptr,
+[](ObjectParser& /*p*/) -> Response {
+	RESP(next);
+});
+
+STAGE(stage_sv, BF_S_ROOT | BF_SINGLE_VALUE,
+[](ObjectParser& p) -> Response {
+	RESP_IF(p.c == PC_EOF, eof)
+	else {
+		parser_push(p, *p.branch->obj, sequence_base);
+		RESP(jump);
+	}
+},
+[](ObjectParser& p) -> Response {
+	RESP_IF(p.c == PC_EOF, eof)
+	else {
+		PARSER_ERROR_EXPECTED(p, "expected EOF (single-value parse)");
+		RESP(error);
 	}
 });
 
@@ -1341,29 +1387,11 @@ STAGE(stage_quantity_children, BF_S_QUANTITY_COLLECTION,
 		PARSER_ERROR_EXPECTED(p, "sub-object");
 		RESP(error);
 	}
-	auto& obj = *p.branch->obj;
-	auto& children = object::children(obj);
-	object::copy(array::push_back_inplace(children), obj, false);
-	// Copy children
-	if (array::size(children) > 1) {
-		auto last = end(children) - 1;
-		auto& last_children = object::children(*last);
-		for (auto it = begin(children); it != last; ++it) {
-			array::push_back_inplace(last_children, rvalue_ref(*it));
-		}
-		array::remove_over(children, 0);
-		array::resize(children, 1);
-	}
-	object::clear_name(obj);
-	object::set_null(obj);
-	object::clear_value_markers(obj);
-	object::clear_source(obj);
-	object::clear_tags(obj);
-	object::clear_quantity(obj);
+	parser_move_object_into_child(*p.branch->obj);
 	switch (p.c) {
 	case '+': case '-':
 	case '*': case '/':
-		parser_push(p, array::back(children), jump_base_complete);
+		parser_push(p, array::back(object::children(*p.branch->obj)), jump_base_complete);
 		p.branch->any_part = true;
 		RESP(jump);
 	}
@@ -1407,7 +1435,15 @@ STAGE(stage_complete, BF_NONE,
 	switch (p.c) {
 	case '+': case '-':
 	case '*': case '/':
-		if (!(parser_parent_flags(p) & (BF_QUANTITY | BF_EXPRESSION))) {
+		if (parser_parent_flags(p) & BF_SINGLE_VALUE) {
+			parser_pop(p);
+			auto& obj = *p.branch->obj;
+			parser_move_object_into_child(obj);
+			object::set_expression(obj);
+			object::set_op(array::back(object::children(obj)), ObjectOperator::none);
+			parser_push(p, obj, &sub_expression);
+			RESP(jump);
+		} else if (!(parser_parent_flags(p) & (BF_QUANTITY | BF_EXPRESSION))) {
 			parser_pop(p);
 			auto& scope = object::children(*p.branch->obj);
 			object::set_expression(array::push_back_inplace(scope));
@@ -1509,6 +1545,11 @@ Stage const
 	&stage_root,
 	&stage_sequence_end,
 },
+* sequence_root_single_value[]{
+	&stage_sv_leader,
+	&stage_sv,
+	&stage_sequence_end,
+},
 * sequence_base[]{
 	&stage_lead, // -> stage_assign
 	&stage_marker_uncertainty,
@@ -1547,7 +1588,7 @@ Stage const
 * sub_expression = &stage_expression
 ;
 
-static void parser_init(ObjectParser& p, Object& root) {
+static void parser_init(ObjectParser& p, Object& root, bool single_value) {
 	p.info.line = 0;
 	p.info.column = 0;
 	p.info.message[0] = '\0';
@@ -1562,7 +1603,7 @@ static void parser_init(ObjectParser& p, Object& root) {
 	p.branch = nullptr;
 	array::clear(p.stack);
 	array::clear(p.buffer);
-	parser_push(p, root, sequence_root);
+	parser_push(p, root, single_value ? sequence_root_single_value : sequence_root);
 }
 
 static bool parser_read(ObjectParser& p) {

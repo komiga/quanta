@@ -14,6 +14,7 @@
 
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
+#include <togo/core/memory/types.hpp>
 #include <togo/core/string/types.hpp>
 
 extern "C" {
@@ -21,6 +22,8 @@ extern "C" {
 	#include <luajit-2.0/lauxlib.h>
 	#include <luajit-2.0/lualib.h>
 }
+
+#include <quanta/core/scripting/scripting.gen_interface>
 
 namespace quanta {
 namespace lua {

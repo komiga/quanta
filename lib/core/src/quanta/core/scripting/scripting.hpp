@@ -23,12 +23,6 @@ extern "C" {
 }
 
 namespace quanta {
-
-// Forward declarations
-namespace object {
-	struct Object;
-}
-
 namespace lua {
 
 /**
@@ -42,6 +36,12 @@ inline void* arg_lud(lua_State* L, signed narg, bool require = true) {
 	auto p = lua_touserdata(L, narg);
 	TOGO_ASSERTE(!require || p);
 	return p;
+}
+
+/// Get an argument from the stack (typed).
+template<class T>
+inline T* arg_lud_t(lua_State* L, signed narg, bool require = true) {
+	return static_cast<T*>(arg_lud(L, narg, require));
 }
 
 /// Get an argument from the stack as a boolean.
@@ -61,11 +61,6 @@ inline StringRef arg_string(lua_State* L, signed narg, bool require = true) {
 /// Push a string reference to the stack.
 inline void push_string_ref(lua_State* L, StringRef str) {
 	lua_pushlstring(L, str.data ? str.data : "", unsigned_cast(str.size));
-}
-
-/// Get an argument from the stack as an Object (LUD).
-inline object::Object* arg_object(lua_State* L, signed narg, bool require = true) {
-	return static_cast<object::Object*>(arg_lud(L, narg, require));
 }
 
 /** @} */ // end of doc-group lua

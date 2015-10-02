@@ -350,7 +350,13 @@ LI_FUNC_DEF(integer) {
 
 LI_FUNC_DEF(set_integer) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	object::set_integer(*obj, luaL_checkinteger(L, 2));
+	auto value = luaL_checkinteger(L, 2);
+	if (lua_isnone(L, 3)) {
+		object::set_integer(*obj, value);
+	} else {
+		auto unit = lua::get_string(L, 3);
+		object::set_integer(*obj, value, unit);
+	}
 	return 0;
 }
 
@@ -362,7 +368,13 @@ LI_FUNC_DEF(decimal) {
 
 LI_FUNC_DEF(set_decimal) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	object::set_decimal(*obj, luaL_checknumber(L, 2));
+	auto value = luaL_checknumber(L, 2);
+	if (lua_isnone(L, 3)) {
+		object::set_decimal(*obj, value);
+	} else {
+		auto unit = lua::get_string(L, 3);
+		object::set_decimal(*obj, value, unit);
+	}
 	return 0;
 }
 

@@ -7,6 +7,7 @@
 #include <quanta/core/object/object.hpp>
 #include <quanta/core/scripting/scripting.hpp>
 
+#include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/io/memory_stream.hpp>
 
@@ -532,12 +533,12 @@ LI_FUNC_DEF(set_expression) {
 	return 0;
 }
 
-LI_FUNC_DEF(object_array_iter) {
+LI_FUNC_DEF(array_iter) {
 	// 1-based index
 	auto& a = *lua::get_lud_t<Array<Object>>(L, 1);
 	auto i = luaL_checkinteger(L, 2);
 	++i;
-	if (i > 0 && i <= signed_cast(array::size(a))) {
+	if (i <= signed_cast(array::size(a))) {
 		lua_pushinteger(L, i);
 		lua::push_lud(L, &a[i - 1]);
 		return 2;
@@ -545,12 +546,54 @@ LI_FUNC_DEF(object_array_iter) {
 	return 0;
 }
 
+// returns nil on error
+static signed LI_FUNC(push_sub)(lua_State* L, Object* obj, Array<Object>& a, bool sv_default) {
+	Object* sub = nullptr;
+	if (lua_isnone(L, 2)) {
+		sub = &array::push_back_inplace(a);
+	} else if (lua_isstring(L, 2)) {
+		auto text = lua::get_string(L, 2);
+		bool single_value = luaL_opt(L, lua::get_boolean, 3, sv_default);
+		auto parsed = TOGO_CONSTRUCT_DEFAULT(memory::default_allocator(), Object);
+		if (object::read_text_string(*parsed, text, single_value)) {
+			sub = &array::push_back_inplace(a, rvalue_ref(*parsed));
+		}
+		TOGO_DESTROY(memory::default_allocator(), parsed);
+	} else {
+		auto sub = lua::get_lud_t<Object>(L, 2);
+		TOGO_DEBUG_ASSERTE(obj != sub);
+		sub = &array::push_back_inplace(a, *sub);
+	}
+	lua::push_lud(L, sub);
+	return 1;
+}
+
+static signed LI_FUNC(remove_sub)(lua_State* L, Object* /*obj*/, Array<Object>& a) {
+	auto i = luaL_checkinteger(L, 2);
+	luaL_argcheck(L, i >= 1 && i <= signed_cast(array::size(a)), 2, "index out of bounds");
+	array::remove(a, i - 1);
+	return 0;
+}
+
+static signed LI_FUNC(sub_at)(lua_State* L, Object* /*obj*/, Array<Object>& a) {
+	auto i = luaL_checkinteger(L, 2);
+	luaL_argcheck(L, i >= 1 && i <= signed_cast(array::size(a)), 2, "index out of bounds");
+	lua::push_lud(L, &a[i - 1]);
+	return 1;
+}
+
 LI_FUNC_DEF(children) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua_pushcfunction(L, li_object_array_iter);
+	lua_pushcfunction(L, li_array_iter);
 	lua::push_lud(L, &object::children(*obj));
 	lua_pushinteger(L, 0);
 	return 3;
+}
+
+LI_FUNC_DEF(num_children) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua_pushinteger(L, array::size(object::children(*obj)));
+	return 1;
 }
 
 LI_FUNC_DEF(has_children) {
@@ -563,6 +606,32 @@ LI_FUNC_DEF(clear_children) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_children(*obj);
 	return 0;
+}
+
+LI_FUNC_DEF(push_child) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_push_sub(L, obj, object::children(*obj), true);
+}
+
+LI_FUNC_DEF(push_child_mv) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_push_sub(L, obj, object::children(*obj), false);
+}
+
+LI_FUNC_DEF(pop_child) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	array::pop_back(object::children(*obj));
+	return 0;
+}
+
+LI_FUNC_DEF(remove_child) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_remove_sub(L, obj, object::children(*obj));
+}
+
+LI_FUNC_DEF(child_at) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_sub_at(L, obj, object::children(*obj));
 }
 
 LI_FUNC_DEF(find_child) {
@@ -579,10 +648,16 @@ LI_FUNC_DEF(find_child) {
 
 LI_FUNC_DEF(tags) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
-	lua_pushcfunction(L, li_object_array_iter);
+	lua_pushcfunction(L, li_array_iter);
 	lua::push_lud(L, &object::tags(*obj));
 	lua_pushinteger(L, 0);
 	return 3;
+}
+
+LI_FUNC_DEF(num_tags) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua_pushinteger(L, array::size(object::tags(*obj)));
+	return 1;
 }
 
 LI_FUNC_DEF(has_tags) {
@@ -595,6 +670,32 @@ LI_FUNC_DEF(clear_tags) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::clear_tags(*obj);
 	return 0;
+}
+
+LI_FUNC_DEF(push_tag) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_push_sub(L, obj, object::tags(*obj), true);
+}
+
+LI_FUNC_DEF(push_tag_mv) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_push_sub(L, obj, object::tags(*obj), false);
+}
+
+LI_FUNC_DEF(pop_tag) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	array::pop_back(object::tags(*obj));
+	return 0;
+}
+
+LI_FUNC_DEF(remove_tag) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_remove_sub(L, obj, object::tags(*obj));
+}
+
+LI_FUNC_DEF(tag_at) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	return li_sub_at(L, obj, object::tags(*obj));
 }
 
 LI_FUNC_DEF(find_tag) {
@@ -780,13 +881,25 @@ static luaL_reg const lua_interface[]{
 	LI_FUNC_REF(set_expression)
 
 	LI_FUNC_REF(children)
+	LI_FUNC_REF(num_children)
 	LI_FUNC_REF(has_children)
 	LI_FUNC_REF(clear_children)
+	LI_FUNC_REF(push_child)
+	LI_FUNC_REF(push_child_mv)
+	LI_FUNC_REF(pop_child)
+	LI_FUNC_REF(remove_child)
+	LI_FUNC_REF(child_at)
 	LI_FUNC_REF(find_child)
 
 	LI_FUNC_REF(tags)
+	LI_FUNC_REF(num_tags)
 	LI_FUNC_REF(has_tags)
 	LI_FUNC_REF(clear_tags)
+	LI_FUNC_REF(push_tag)
+	LI_FUNC_REF(push_tag_mv)
+	LI_FUNC_REF(pop_tag)
+	LI_FUNC_REF(remove_tag)
+	LI_FUNC_REF(tag_at)
 	LI_FUNC_REF(find_tag)
 
 	LI_FUNC_REF(quantity)

@@ -532,6 +532,27 @@ LI_FUNC_DEF(set_expression) {
 	return 0;
 }
 
+LI_FUNC_DEF(object_array_iter) {
+	// 1-based index
+	auto& a = *lua::get_lud_t<Array<Object>>(L, 1);
+	auto i = luaL_checkinteger(L, 2);
+	++i;
+	if (i > 0 && i <= signed_cast(array::size(a))) {
+		lua_pushinteger(L, i);
+		lua::push_lud(L, &a[i - 1]);
+		return 2;
+	}
+	return 0;
+}
+
+LI_FUNC_DEF(children) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua_pushcfunction(L, li_object_array_iter);
+	lua::push_lud(L, &object::children(*obj));
+	lua_pushinteger(L, 0);
+	return 3;
+}
+
 LI_FUNC_DEF(has_children) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::has_children(*obj));
@@ -554,6 +575,14 @@ LI_FUNC_DEF(find_child) {
 	}
 	lua::push_lud(L, result);
 	return 1;
+}
+
+LI_FUNC_DEF(tags) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua_pushcfunction(L, li_object_array_iter);
+	lua::push_lud(L, &object::tags(*obj));
+	lua_pushinteger(L, 0);
+	return 3;
 }
 
 LI_FUNC_DEF(has_tags) {
@@ -750,10 +779,12 @@ static luaL_reg const lua_interface[]{
 
 	LI_FUNC_REF(set_expression)
 
+	LI_FUNC_REF(children)
 	LI_FUNC_REF(has_children)
 	LI_FUNC_REF(clear_children)
 	LI_FUNC_REF(find_child)
 
+	LI_FUNC_REF(tags)
 	LI_FUNC_REF(has_tags)
 	LI_FUNC_REF(clear_tags)
 	LI_FUNC_REF(find_tag)

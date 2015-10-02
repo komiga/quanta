@@ -23,11 +23,21 @@ end
 
 -- print_table(O)
 
-local a = O.create_mv [[
-	a, b
-]]
-print(O.write_text_string(a, true))
-O.destroy(a)
+do
+	local a = O.create_mv [[
+		a, b
+	]]
+
+	for i, v in O.children(a) do
+		print(i, O.write_text_string(v, true), v)
+		assert(
+			(i == 1 and O.string(v) == "a") or
+			(i == 2 and O.string(v) == "b") or
+			false
+		)
+	end
+	O.destroy(a)
+end
 
 do
 	local a = O.create()

@@ -83,7 +83,7 @@ inline Time as_utc_adjusted(Time const& t) {
 }
 
 /// The difference between two time points.
-inline Duration difference(Time l, Time r) {
+inline Duration difference(Time const& l, Time const& r) {
 	return l.sec - r.sec;
 }
 
@@ -98,7 +98,7 @@ inline void sub(Time& t, Duration d) {
 }
 
 /// Compare two times for equality (UTC).
-inline bool compare_equal(Time& l, Time& r) {
+inline bool compare_equal(Time const& l, Time const& r) {
 	return l.sec == r.sec;
 }
 
@@ -199,8 +199,6 @@ namespace gregorian {
 inline bool is_leap_year(signed const year) {
 	return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 }
-
-
 
 /// Gregorian calendar date.
 inline Date date(Time const& t) {

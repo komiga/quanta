@@ -10,7 +10,7 @@
 #pragma once
 
 // igen-source: object/io_text.cpp
-// igen-source: object/lua_interface.cpp
+// igen-source: object/object_li.cpp
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>

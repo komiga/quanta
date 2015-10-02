@@ -1,4 +1,4 @@
-#line 2 "quanta/core/object/lua_binding.cpp"
+#line 2 "quanta/core/object/object_li.cpp"
 /**
 @copyright MIT license; see @ref index or the accompanying LICENSE file.
 */
@@ -786,7 +786,7 @@ LI_FUNC_DEF(write_text_string) {
 
 #define LI_FUNC_REF(name) {#name, object:: LI_FUNC(name)},
 
-static luaL_reg const lua_interface[]{
+static luaL_reg const li_funcs[]{
 	LI_FUNC_REF(hash_name)
 	LI_FUNC_REF(hash_unit)
 
@@ -924,7 +924,7 @@ static luaL_reg const lua_interface[]{
 
 /// Register the Lua interface.
 void object::register_lua_interface(lua_State* L) {
-	luaL_register(L, "Quanta.Object", object::lua_interface);
+	luaL_register(L, "Quanta.Object", object::li_funcs);
 
 #define SET_INT(name_, value_) do { \
 	lua_pushliteral(L, name_); \

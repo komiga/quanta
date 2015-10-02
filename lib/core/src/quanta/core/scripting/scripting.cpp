@@ -4,6 +4,8 @@
 */
 
 #include <quanta/core/config.hpp>
+#include <quanta/core/chrono/time.hpp>
+#include <quanta/core/object/object.hpp>
 #include <quanta/core/scripting/scripting.hpp>
 
 #include <togo/core/error/assert.hpp>
@@ -42,6 +44,12 @@ lua_State* lua::new_state(Allocator& allocator) {
 /// Create a new state with Lua's allocator.
 lua_State* lua::new_state() {
 	return luaL_newstate();
+}
+
+/// Create a new state with Lua's allocator.
+void lua::register_interfaces(lua_State* L) {
+	time::register_lua_interface(L);
+	object::register_lua_interface(L);
 }
 
 } // namespace quanta

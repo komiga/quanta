@@ -36,6 +36,16 @@ do
 			false
 		)
 	end
+
+	assert(O.push_child(a, "c") ~= nil)
+	assert(O.num_children(a) == 3 and O.string(O.child_at(a, 3)) == "c")
+	O.remove_child(a, 2)
+	assert(O.num_children(a) == 2 and O.string(O.child_at(a, 2)) == "c")
+	O.remove_child(a, 1)
+	assert(O.num_children(a) == 1 and O.string(O.child_at(a, 1)) == "c")
+	O.pop_child(a)
+	assert(O.num_children(a) == 0)
+	assert(O.push_child(a, "x=") == nil)
 	O.destroy(a)
 end
 
@@ -131,29 +141,29 @@ do
 	O.destroy(a)
 end
 
---[[
 do
 	local a = O.create()
-	set_string(a, "brains")
+	O.set_string(a, "brains")
 	assert(O.string(a) == "brains")
 
-	auto& q = make_quantity(a)
-	set_integer(q, 42, "g")
-	assert(integer(q) == 42)
-	assert(unit(q) == "g")
+	local q = O.make_quantity(a)
+	O.set_integer(q, 42, "g")
+	assert(O.integer(q) == 42)
+	assert(O.unit(q) == "g")
 
-	auto& c = push_back_inplace(children(a))
+	local c = O.push_child(a)
 	O.set_name(c, "d")
 	assert(O.name(c) == "d")
-	set_string(c, "yum")
-	assert(&c == O.find_child(a, "d"))
+	O.set_string(c, "yum")
+	assert(c == O.find_child(a, "d"))
 
-	auto& t = push_back_inplace(tags(a))
+	local t = O.push_tag(a)
 	O.set_name(t, "leftover")
-	assert(&t == O.find_tag(a, "leftover"))
+	assert(t == O.find_tag(a, "leftover"))
 	O.destroy(a)
 end
 
+--[[
 {
 	Time wow{}
 	-- treated as local when resolve_time() is called (from unzoned to -04:00)

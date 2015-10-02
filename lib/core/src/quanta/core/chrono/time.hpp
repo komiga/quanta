@@ -9,10 +9,13 @@
 
 #pragma once
 
+// igen-source: chrono/chrono_time_li.cpp
+
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
 #include <quanta/core/chrono/types.hpp>
 #include <quanta/core/chrono/internal.hpp>
+#include <quanta/core/scripting/scripting.hpp>
 
 #include <togo/core/utility/utility.hpp>
 

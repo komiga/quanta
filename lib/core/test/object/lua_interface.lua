@@ -1,5 +1,6 @@
 
 local O = require "Quanta.Object"
+local T = require "Quanta.Time"
 
 function print_table(t, level)
 	local function table_to_string(t, level)
@@ -163,14 +164,13 @@ do
 	O.destroy(a)
 end
 
---[[
-{
-	Time wow{}
+do
+	local wow = T.temporary()
 	-- treated as local when resolve_time() is called (from unzoned to -04:00)
-	time::set(wow, 10,16,0)
+	T.set(wow, 10,16,0)
 
-	Object a
-	set_time_value(a, wow)
+	local a = O.create()
+	O.set_time_value(a, wow)
 	assert(O.is_zoned(a))
 	assert(not O.is_year_contextual(a) and not O.is_month_contextual(a))
 	assert(O.has_date(a) and O.has_clock(a) and O.time_type(a) == O.TimeType.date_and_clock)
@@ -182,48 +182,52 @@ end
 	O.set_time_type(a, O.TimeType.clock)
 	assert(not O.has_date(a) and O.has_clock(a) and O.time_type(a) == O.TimeType.clock)
 
-	time::adjust_zone_clock(wow, -4)
-	time::gregorian::set(wow, 1977,8,15)
+	T.adjust_zone_clock(wow, -4)
+	T.Gregorian.set(wow, 1977,8,15)
 	O.resolve_time(a, wow)
-	assert(is_zoned(a))
+	assert(O.is_zoned(a))
 	assert(O.has_date(a) and O.has_clock(a) and O.time_type(a) == O.TimeType.date_and_clock)
 
-	assert(time::compare_equal(O.time_value(a), wow))
-}
+	assert(T.compare_equal(O.time(a), wow))
+	O.destroy(a)
+end
 
-{
-	Date d
-	Time t{}
-	time::gregorian::set(t, 1,10,15)
+do
+	local y, m, d
+	local t = T.temporary()
+	T.Gregorian.set(t, 1,10,15)
 
-	Object a
+	local a = O.create()
 	O.set_time_value(a, t)
 
-	t = {}
+	T.clear(t)
 	O.set_year_contextual(a, true)
-	time::gregorian::set(t, 2,3,10)
+	T.Gregorian.set(t, 2,3,10)
 	O.resolve_time(a, t)
-	d = time::gregorian::date(O.time_value(a))
-	assert(d.year == 2 and d.month == 10 and d.day == 15)
+	y, m, d = T.Gregorian.date(O.time(a))
+	assert(y == 2 and m == 10 and d == 15)
 
 	O.set_month_contextual(a, true) -- implies contextual year
-	time::gregorian::set(t, 4,6,20)
+	T.Gregorian.set(t, 4,6,20)
 	O.resolve_time(a, t)
-	d = time::gregorian::date(O.time_value(a))
-	assert(d.year == 4 and d.month == 6 and d.day == 15)
-}
+	y, m, d = T.Gregorian.date(O.time(a))
+	assert(y == 4 and m == 6 and d == 15)
+	O.destroy(a)
+end
 
 do
 	local a = O.create()
 	O.set_expression(a)
 	assert(O.is_expression(a))
-	auto& e1 = push_back_inplace(O.children(a))
-	set_integer(e1, 1)
+
+	local e1 = O.push_child(a)
+	O.set_integer(e1, 1)
 	assert(O.op(e1) == O.Operator.none)
-	auto& e2 = push_back_inplace(O.children(a))
-	set_integer(e2, 2)
-	set_op(e2, O.Operator.div)
+
+	local e2 = O.push_child(a)
+	O.set_integer(e2, 2)
+	O.set_op(e2, O.Operator.div)
 	assert(O.op(e2) == O.Operator.div)
+
 	O.destroy(a)
 end
---]]

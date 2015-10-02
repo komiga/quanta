@@ -18,14 +18,14 @@ namespace object {
 #define LI_FUNC_DEF(name) static signed LI_FUNC(name)(lua_State* L)
 
 LI_FUNC_DEF(hash_name) {
-	auto name = lua::get_string(L, 1, false);
+	auto name = lua::get_string(L, 1);
 	lua_pushinteger(L, object::hash_name(name));
 	return 1;
 }
 
 LI_FUNC_DEF(hash_unit) {
-	auto name = lua::get_string(L, 1, false);
-	lua_pushinteger(L, object::hash_unit(name));
+	auto unit = lua::get_string(L, 1);
+	lua_pushinteger(L, object::hash_unit(unit));
 	return 1;
 }
 

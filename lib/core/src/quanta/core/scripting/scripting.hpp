@@ -37,7 +37,9 @@ namespace lua {
 inline void* get_lud(lua_State* L, signed narg, bool require = true) {
 	luaL_checktype(L, narg, LUA_TLIGHTUSERDATA);
 	auto p = lua_touserdata(L, narg);
-	TOGO_ASSERTE(!require || p);
+	if (require && !p) {
+		luaL_argerror(L, narg, "value must be non-null");
+	}
 	return p;
 }
 
@@ -54,10 +56,9 @@ inline bool get_boolean(lua_State* L, signed narg) {
 }
 
 /// Get a string from the stack as a string reference.
-inline StringRef get_string(lua_State* L, signed narg, bool require = true) {
+inline StringRef get_string(lua_State* L, signed narg) {
 	size_t size = 0;
 	auto data = luaL_checklstring(L, narg, &size);
-	TOGO_ASSERTE(!require || data);
 	return {data, static_cast<unsigned>(size)};
 }
 

@@ -182,7 +182,7 @@ Object const* object::find_impl(
 	}
 	for (Object const& item : collection) {
 		if (name_hash == item.name.hash) {
-			#if defined(TOGO_DEBUG)
+			#if defined(QUANTA_DEBUG)
 			if (name.valid() && !string::compare_equal(name, object::name(item))) {
 				TOGO_LOG_DEBUGF(
 					"hashes matched, but names mismatched: '%.*s' != '%.*s' (lookup_name != name)\n",

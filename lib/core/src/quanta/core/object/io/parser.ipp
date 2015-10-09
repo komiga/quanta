@@ -286,7 +286,13 @@ inline static unsigned parser_parent_flags(ObjectParser const& p) {
 
 static void parser_move_object_into_child(Object& obj) {
 	auto& children = object::children(obj);
-	object::copy(array::push_back_inplace(children), obj, false);
+	{
+	auto& last = array::push_back_inplace(children);
+	auto name = obj.name;
+	obj.name = {};
+	object::copy(last, obj, false);
+	obj.name = name;
+	}
 	// Copy children
 	if (array::size(children) > 1) {
 		auto last = end(children) - 1;
@@ -297,7 +303,6 @@ static void parser_move_object_into_child(Object& obj) {
 		array::remove_over(children, 0);
 		array::resize(children, 1);
 	}
-	object::clear_name(obj);
 	object::set_null(obj);
 	object::clear_value_markers(obj);
 	object::clear_source(obj);
@@ -1446,10 +1451,13 @@ STAGE(stage_complete, BF_NONE,
 		} else if (!(parser_parent_flags(p) & (BF_QUANTITY | BF_EXPRESSION))) {
 			parser_pop(p);
 			auto& scope = object::children(*p.branch->obj);
-			object::set_expression(array::push_back_inplace(scope));
+			auto& shim = array::push_back_inplace(scope);
 			auto lead = end(scope) - 2;
+			object::set_expression(shim);
+			shim.name = lead->name;
+			lead->name = {};
 			object::set_op(*lead, ObjectOperator::none);
-			array::push_back_inplace(object::children(array::back(scope)), rvalue_ref(*lead));
+			array::push_back_inplace(object::children(shim), rvalue_ref(*lead));
 			array::remove_over(scope, lead);
 			parser_push(p, array::back(scope), &sub_expression);
 			RESP(jump);

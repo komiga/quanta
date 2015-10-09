@@ -1,5 +1,5 @@
 
-#include <quanta/core/object/object.hpp>
+#include <quanta/core/scripting/scripting.hpp>
 
 #include <togo/core/log/log.hpp>
 #include <togo/core/error/assert.hpp>

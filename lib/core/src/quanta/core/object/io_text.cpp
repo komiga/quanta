@@ -224,7 +224,8 @@ inline static bool write_markers(IWriter& stream, Object const& obj) {
 static bool write_object(
 	IWriter& stream,
 	Object const& obj,
-	unsigned tabs
+	unsigned tabs,
+	bool named = true
 );
 
 static bool write_tag(
@@ -269,11 +270,11 @@ static bool write_expression(
 		auto& children = object::children(obj);
 		auto it = begin(children);
 		auto end = array::end(children);
-		RETURN_ERROR(write_object(stream, *it, tabs));
+		RETURN_ERROR(write_object(stream, *it, tabs, true));
 		for (++it; it != end; ++it) {
 			RETURN_ERROR(
 				io::write(stream, op_string(object::op(*it)), 3) &&
-				write_object(stream, *it, tabs)
+				write_object(stream, *it, tabs, false)
 			);
 		}
 	} else {
@@ -285,16 +286,19 @@ static bool write_expression(
 static bool write_object(
 	IWriter& stream,
 	Object const& obj,
-	unsigned tabs
+	unsigned tabs,
+	bool named
 ) {
-	if (object::is_expression(obj)) {
-		return write_expression(stream, obj, tabs);
-	} else if (object::is_named(obj)) {
+	if (named && object::is_named(obj)) {
 		RETURN_ERROR(
 			write_identifier(stream, object::name(obj)) &&
 			io::write(stream, " = ", 3)
 		);
 	}
+	if (object::is_expression(obj)) {
+		return write_expression(stream, obj, tabs);
+	}
+
 	RETURN_ERROR(write_markers(stream, obj));
 	switch (object::type(obj)) {
 	case ObjectValueType::null:

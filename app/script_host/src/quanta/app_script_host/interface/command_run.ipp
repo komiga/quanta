@@ -33,7 +33,9 @@ bool interface::command_run(
 	lua::register_interfaces(L);
 	lua_pushcfunction(L, pcall_message_handler);
 	if (luaL_loadfile(L, script_path.data)) {
-		TOGO_LOG("failed to load script\n");
+		auto error = lua::get_string(L, -1);
+		TOGO_LOGF("failed to load script: %.*s\n", error.size, error.data);
+		lua_pop(L, 1);
 		return false;
 	}
 	if (lua_pcall(L, 0, 0, -2)) {

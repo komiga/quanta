@@ -121,7 +121,7 @@ function quanta.make_app(name, configs, env)
 		}
 
 	local app_env = precore.internal.env_set({
-		QUANTA_TOOL = true,
+		QUANTA_APP = true,
 	}, env)
 	precore.make_project(
 		"app_" .. name,

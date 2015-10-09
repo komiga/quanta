@@ -16,7 +16,7 @@ interface.configure(IGEN_ROOT, "quanta", "tmp", "dep/togo/scripts/igen_interface
 
 c = interface.Collector()
 c.add_groups("lib", "")
-# c.add_groups("app", "app_")
+c.add_groups("app", "app_")
 c.collect()
 c.write()
 

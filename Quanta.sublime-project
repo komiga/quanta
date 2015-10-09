@@ -58,6 +58,27 @@
 			"file_exclude_patterns": [
 				"*.gen_interface"
 			]
+		},
+		{
+			"name": "App: app_script_host",
+			"path": "./app/script_host/",
+			"folder_exclude_patterns": [
+				"src",
+				"build"
+			],
+			"file_exclude_patterns": [
+				"Makefile",
+				"*.make",
+				"*.exe",
+				"*.elf"
+			]
+		},
+		{
+			"name": "— app/script_host",
+			"path": "./app/script_host/src/quanta/app_script_host/",
+			"file_exclude_patterns": [
+				"*.gen_interface"
+			]
 		}
 	],
 	"settings":

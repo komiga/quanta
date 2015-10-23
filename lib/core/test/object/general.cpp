@@ -101,8 +101,8 @@ signed main() {
 
 	{
 		Object a;
-		set_string(a, "brains");
-		TOGO_ASSERTE(string::compare_equal(object::string(a), "brains"));
+		set_identifier(a, "brains");
+		TOGO_ASSERTE(string::compare_equal(identifier(a), "brains") && identifier_hash(a) == "brains"_object_name);
 
 		auto& q = make_quantity(a);
 		set_integer(q, 42, "g");
@@ -113,6 +113,9 @@ signed main() {
 		set_name(c, "d");
 		TOGO_ASSERTE(string::compare_equal(name(c), "d"));
 		set_string(c, "yum");
+		TOGO_ASSERTE(string::compare_equal(object::string(c), "yum"));
+		TOGO_ASSERTE(string::compare_equal(text(c), "yum"));
+
 		TOGO_ASSERTE(&c == find_child(a, "d"));
 
 		auto& t = push_back_inplace(tags(a));

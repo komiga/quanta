@@ -32,18 +32,18 @@ do
 	for i, v in O.children(a) do
 		print(i, O.write_text_string(v, true), v)
 		assert(
-			(i == 1 and O.string(v) == "a") or
-			(i == 2 and O.string(v) == "b") or
+			(i == 1 and O.identifier(v) == "a") or
+			(i == 2 and O.identifier(v) == "b") or
 			false
 		)
 	end
 
 	assert(O.push_child(a, "c") ~= nil)
-	assert(O.num_children(a) == 3 and O.string(O.child_at(a, 3)) == "c")
+	assert(O.num_children(a) == 3 and O.identifier(O.child_at(a, 3)) == "c")
 	O.remove_child(a, 2)
-	assert(O.num_children(a) == 2 and O.string(O.child_at(a, 2)) == "c")
+	assert(O.num_children(a) == 2 and O.identifier(O.child_at(a, 2)) == "c")
 	O.remove_child(a, 1)
-	assert(O.num_children(a) == 1 and O.string(O.child_at(a, 1)) == "c")
+	assert(O.num_children(a) == 1 and O.identifier(O.child_at(a, 1)) == "c")
 	O.pop_child(a)
 	assert(O.num_children(a) == 0)
 	assert(O.push_child(a, "x=") == nil)
@@ -144,8 +144,8 @@ end
 
 do
 	local a = O.create()
-	O.set_string(a, "brains")
-	assert(O.string(a) == "brains")
+	O.set_identifier(a, "brains")
+	assert(O.identifier(a) == "brains" and O.identifier_hash(a) == O.hash_value("brains"))
 
 	local q = O.make_quantity(a)
 	O.set_integer(q, 42, "g")
@@ -156,6 +156,9 @@ do
 	O.set_name(c, "d")
 	assert(O.name(c) == "d")
 	O.set_string(c, "yum")
+	assert(O.string(c) == "yum")
+	assert(O.text(c) == "yum")
+
 	assert(c == O.find_child(a, "d"))
 
 	local t = O.push_tag(a)

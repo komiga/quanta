@@ -174,9 +174,9 @@ struct Test {
 
 // strings
 	TSE("\"\"", "\"\"")
-	TSE("\"a\"", "a")
+	TSS("\"a\"")
 	TSE("``````", "\"\"")
-	TSE("```a```", "a")
+	TSE("```a```", "\"a\"")
 	TSE("```a b```", "\"a b\"")
 	TSE("```a\"b```", "```a\"b```")
 	TSE("```\na\n```", "```\na\n```")
@@ -198,11 +198,11 @@ struct Test {
 	TSS("a = -1")
 
 	TSE("a=\"\"", "a = \"\"")
-	TSE("a=\"ab\"", "a = ab")
+	TSE("a=\"ab\"", "a = \"ab\"")
 	TSE("a=\"a b\"", "a = \"a b\"")
 	TF("a=\"\n")
 
-	TSE("a=```ab```", "a = ab")
+	TSE("a=```ab```", "a = \"ab\"")
 	TSE("a=```a b```", "a = \"a b\"")
 	TSE("a=```a\nb```", "a = ```a\nb```")
 

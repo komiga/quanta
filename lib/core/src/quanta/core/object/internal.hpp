@@ -24,7 +24,7 @@ namespace {
 enum : unsigned {
 	M_TYPE = (unsigned_cast(ObjectValueType::expression) << 1) - 1,
 
-	P_BASE = 7,
+	P_BASE = 8,
 
 	S_VALUE_UNCERTAIN = P_BASE + 0,
 	M_VALUE_UNCERTAIN = 1 << S_VALUE_UNCERTAIN,
@@ -102,9 +102,14 @@ static_assert(
 	, "bitjumbo is janked up"
 );
 
-static constexpr ObjectValueType const type_mask_numeric
+static constexpr ObjectValueType const
+type_mask_numeric
 	= ObjectValueType::integer
 	| ObjectValueType::decimal
+,
+type_mask_textual
+	= ObjectValueType::string
+	| ObjectValueType::identifier
 ;
 
 } // anonymous namespace

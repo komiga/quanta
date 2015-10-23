@@ -43,8 +43,8 @@ enum ParserBufferType : unsigned {
 	PB_TRUE,
 	PB_INTEGER,
 	PB_DECIMAL,
-	PB_IDENTIFIER,
 	PB_STRING,
+	PB_IDENTIFIER,
 	PB_TIME,
 };
 
@@ -935,9 +935,12 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 			object::set_decimal(obj, parse_f64(array::begin(p.buffer)));
 			break;
 
-		case PB_IDENTIFIER:
 		case PB_STRING:
 			object::set_string(obj, parser_buffer_ref(p));
+			break;
+
+		case PB_IDENTIFIER:
+			object::set_identifier(obj, parser_buffer_ref(p));
 			break;
 
 		case PB_TIME: {

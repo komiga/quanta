@@ -24,9 +24,9 @@ LI_FUNC_DEF(hash_name) {
 	return 1;
 }
 
-LI_FUNC_DEF(hash_unit) {
+LI_FUNC_DEF(hash_value) {
 	auto unit = lua::get_string(L, 1);
-	lua_pushinteger(L, object::hash_unit(unit));
+	lua_pushinteger(L, object::hash_value(unit));
 	return 1;
 }
 
@@ -123,6 +123,18 @@ LI_FUNC_DEF(is_time) {
 LI_FUNC_DEF(is_string) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	lua_pushboolean(L, object::is_string(*obj));
+	return 1;
+}
+
+LI_FUNC_DEF(is_identifier) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua_pushboolean(L, object::is_identifier(*obj));
+	return 1;
+}
+
+LI_FUNC_DEF(is_textual) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua_pushboolean(L, object::is_textual(*obj));
 	return 1;
 }
 
@@ -527,6 +539,30 @@ LI_FUNC_DEF(set_string) {
 	return 0;
 }
 
+LI_FUNC_DEF(identifier) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua::push_string(L, object::identifier(*obj));
+	return 1;
+}
+
+LI_FUNC_DEF(identifier_hash) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua_pushinteger(L, object::identifier_hash(*obj));
+	return 1;
+}
+
+LI_FUNC_DEF(set_identifier) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	object::set_identifier(*obj, lua::get_string(L, 2));
+	return 0;
+}
+
+LI_FUNC_DEF(text) {
+	auto obj = lua::get_lud_t<Object>(L, 1);
+	lua::push_string(L, object::text(*obj));
+	return 1;
+}
+
 LI_FUNC_DEF(set_expression) {
 	auto obj = lua::get_lud_t<Object>(L, 1);
 	object::set_expression(*obj);
@@ -788,7 +824,7 @@ LI_FUNC_DEF(write_text_string) {
 
 static luaL_reg const li_funcs[]{
 	LI_FUNC_REF(hash_name)
-	LI_FUNC_REF(hash_unit)
+	LI_FUNC_REF(hash_value)
 
 	LI_FUNC_REF(create)
 	LI_FUNC_REF(create_mv)
@@ -805,6 +841,8 @@ static luaL_reg const li_funcs[]{
 	LI_FUNC_REF(is_numeric)
 	LI_FUNC_REF(is_time)
 	LI_FUNC_REF(is_string)
+	LI_FUNC_REF(is_identifier)
+	LI_FUNC_REF(is_textual)
 	LI_FUNC_REF(is_expression)
 
 	LI_FUNC_REF(name)
@@ -854,9 +892,9 @@ static luaL_reg const li_funcs[]{
 	LI_FUNC_REF(set_decimal)
 	LI_FUNC_REF(numeric)
 	LI_FUNC_REF(unit)
-	LI_FUNC_REF(set_unit)
 	LI_FUNC_REF(unit_hash)
 	LI_FUNC_REF(has_unit)
+	LI_FUNC_REF(set_unit)
 
 	LI_FUNC_REF(time)
 	LI_FUNC_REF(time_type)
@@ -877,6 +915,12 @@ static luaL_reg const li_funcs[]{
 
 	LI_FUNC_REF(string)
 	LI_FUNC_REF(set_string)
+
+	LI_FUNC_REF(identifier)
+	LI_FUNC_REF(identifier_hash)
+	LI_FUNC_REF(set_identifier)
+
+	LI_FUNC_REF(text)
 
 	LI_FUNC_REF(set_expression)
 
@@ -944,6 +988,7 @@ void object::register_lua_interface(lua_State* L) {
 	SET_INT("decimal", unsigned_cast(ObjectValueType::decimal));
 	SET_INT("time", unsigned_cast(ObjectValueType::time));
 	SET_INT("string", unsigned_cast(ObjectValueType::string));
+	SET_INT("identifier", unsigned_cast(ObjectValueType::identifier));
 	SET_INT("expression", unsigned_cast(ObjectValueType::expression));
 	lua_pop(L, 1);
 

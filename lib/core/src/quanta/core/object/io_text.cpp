@@ -130,55 +130,22 @@ static bool writef(IWriter& stream, char const* const format, ...) {
 }
 
 inline static unsigned quote_level(StringRef const& str) {
-	unsigned level = str.empty() ? 1 : 0;
-	if (str.size >= 1) {
-		u8 c = reinterpret_cast<u8 const*>(str.data)[0];
-		if (
-			(c >= '0' && c <= '9')
-			|| !(false
-				|| (c >= 'a' && c <= 'z')
-				|| (c >= 'A' && c <= 'Z')
-				||  c == '_' || c == '.'
-				||  c >= 0xC0
-			)
-		) {
-			level = 1;
-		}
-	}
 	auto const it_end = end(str);
 	for (auto it = begin(str); it != it_end; ++it) {
 		switch (*it) {
-		case '\t':
-		case ' ':
-		case ',': case ';':
-		case ':':
-		case '=':
-		case '{': case '}':
-		case '[': case ']':
-		case '(': case ')':
-		case '+': case '-':
-		case '*': case '/':
-		case '`':
-			level = 1;
-			break;
-
 		case '\\':
 		case '\"':
 		case '\n':
-			level = 2;
-			goto l_return;
+			return 1;
 		}
 	}
-
-l_return:
-	return level;
+	return 0;
 }
 
 inline static bool write_quote(IWriter& stream, unsigned level) {
 	switch (level) {
-	case 0: break;
-	case 1: RETURN_ERROR(io::write_value(stream, '\"')); break;
-	case 2: RETURN_ERROR(io::write(stream, "```", 3)); break;
+	case 0: RETURN_ERROR(io::write_value(stream, '\"')); break;
+	case 1: RETURN_ERROR(io::write(stream, "```", 3)); break;
 	}
 	return true;
 }
@@ -358,6 +325,10 @@ static bool write_object(
 
 	case ObjectValueType::string:
 		RETURN_ERROR(write_string(stream, object::string(obj)));
+		break;
+
+	case ObjectValueType::identifier:
+		RETURN_ERROR(write_identifier(stream, object::identifier(obj)));
 		break;
 
 	case ObjectValueType::expression:

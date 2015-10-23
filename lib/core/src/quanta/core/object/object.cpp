@@ -61,6 +61,9 @@ void object::clear_value(Object& obj) {
 	case ObjectValueType::string:
 		unmanaged_string::clear(obj.value.string, a);
 		break;
+	case ObjectValueType::identifier:
+		unmanaged_string::clear(obj.value.identifier, a);
+		break;
 	case ObjectValueType::expression:
 		break;
 	}
@@ -93,6 +96,9 @@ void object::copy(Object& dst, Object const& src, bool const children IGEN_DEFAU
 		break;
 	case ObjectValueType::string:
 		unmanaged_string::set(dst.value.string, src.value.string, a);
+		break;
+	case ObjectValueType::identifier:
+		unmanaged_string::set(dst.value.identifier, src.value.identifier, a);
 		break;
 	case ObjectValueType::expression:
 		break;

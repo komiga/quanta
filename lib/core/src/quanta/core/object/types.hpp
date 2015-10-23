@@ -31,8 +31,8 @@ namespace object {
 /// Object name hash.
 using ObjectNameHash = hash32;
 
-/// Object numeric unit hash.
-using ObjectNumericUnitHash = hash32;
+/// Object value hash (numeric unit, identifier).
+using ObjectValueHash = hash32;
 
 namespace hash_literals {
 
@@ -68,8 +68,10 @@ enum class ObjectValueType : unsigned {
 	time		= 1 << 4,
 	/// String.
 	string		= 1 << 5,
+	/// Identifier.
+	identifier	= 1 << 6,
 	/// Expression.
-	expression	= 1 << 6,
+	expression	= 1 << 7,
 };
 
 /// Object operator.
@@ -105,10 +107,11 @@ struct Object {
 				s64 integer;
 				f64 decimal;
 			};
-			HashedUnmanagedString<ObjectNumericUnitHash> unit;
+			HashedUnmanagedString<ObjectValueHash> unit;
 		} numeric;
 		Time time;
 		UnmanagedString string;
+		HashedUnmanagedString<ObjectValueHash> identifier;
 	};
 
 	u64 properties;
@@ -147,7 +150,7 @@ struct ObjectParserInfo {
 } // namespace object
 
 using object::ObjectNameHash;
-using object::ObjectNumericUnitHash;
+using object::ObjectValueHash;
 using namespace object::hash_literals;
 using object::OBJECT_NAME_NULL;
 using object::ObjectValueType;

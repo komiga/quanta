@@ -43,9 +43,9 @@ inline ObjectNameHash hash_name(StringRef const& name) {
 	return hash::calc_generic<ObjectNameHash>(name);
 }
 
-/// Calculate unit hash of a string.
-inline ObjectNumericUnitHash hash_unit(StringRef const& name) {
-	return hash::calc_generic<ObjectNumericUnitHash>(name);
+/// Calculate value hash of a string.
+inline ObjectValueHash hash_value(StringRef const& name) {
+	return hash::calc_generic<ObjectValueHash>(name);
 }
 
 /// Value type.
@@ -85,6 +85,12 @@ inline bool is_time(Object const& obj) { return object::is_type(obj, ObjectValue
 
 /// Whether type is ObjectValueType::string.
 inline bool is_string(Object const& obj) { return object::is_type(obj, ObjectValueType::string); }
+
+/// Whether type is ObjectValueType::identifier.
+inline bool is_identifier(Object const& obj) { return object::is_type(obj, ObjectValueType::identifier); }
+
+/// Whether type is ObjectValueType::string or ObjectValueType::identifier.
+inline bool is_textual(Object const& obj) { return object::is_type_any(obj, type_mask_textual); }
 
 /// Whether type is ObjectValueType::expression.
 inline bool is_expression(Object const& obj) { return object::is_type(obj, ObjectValueType::expression); }
@@ -320,7 +326,7 @@ inline StringRef unit(Object const& obj) {
 }
 
 /// Numeric value unit hash.
-inline ObjectNumericUnitHash unit_hash(Object const& obj) {
+inline ObjectValueHash unit_hash(Object const& obj) {
 	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
 	return obj.value.numeric.unit.hash;
 }
@@ -491,6 +497,30 @@ inline void set_string(Object& obj, StringRef const value) {
 	unmanaged_string::set(obj.value.string, value, memory::default_allocator());
 }
 
+/// Identifier value.
+inline StringRef identifier(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::identifier));
+	return obj.value.identifier;
+}
+
+/// Identifier value hash.
+inline ObjectValueHash identifier_hash(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::identifier));
+	return obj.value.identifier.hash;
+}
+
+/// Set identifier value.
+inline void set_identifier(Object& obj, StringRef const value) {
+	object::set_type(obj, ObjectValueType::identifier);
+	unmanaged_string::set(obj.value.identifier, value, memory::default_allocator());
+}
+
+/// String or identifier value.
+inline StringRef text(Object const& obj) {
+	TOGO_ASSERTE(object::is_type_any(obj, type_mask_textual));
+	return object::is_type(obj, ObjectValueType::string) ? obj.value.string : obj.value.identifier;
+}
+
 /// Set type to expression.
 ///
 /// Expressions do not have value markers, source, tags, or quantity. The
@@ -607,6 +637,9 @@ inline Object::Object(Object&& other)
 		break;
 	case ObjectValueType::string:
 		other.value.string = {};
+		break;
+	case ObjectValueType::identifier:
+		other.value.identifier = {};
 		break;
 	case ObjectValueType::expression:
 		break;

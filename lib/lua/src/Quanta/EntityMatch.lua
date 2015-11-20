@@ -367,11 +367,13 @@ table.insert(category_patterns, Match.Pattern{
 	children = U.table_ijoined(M.universe.patterns, M.entity.patterns),
 })
 
-function M.read_universe(root_path)
+function M.read_universe(root_path, name)
+	U.type_assert(name, "string", true)
+
 	local universe = nil
 	local root = O.create()
 	if O.read_text_file(root, root_path) then
-		universe = Entity.Universe("universe")
+		universe = Entity.Universe(name or "universe")
 		local context = Match.Context()
 		if not context:consume_sub(M.universe, root, universe) then
 			U.log("match error:\n%s", context.error:to_string(context.error_obj))

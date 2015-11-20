@@ -16,9 +16,15 @@ group_data["core"] = {
 	excluded = {},
 	args = {},
 }
+group_data["lua"] = {
+	excluded = {},
+	args = {},
+}
 
 local group_names = quanta_libs()
 local groups = {}
+
+table.insert(group_names, "lua")
 
 for _, group_name in pairs(group_names) do
 	local root = "lib/" .. group_name .. "/test"
@@ -30,7 +36,7 @@ for _, group_name in pairs(group_names) do
 	}
 	for file in iterate_dir(root, "file") do
 		local name, ext = split_path(file)
-		if ext == "elf" then
+		if ext == "elf" or (group_name == "lua" and ext == "lua") then
 			if group.data.excluded[name] then
 				printf("EXCLUDED: %s / %s", group_name, name)
 			else
@@ -46,7 +52,11 @@ function run()
 		printf("\nGROUP: %s", group.name)
 		lfs.chdir(group.root)
 		for _, path in pairs(group.tests) do
+			local _, ext = split_path(path)
 			local cmd = "./" .. path
+			if ext == "lua" then
+				cmd = "LUA_PATH=\"../src/?.lua;;\" ../../../build/bin/script_host.elf run " .. cmd
+			end
 			local args = group.data.args[path]
 			if args then
 				cmd = cmd .. " " .. args

@@ -63,12 +63,12 @@
 			"name": "Library: lua",
 			"path": "./lib/lua/",
 			"folder_exclude_patterns": [
-				"Quanta"
+				"src"
 			]
 		},
 		{
 			"name": "— lib/lua",
-			"path": "./lib/lua/Quanta/"
+			"path": "./lib/lua/src/Quanta/"
 		},
 		{
 			"name": "App: app_script_host",

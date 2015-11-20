@@ -45,13 +45,27 @@ operator"" _object_name(
 	return hash::calc_generic_ce<ObjectNameHash>(data, size);
 }
 
+/// Object value hash literal.
+inline constexpr ObjectValueHash
+operator"" _object_value(
+	char const* const data,
+	std::size_t const size
+) {
+	return hash::calc_generic_ce<ObjectValueHash>(data, size);
+}
+
 } // namespace hash_literals
 
 using namespace hash_literals;
 
-/// Object names.
+/// Object name hashes.
 enum : ObjectNameHash {
 	OBJECT_NAME_NULL = ""_object_name,
+};
+
+/// Object value hashes.
+enum : ObjectValueHash {
+	OBJECT_VALUE_NULL = ""_object_value,
 };
 
 /// Object value type.
@@ -153,6 +167,7 @@ using object::ObjectNameHash;
 using object::ObjectValueHash;
 using namespace object::hash_literals;
 using object::OBJECT_NAME_NULL;
+using object::OBJECT_VALUE_NULL;
 using object::ObjectValueType;
 using object::ObjectTimeType;
 using object::ObjectOperator;

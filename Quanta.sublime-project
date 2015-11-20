@@ -60,6 +60,17 @@
 			]
 		},
 		{
+			"name": "Library: lua",
+			"path": "./lib/lua/",
+			"folder_exclude_patterns": [
+				"Quanta"
+			]
+		},
+		{
+			"name": "— lib/lua",
+			"path": "./lib/lua/Quanta/"
+		},
+		{
 			"name": "App: app_script_host",
 			"path": "./app/script_host/",
 			"folder_exclude_patterns": [

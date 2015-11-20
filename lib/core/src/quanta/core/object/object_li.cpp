@@ -25,8 +25,8 @@ LI_FUNC_DEF(hash_name) {
 }
 
 LI_FUNC_DEF(hash_value) {
-	auto unit = lua::get_string(L, 1);
-	lua_pushinteger(L, object::hash_value(unit));
+	auto value = lua::get_string(L, 1);
+	lua_pushinteger(L, object::hash_value(value));
 	return 1;
 }
 
@@ -977,6 +977,7 @@ void object::register_lua_interface(lua_State* L) {
 	} while (false)
 
 	SET_INT("NAME_NULL", OBJECT_NAME_NULL);
+	SET_INT("VALUE_NULL", OBJECT_VALUE_NULL);
 
 	lua_createtable(L, 0, 7);
 	lua_pushliteral(L, "Type");

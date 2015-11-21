@@ -8,8 +8,6 @@ local M = U.module("Quanta.Entity")
 U.class(M)
 
 function M:__init(name)
-	U.type_assert(name, "string")
-
 	self.is_category = false
 	self.name = nil
 	self.name_hash = O.NAME_NULL
@@ -123,25 +121,21 @@ U.set_functable(M.Universe, function(_, name)
 	local e = M.Category(name)
 	e.universe = e
 	e.index = {}
-	e.index_hash = {}
 	return e
 end)
 
+-- NB: not actually usable as metamethods; M is the only metatable for entities
 function M.Universe:add_index(entity)
-	U.assert(self.index ~= nil)
-	U.assert(self.index[entity.name] == nil, "entity name '%s' is not unique within the universe", entity.name)
-	local h = O.hash_name(entity.name)
 	U.assert(
-		self.index_hash[h] == nil, "entity name '%s' is not unique by hash (%d, '%s') the universe",
-		entity.name, h, self.index_hash[entity.name]
+		self.index[entity.name_hash] == nil,
+		"entity name '%s' is not unique by hash (%d => '%s') within the universe",
+		entity.name, entity.name_hash, self.index[entity.name].name
 	)
-	self.index[entity.name] = entity
-	self.index_hash[h] = entity
+	self.index[entity.name_hash] = entity
 end
 
 function M.Universe:remove_index(entity)
-	self.index[entity.name] = nil
-	self.index_hash[entity.name_hash] = nil
+	self.index[entity.name_hash] = nil
 end
 
 M.Unit = {}

@@ -2,6 +2,8 @@
 local U = require "Quanta.Util"
 local O = require "Quanta.Object"
 local Measurement = require "Quanta.Measurement"
+local Instance = require "Quanta.Instance"
+local Composition = require "Quanta.Composition"
 local Entity = require "Quanta.Entity"
 
 function check_modifier_equal(x, y)
@@ -40,7 +42,7 @@ function check_instance_equal(x, y)
 end
 
 function make_modifier(name, controller)
-	local m = Entity.Modifier()
+	local m = Instance.Modifier()
 	m.name = name
 	m.controller = controller
 	return m
@@ -53,7 +55,7 @@ function make_instance(
 	variant_certain, presence_certain,
 	measurements, selection, modifiers
 )
-	local i = Entity.Instance()
+	local i = Instance()
 	i.name = name
 	i.name_hash = O.hash_name(name)
 	i.entity = entity
@@ -70,12 +72,12 @@ function make_instance(
 end
 
 function make_test(text, items)
-	local block = Entity.InstanceBlock()
-	block.items = items
+	local comp = Composition()
+	comp.items = items
 
 	return {
 		text = text,
-		block = block,
+		comp = comp,
 	}
 end
 
@@ -144,15 +146,15 @@ function do_translation_test(t, search_in, controllers)
 	local o = O.create(t.text)
 	U.assert(o ~= nil)
 
-	local block = Entity.InstanceBlock(o, search_in, controllers)
-	U.assert(#block.items == #t.block.items)
-	for i = 1, #block.items do
-		check_instance_equal(block.items[i], t.block.items[i])
+	local comp = Composition(o, search_in, controllers)
+	U.assert(#comp.items == #t.comp.items)
+	for i = 1, #comp.items do
+		check_instance_equal(comp.items[i], t.comp.items[i])
 	end
 
-	block:to_object(o)
-	local text = O.write_text_string(o, #block.items > 1)
-	if #block.items > 1 then
+	comp:to_object(o)
+	local text = O.write_text_string(o, #comp.items > 1)
+	if #comp.items > 1 then
 		text = "{" .. string.sub(text, 4, -3) .. "}"
 	end
 	text = string.gsub(text, "\t", " ")

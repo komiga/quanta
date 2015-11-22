@@ -154,7 +154,7 @@ local function measurement_less(lobj, lunit, robj, runit)
 	return false
 end
 
-function M:__init(obj_or_value, unit, approximation, certain)
+function M:__init(obj_or_value, unit, of, approximation, certain)
 	self.of = 0
 	self.value = 0
 	self.qindex = M.QuantityIndex.dimensionless
@@ -163,7 +163,7 @@ function M:__init(obj_or_value, unit, approximation, certain)
 	self.certain = true
 
 	if U.is_type(obj_or_value, "number") then
-		self:set(obj_or_value, unit or "", approximation, certain)
+		self:set(obj_or_value, unit or "", of, approximation, certain)
 	elseif obj_or_value ~= nil then
 		self:from_object(obj_or_value)
 	end
@@ -176,6 +176,7 @@ function M:from_object(obj)
 		self:set(
 			O.numeric(obj),
 			O.unit_hash(obj),
+			0,
 			O.value_approximation(obj),
 			not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
 		)
@@ -190,14 +191,16 @@ function M:from_object(obj)
 					best = sub
 					best_unit = unit
 					if unit.qindex == M.QuantityIndex.dimensionless then
-						of = O.numeric(sub)
+						of = sub
 					end
 				end
 			end
 		end
 		if best then
 			self:from_object(best)
-			self.of = of
+			if of and of ~= best then
+				self.of = O.numeric(of)
+			end
 			return
 		end
 	end
@@ -215,23 +218,40 @@ function M:to_object(obj, no_rebase)
 		value = value * (10 ^ self.magnitude)
 		unit = quantity.UnitByMagnitude[0]
 	end
-	O.set_value_approximation(obj, self.approximation)
-	O.set_value_certain(obj, self.certain)
-	O.set_decimal(obj, value)
-	if unit then
-		O.set_unit(obj, unit.name)
-	else
-		O.set_unit(obj, quantity.name .. "_unknown")
+
+	if self.of > 0 then
+		if value > 0 then
+			O.set_expression(obj)
+			O.clear_children(obj)
+			O.set_integer(O.push_child(obj), self.of)
+			obj = O.push_child(obj)
+			O.set_op(obj, O.Operator.div)
+		else
+			O.set_integer(obj, self.of)
+		end
+	end
+
+	if value > 0 then
+		O.set_value_approximation(obj, self.approximation)
+		O.set_value_certain(obj, self.certain)
+		O.set_decimal(obj, value)
+		if unit then
+			O.set_unit(obj, unit.name)
+		else
+			O.set_unit(obj, quantity.name .. "_unknown")
+		end
 	end
 end
 
-function M:set(value, unit, approximation, certain)
+function M:set(value, unit, of, approximation, certain)
 	U.type_assert(value, "number")
 	unit = M.get_unit(unit)
 	U.type_assert(unit, "table")
+	U.type_assert(of, "number", true)
 	U.type_assert(approximation, "number", true)
 	U.type_assert(certain, "boolean", true)
 
+	self.of = U.optional(of, 0)
 	self.value = value
 	self.qindex = unit.qindex
 	self.magnitude = unit.magnitude
@@ -262,11 +282,12 @@ function M:unit()
 end
 
 function M:is_empty()
-	return self.value == 0
+	return self.of == 0 and self.value == 0
 end
 
 function M:__eq(y)
 	return (
+		self.of == y.of and
 		self.value == y.value and
 		self.qindex == y.qindex and
 		self.magnitude == y.magnitude and

@@ -11,7 +11,7 @@ function M:__init(obj, search_in, controllers)
 	self.name = ""
 	self.name_hash = O.NAME_NULL
 	-- Entity or Unit
-	self.entity = nil
+	self.item = nil
 	self.source = 0
 	self.sub_source = 0
 	self.source_certain = true
@@ -48,7 +48,7 @@ function M:from_object(obj, search_in, controllers)
 	U.type_assert(controllers, "table")
 
 	self:set_name(O.is_identifier(obj) and O.identifier(obj) or "")
-	self.entity = nil
+	self.item = nil
 	self.source = O.source(obj)
 	self.sub_source = O.sub_source(obj)
 	self.source_certain = not O.marker_source_uncertain(obj)
@@ -79,12 +79,12 @@ function M:from_object(obj, search_in, controllers)
 	if self.name_hash ~= O.NAME_NULL then
 		for _, s in pairs(search_in) do
 			if Entity.is_universe(s) then
-				self.entity = s.index_hash[self.name_hash]
+				self.item = s.index_hash[self.name_hash]
 			else
 				U.type_assert(s, "table")
-				self.entity = s[self.name_hash]
+				self.item = s[self.name_hash]
 			end
-			if self.entity then
+			if self.item then
 				break
 			end
 		end

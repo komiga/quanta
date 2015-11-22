@@ -366,7 +366,7 @@ static bool write_object(
 	if (object::has_quantity(obj)) {
 		auto& quantity = *object::quantity(obj);
 		RETURN_ERROR(io::write_value(stream, '['));
-		if (object::has_children(quantity)) {
+		if (object::is_null(quantity) && object::has_children(quantity)) {
 			auto& last_child = array::back(object::children(quantity));
 			for (auto& child : object::children(quantity)) {
 				RETURN_ERROR(

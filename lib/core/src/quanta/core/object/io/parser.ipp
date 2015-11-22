@@ -1379,8 +1379,6 @@ STAGE(stage_quantity, BF_QUANTITY,
 	case ']':
 		RESP(next_gobble);
 
-	case '+': case '-':
-	case '*': case '/':
 	case ',': case ';': case '\n':
 		parser_push(p, *object::quantity(*p.branch->obj), &sub_quantity_children);
 		RESP(jump);
@@ -1396,13 +1394,6 @@ STAGE(stage_quantity_children, BF_S_QUANTITY_COLLECTION,
 		RESP(error);
 	}
 	parser_move_object_into_child(*p.branch->obj);
-	switch (p.c) {
-	case '+': case '-':
-	case '*': case '/':
-		parser_push(p, array::back(object::children(*p.branch->obj)), jump_base_complete);
-		p.branch->any_part = true;
-		RESP(jump);
-	}
 	p.flags |= PF_CARRY;
 	RESP(exit);
 },
@@ -1442,16 +1433,19 @@ STAGE(stage_complete, BF_NONE,
 	}
 	switch (p.c) {
 	case '+': case '-':
-	case '*': case '/':
-		if (parser_parent_flags(p) & BF_SINGLE_VALUE) {
+	case '*': case '/': {
+		auto flags = parser_parent_flags(p);
+		if (flags & BF_EXPRESSION) {
+			// do nothing (common case)
+		} else if (flags & (BF_SINGLE_VALUE | BF_QUANTITY)) {
 			parser_pop(p);
-			auto& obj = *p.branch->obj;
+			auto& obj = *((flags & BF_QUANTITY) ? object::quantity(*p.branch->obj) : p.branch->obj);
 			parser_move_object_into_child(obj);
 			object::set_expression(obj);
 			object::set_op(array::back(object::children(obj)), ObjectOperator::none);
 			parser_push(p, obj, &sub_expression);
 			RESP(jump);
-		} else if (!(parser_parent_flags(p) & (BF_QUANTITY | BF_EXPRESSION))) {
+		} else {
 			parser_pop(p);
 			auto& scope = object::children(*p.branch->obj);
 			auto& shim = array::push_back_inplace(scope);
@@ -1465,6 +1459,7 @@ STAGE(stage_complete, BF_NONE,
 			parser_push(p, array::back(scope), &sub_expression);
 			RESP(jump);
 		}
+	}
 
 	case PC_EOF:
 	case '\\':

@@ -1086,7 +1086,7 @@ STAGE(stage_sv, BF_S_ROOT | BF_SINGLE_VALUE,
 [](ObjectParser& p) -> Response {
 	RESP_IF(p.c == PC_EOF, eof)
 	else {
-		PARSER_ERROR_EXPECTED(p, "expected EOF (single-value parse)");
+		PARSER_ERROR_EXPECTED(p, "EOF (single-value parse)");
 		RESP(error);
 	}
 });

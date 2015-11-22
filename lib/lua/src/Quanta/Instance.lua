@@ -61,14 +61,14 @@ function M:from_object(obj, search_in, controllers)
 
 	if O.has_quantity(obj) then
 		local quantity = O.quantity(obj)
-		if not O.is_expression(quantity) and O.has_children(quantity) then
+		if O.is_null(quantity) and O.has_children(quantity) then
 			for _, sub in O.children(quantity) do
 				local m = Measurement(sub)
 				if not m:is_empty() then
 					table.insert(self.measurements, m)
 				end
 			end
-		else
+		elseif not O.is_null(quantity) then
 			local m = Measurement(quantity)
 			if not m:is_empty() then
 				table.insert(self.measurements, m)

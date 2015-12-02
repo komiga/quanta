@@ -17,7 +17,7 @@ end
 function check_instance_equal(x, y)
 	U.assert(x.name == y.name)
 	U.assert(x.name_hash == y.name_hash)
-	U.assert(x.entity == y.entity)
+	U.assert(x.item == y.item)
 	U.assert(x.source == y.source)
 	U.assert(x.sub_source == y.sub_source)
 	U.assert(x.source_certain == y.source_certain)
@@ -49,7 +49,7 @@ function make_modifier(name, controller)
 end
 
 function make_instance(
-	name, entity,
+	name, item,
 	source, sub_source,
 	source_certain, sub_source_certain,
 	variant_certain, presence_certain,
@@ -58,7 +58,7 @@ function make_instance(
 	local i = Instance()
 	i.name = name
 	i.name_hash = O.hash_name(name)
-	i.entity = entity
+	i.item = item
 	i.source = source
 	i.sub_source = sub_source
 	i.source_certain = source_certain

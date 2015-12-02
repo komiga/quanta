@@ -96,35 +96,24 @@ local translation_tests = {
 		make_instance("y", nil, 0, 0, true, true, true, true, {}, {}, {}),
 	}),
 
-	make_test("x[1]", {
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
+	make_test("{x[2], x[2ml], x[2kg]}", {
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {}),
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(2, "ml")}, {}, {}),
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(2, "kg")}, {}, {}),
 	}),
 	make_test("{x[?1], x[G~1]}", {
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, false)}, {}, {}),
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, false)}, {}, {}),
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
 	}),
 	make_test("{x[~~1], x[^^1]}", {
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "", -2)}, {}, {}),
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "",  2)}, {}, {}),
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, -2)}, {}, {}),
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1, "", 0,  2)}, {}, {}),
 	}),
 	make_test("x[1, 2]", {
 		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(1), Measurement(2)}, {}, {}),
 	}),
 	make_test("x[1/2g]", {
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(2, "g")}, {}, {}),
-	}),
-
-	make_test("x[20ml]", {
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(20, "ml")}, {}, {}),
-	}),
-	make_test("x:y[2]", {
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {make_modifier("y", nil)}),
-	}),
-	make_test("x:y:z[20kg]", {
-		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(20, "kg")}, {}, {
-			make_modifier("y", nil, nil),
-			make_modifier("z", nil, nil),
-		}),
+		make_instance("x", nil, 0, 0, true, true, true, true, {Measurement(2, "g", 1)}, {}, {}),
 	}),
 
 	make_test("{x$?, x$?$?, x$?1, x$?1$?2}", {

@@ -180,7 +180,7 @@ function M:from_object(obj)
 			O.value_approximation(obj),
 			not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
 		)
-		return
+		return true
 	elseif O.is_expression(obj) then
 		local of, best, best_unit, unit
 		for i, sub in O.children(obj) do
@@ -201,10 +201,13 @@ function M:from_object(obj)
 			if of and of ~= best then
 				self.of = O.numeric(of)
 			end
-			return
+			return true
 		end
 	end
-	U.assert(false, "unmeasureable object formula")
+
+	-- U.assert(false, "unmeasureable object formula")
+	self:__init()
+	return false
 end
 
 function M:to_object(obj, no_rebase)

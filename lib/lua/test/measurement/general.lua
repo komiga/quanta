@@ -3,14 +3,15 @@ local U = require "Quanta.Util"
 local O = require "Quanta.Object"
 local Measurement = require "Quanta.Measurement"
 
-function make_test(text, item_index, value, unit, certain, approximation)
+function make_test(text, item_index, value, unit, of, approximation, certain)
 	return {
 		text = text,
 		item_index = item_index,
 		value = value,
 		unit = unit,
-		certain = U.optional(certain, true),
+		of = U.optional(of, 0),
 		approximation = U.optional(approximation, 0),
+		certain = U.optional(certain, true),
 	}
 end
 
@@ -20,19 +21,19 @@ local translation_tests = {
 	make_test("2g" , 0, 2, "g" ),
 	make_test("2ml", 0, 2, "ml"),
 
-	make_test("1/2g", 2, 2, "g"),
-	make_test("1/2ml/3g", 3, 3, "g"),
-	make_test("1/2ml/3g/4mg", 3, 3, "g"),
+	make_test("1/2g", 2, 2, "g", 1),
+	make_test("1/2ml/3g", 3, 3, "g", 1),
+	make_test("1/2ml/3g/4mg", 3, 3, "g", 1),
 
 	make_test("1µg/2mg", 2, 2, "mg"),
 	make_test("2mg/1µg", 1, 2, "mg"),
 
 	make_test("?1/2", 2, 2, ""),
 	make_test("~1/2", 2, 2, ""),
-	make_test("~~1/~2", 2, 2, "", false, -1),
-	make_test("?1/~~2", 2, 2, "", false, -2),
-	make_test("G~1/~~~2", 2, 2, "", false, -3),
-	make_test("G~^1/?2", 2, 2, "", false),
+	make_test("~~1/~2", 2, 2, "", 0, -1, false),
+	make_test("?1/~~2", 2, 2, "", 0, -2, false),
+	make_test("G~1/~~~2", 2, 2, "", 0, -3, false),
+	make_test("G~^1/?2", 2, 2, "", 0),
 }
 
 function do_translation_test(t)
@@ -50,10 +51,11 @@ function do_translation_test(t)
 	U.assert(m.value == value)
 	U.assert(m.qindex == unit.quantity.index)
 	U.assert(m.magnitude == unit.magnitude)
-	U.assert(m.certain == t.certain)
+	U.assert(m.of == t.of)
 	U.assert(m.approximation == t.approximation)
+	U.assert(m.certain == t.certain)
 
-	U.assert(m == Measurement(t.value, t.unit, t.approximation, t.certain))
+	U.assert(m == Measurement(t.value, t.unit, t.of, t.approximation, t.certain))
 
 	O.destroy(o)
 end

@@ -22,7 +22,7 @@ function M:from_object(obj, search_in, controllers)
 	U.type_assert(controllers, "table")
 
 	self.items = {}
-	if O.is_null(obj) and O.has_children(obj) then
+	if O.is_type_any(obj, O.Type.null + O.Type.expression) and O.has_children(obj) then
 		-- {...}, (x + y)
 		for _, sub in O.children(obj) do
 			U.assert(O.op(sub) == O.Operator.add)

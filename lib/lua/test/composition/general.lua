@@ -129,6 +129,17 @@ local translation_tests = {
 	make_test("?x", {
 		make_instance("x", nil, 0, 0, true, true, true, false, {}, {}, {}),
 	}),
+
+	make_test("x:m", {
+		make_instance("x", nil, 0, 0, true, true, true, true, {}, {}, {
+			make_modifier("m", nil, nil),
+		}),
+	}),
+	make_test(":m", {
+		make_instance("", nil, 0, 0, true, true, true, true, {}, {}, {
+			make_modifier("m", nil, nil),
+		}),
+	}),
 }
 
 function do_translation_test(t, search_in, controllers)

@@ -131,6 +131,14 @@ function M.table_inverse(t, value)
 	return it
 end
 
+function M.table_keys(t)
+	local kt = {}
+	for k, _ in pairs(t) do
+		table.insert(kt, k)
+	end
+	return kt
+end
+
 function M.pad_left(str, length)
 	if #str < length then
 		while #str < length do

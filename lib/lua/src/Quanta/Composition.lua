@@ -10,6 +10,7 @@ U.class(M)
 
 function M:__init(obj, search_in, controllers)
 	self.items = {}
+	self.measurement = Measurement()
 
 	if obj then
 		self:from_object(obj, search_in, controllers)
@@ -28,6 +29,20 @@ function M:from_object(obj, search_in, controllers)
 			U.assert(O.op(sub) == O.Operator.add)
 			table.insert(self.items, Instance(sub, search_in, controllers))
 		end
+
+		-- [XXX, 1g], [1g]
+		if O.has_quantity(obj) then
+			local quantity = O.quantity(obj)
+			if O.is_null(quantity) and O.has_children(quantity) then
+				for _, sub in O.children(quantity) do
+					if self.measurement:from_object(sub) then
+						break
+					end
+				end
+			elseif not O.is_null(quantity) then
+				self.measurement:from_object(quantity)
+			end
+		end
 	else
 		-- x, x:y, :y
 		table.insert(self.items, Instance(obj, search_in, controllers))
@@ -41,9 +56,14 @@ function M:to_object(obj)
 	end
 
 	O.clear(obj)
-	O.release_quantity(obj)
 	for _, item in pairs(self.items) do
 		item:to_object(O.push_child(obj))
+	end
+
+	if self.measurement:is_empty() then
+		O.release_quantity(obj)
+	else
+		self.measurement:to_object(O.make_quantity(obj))
 	end
 	return obj
 end

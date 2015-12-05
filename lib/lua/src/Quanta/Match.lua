@@ -322,10 +322,10 @@ do_object = function(tree, context, patterns, obj, collection)
 					return false
 				end
 			else
-				if not do_sub(tree, context, p, p.children, p.collect_post, obj, O.children) then
+				if not do_sub(tree, context, p.children, p.collect_post, obj, O.children) then
 					return false
 				end
-				if not do_sub(tree, context, p, p.tags, p.collect_tags_post, obj, O.tags) then
+				if not do_sub(tree, context, p.tags, p.collect_tags_post, obj, O.tags) then
 					return false
 				end
 			end
@@ -343,7 +343,7 @@ do_object = function(tree, context, patterns, obj, collection)
 	return false
 end
 
-do_sub = function(tree, context, p, patterns, post, obj, iter_func)
+do_sub = function(tree, context, patterns, post, obj, iter_func)
 	if patterns == nil then
 		-- filter rule was not a pattern list/tree
 		return true
@@ -428,16 +428,11 @@ function M.Context:consume_sub(tree, obj, root)
 	if root ~= nil then
 		self:push(tree, root)
 	end
-	for _, sub in O.children(obj) do
-		if not do_object(tree, self, tree.patterns, sub, nil) then
-			self:pop()
-			return false
-		end
-	end
+	local r = do_sub(tree, self, tree.patterns, nil, obj, O.children)
 	if root ~= nil then
 		self:pop()
 	end
-	return true
+	return r
 end
 
 M.Error = U.class(M.Error)

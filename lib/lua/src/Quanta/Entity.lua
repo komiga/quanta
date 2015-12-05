@@ -126,10 +126,11 @@ end)
 
 -- NB: not actually usable as metamethods; M is the only metatable for entities
 function M.Universe:add_index(entity)
+	local current = self.index[entity.name_hash]
 	U.assert(
-		self.index[entity.name_hash] == nil,
+		current == nil,
 		"entity name '%s' is not unique by hash (%d => '%s') within the universe",
-		entity.name, entity.name_hash, self.index[entity.name].name
+		entity.name, entity.name_hash, current and current.name or ""
 	)
 	self.index[entity.name_hash] = entity
 end

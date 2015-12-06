@@ -41,7 +41,7 @@ M.filters.name.init = function(p, r)
 	)
 	if r.name == nil then
 		return M.filters.name[false]
-	elseif r.vtype == M.Any then
+	elseif r.name == M.Any then
 		return nil
 	elseif U.is_type(r.name, "table") then
 		p.names = #r.name == 0 and r.name or U.table_inverse(r.name, true)

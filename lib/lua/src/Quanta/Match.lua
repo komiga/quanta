@@ -426,7 +426,7 @@ end
 
 function M.Context:at(rel)
 	rel = rel ~= nil and rel or 0
-	return #self.stack > 0 and self.stack[#self.stack - rel] or nil
+	return #self.stack > 0 and self.stack[rel < 0 and -rel or (#self.stack - rel)] or nil
 end
 
 function M.Context:control(rel)

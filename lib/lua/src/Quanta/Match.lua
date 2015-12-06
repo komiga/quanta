@@ -478,7 +478,7 @@ function M.Error:to_string(error_obj)
 end
 
 function M.Error:print()
-	print(self:tostring())
+	print(self:to_string())
 end
 
 return M

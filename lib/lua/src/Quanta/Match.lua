@@ -100,7 +100,11 @@ end
 
 M.filters.value.typed = function(context, value, obj, p)
 	if O.is_type_any(obj, p.value_type_mask) then
-		return p.value_func and p.value_func(context, value, obj, p) or true
+		if p.value_func then
+			return p.value_func(context, value, obj, p)
+		else
+			return true
+		end
 	end
 	return false
 end

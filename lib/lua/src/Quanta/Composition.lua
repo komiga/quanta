@@ -1,6 +1,7 @@
 
 local U = require "Quanta.Util"
 local O = require "Quanta.Object"
+local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
@@ -9,6 +10,7 @@ local M = U.module("Quanta.Composition")
 U.class(M)
 
 function M:__init(obj, search_in, controllers)
+	-- Instance, Composition
 	self.items = {}
 	self.measurement = Measurement()
 
@@ -23,13 +25,59 @@ function M:from_object(obj, search_in, controllers)
 	U.type_assert(controllers, "table")
 
 	self.items = {}
-	if O.is_type_any(obj, O.Type.null + O.Type.expression) and O.has_children(obj) then
-		-- {...}, (x + y)
-		for _, sub in O.children(obj) do
-			U.assert(O.op(sub) == O.Operator.add)
-			table.insert(self.items, Instance(sub, search_in, controllers))
-		end
+	self.measurement:__init()
 
+	local context = Match.Context()
+	context.user = {
+		search_in = search_in,
+		controllers = controllers,
+	}
+	if not context:consume(M.t_head, obj, self) then
+		U.log("match error:\n%s", context.error:to_string(context.error_obj))
+		return false
+	end
+	return true
+end
+
+function M:to_object(obj, keep)
+	U.type_assert(obj, "userdata", true)
+	if not obj then
+		obj = O.create()
+	elseif not keep then
+		O.clear(obj)
+	end
+
+	for _, item in pairs(self.items) do
+		item:to_object(O.push_child(obj))
+	end
+
+	if self.measurement:is_empty() then
+		O.release_quantity(obj)
+	else
+		self.measurement:to_object(O.make_quantity(obj))
+	end
+	return obj
+end
+
+M.t_head = Match.Tree()
+M.t_body = Match.Tree()
+
+M.p_instance = Match.Pattern{
+	vtype = {O.Type.null, O.Type.identifier},
+	tags = Match.Any,
+	func = function(_, _, obj, _)
+		return O.op(obj) == O.Operator.add
+	end,
+	acceptor = function(context, self, obj)
+		table.insert(self.items, Instance(obj, context.user.search_in, context.user.controllers))
+	end,
+}
+
+-- {...}, (x + y ...)
+M.t_head:add(Match.Pattern{
+	vtype = {O.Type.null, O.Type.expression},
+	children = M.t_body,
+	acceptor = function(context, self, obj)
 		-- [XXX, 1g], [1g]
 		if O.has_quantity(obj) then
 			local quantity = O.quantity(obj)
@@ -43,29 +91,19 @@ function M:from_object(obj, search_in, controllers)
 				self.measurement:from_object(quantity)
 			end
 		end
-	else
-		-- x, x:y, :y
-		table.insert(self.items, Instance(obj, search_in, controllers))
-	end
-end
+	end,
+})
 
-function M:to_object(obj)
-	U.type_assert(obj, "userdata", true)
-	if not obj then
-		obj = O.create()
-	end
+-- x, x:y, :y
+M.t_head:add(M.p_instance)
+M.t_body:add(M.p_instance)
 
-	O.clear(obj)
-	for _, item in pairs(self.items) do
-		item:to_object(O.push_child(obj))
-	end
-
-	if self.measurement:is_empty() then
-		O.release_quantity(obj)
-	else
-		self.measurement:to_object(O.make_quantity(obj))
-	end
-	return obj
-end
+-- sub composition
+M.t_body:add(Match.Pattern{
+	any_branch = M.t_head,
+	acceptor = function(context, self, obj)
+		return M()
+	end,
+})
 
 return M

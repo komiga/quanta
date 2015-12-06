@@ -226,7 +226,9 @@ function M.Pattern:__init(...)
 			end
 		end
 	end
-	self.acceptor = r.acceptor
+	self.acceptor = U.type_assert(r.acceptor, "function", true)
+	self.post_branch = U.type_assert(r.post_branch, "function", true)
+	self.post_branch_pre = U.type_assert(r.post_branch_pre, "function", true)
 	if M.debug then
 		self.definition_location = U.get_trace(2)
 	end
@@ -333,9 +335,29 @@ do_object = function(tree, context, patterns, obj, collection)
 					return false
 				end
 			end
+
+			local function do_post_branch(f)
+				local err = f(context, context:value(), obj)
+				if U.is_type(err, M.Error) then
+					context:set_error(err, obj)
+					return false
+				end
+				return true
+			end
+			if p.post_branch_pre then
+				if not do_post_branch(p.post_branch_pre) then
+					return false
+				end
+			end
 			if pushed then
 				context:pop()
 			end
+			if p.post_branch then
+				if not do_post_branch(p.post_branch) then
+					return false
+				end
+			end
+
 			return true
 		else
 			if M.debug then

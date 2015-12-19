@@ -330,7 +330,7 @@ static bool write_object(
 				RETURN_ERROR(io::write(stream, "Z", 1));
 			} else {
 				time::clock(Time{t.zone_offset, 0}, h, m, s);
-				RETURN_ERROR(writef(stream, "%.*s%02d%02d", 1, t.zone_offset < 0 ? "-" : "+", h, m));
+				RETURN_ERROR(writef(stream, "%c%02d%02d", t.zone_offset < 0 ? '-' : '+', h, m));
 			}
 		}
 	}	break;

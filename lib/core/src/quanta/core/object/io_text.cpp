@@ -300,9 +300,35 @@ static bool write_object(
 		RETURN_ERROR(writef(stream, "%.6lg", obj.value.numeric.decimal));
 		goto l_write_unit;
 
+	case ObjectValueType::currency: {
+		RETURN_ERROR(io::write(stream, "\xC2\xA4", 2)); // ¤ in UTF-8
+		s64 value = 0;
+		if (obj.value.numeric.c.value < 0) {
+			RETURN_ERROR(io::write_value(stream, '-'));
+			value = -obj.value.numeric.c.value;
+		} else {
+			value = obj.value.numeric.c.value;
+		}
+		if (obj.value.numeric.c.exponent == 0) {
+			RETURN_ERROR(writef(stream, "%li", value));
+		} else if (obj.value.numeric.c.exponent < 0) {
+			RETURN_ERROR(writef(stream, "0.%0*li", -obj.value.numeric.c.exponent, value));
+		} else {
+			u64 scale = object::pow_int(10, obj.value.numeric.c.exponent);
+			s64 minor = value % scale;
+			RETURN_ERROR(writef(
+				stream, "%li.%0*li",
+				(value - minor) / scale,
+				obj.value.numeric.c.exponent, minor
+			));
+		}
+	}	goto l_write_unit;
+
 	l_write_unit:
 		if (object::has_unit(obj)) {
 			RETURN_ERROR(write_identifier(stream, object::unit(obj)));
+		} else if (object::is_currency(obj)) {
+			RETURN_ERROR(io::write(stream, "unknown", 7));
 		}
 		break;
 

@@ -307,7 +307,7 @@ static void parser_move_object_into_child(Object& obj) {
 	object::clear_value_markers(obj);
 	object::clear_source(obj);
 	object::clear_tags(obj);
-	object::clear_quantity(obj);
+	object::release_quantity(obj);
 }
 
 static bool parser_next(ObjectParser& p) {

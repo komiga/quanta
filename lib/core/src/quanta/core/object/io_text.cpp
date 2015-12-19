@@ -18,6 +18,7 @@
 #include <togo/core/io/memory_stream.hpp>
 #include <togo/core/io/file_stream.hpp>
 
+#include <quanta/core/object/io/common.ipp>
 #include <quanta/core/object/io/parser.ipp>
 #include <quanta/core/object/io/writer.ipp>
 

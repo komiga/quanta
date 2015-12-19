@@ -169,48 +169,6 @@ struct ObjectParser {
 	{}
 };
 
-template<bool>
-struct parse_s64_adaptor;
-
-template<>
-struct parse_s64_adaptor<true> {
-	inline static s64 parse(char const* const cstr, unsigned const base) {
-		return std::strtol(cstr, nullptr, base);
-	}
-};
-
-template<>
-struct parse_s64_adaptor<false> {
-	inline static s64 parse(char const* const cstr, unsigned const base) {
-		return std::strtoll(cstr, nullptr, base);
-	}
-};
-
-inline static s64 parse_s64(char const* const cstr, unsigned const base) {
-	return parse_s64_adaptor<sizeof(long) == sizeof(s64)>::parse(cstr, base);
-}
-
-template<bool>
-struct parse_f64_adaptor;
-
-template<>
-struct parse_f64_adaptor<true> {
-	inline static f64 parse(char const* const cstr) {
-		return std::strtod(cstr, nullptr);
-	}
-};
-
-template<>
-struct parse_f64_adaptor<false> {
-	inline static f64 parse(char const* const cstr) {
-		return std::strtold(cstr, nullptr);
-	}
-};
-
-inline static f64 parse_f64(char const* const cstr) {
-	return parse_f64_adaptor<sizeof(double) == sizeof(f64)>::parse(cstr);
-}
-
 #if defined(TOGO_COMPILER_CLANG) || \
 	defined(TOGO_COMPILER_GCC)
 	__attribute__((__format__ (__printf__, 2, 3)))
@@ -381,86 +339,87 @@ static bool parser_skip_junk(ObjectParser& p, bool stage_exit) {
 		filter_completers = flags & BF_M_FILTER_COMPLETER;
 		filter_comments = flags & BF_M_FILTER_COMMENT;
 	}
+
 	do {
-		switch (p.c) {
-		default:
+	switch (p.c) {
+	default:
+		return true;
+
+	case '\n':
+		if (!filter_newline) {
 			return true;
-
-		case '\n':
-			if (!filter_newline) {
-				return true;
-			}
-
-		case '\t':
-		case ' ':
-			break;
-
-		case ',': case ';':
-			if (!filter_completers) {
-				return true;
-			}
-			break;
-
-		case '\\':
-			if (!filter_comments) {
-				return true;
-			}
-			if (!parser_next(p)) {
-				return false;
-			}
-			if (p.c == '\\') {
-				while (parser_next(p)) {
-					if (p.c == '\n' || p.c == PC_EOF) {
-						goto l_continue;
-					}
-				}
-				return false;
-			} else if (p.c == '*') {
-				bool head = false;
-				bool tail = false;
-				unsigned count = 1;
-				while (parser_next(p)) {
-					switch (p.c) {
-					case PC_EOF:
-						return PARSER_ERROR(p, "expected end of block comment, got EOF");
-
-					case '*':
-						if (head) {
-							++count;
-							head = false;
-						} else {
-							tail = true;
-						}
-						break;
-
-					case '\\':
-						if (tail) {
-							--count;
-							tail = false;
-							if (count == 0) {
-								goto l_continue;
-							}
-						} else {
-							head = true;
-						}
-						break;
-
-					default:
-						head = false;
-						tail = false;
-						break;
-					}
-				}
-				return false;
-			} else if (p.c == PC_EOF) {
-				return PARSER_ERROR(p, "expected '\\' or '*' to continue comment lead, got EOF");
-			} else {
-				return PARSER_ERROR_EXPECTED(p, "'\\' or '*' to continue comment lead");
-			}
-			break;
 		}
 
-		l_continue:
+	case '\t':
+	case ' ':
+		break;
+
+	case ',': case ';':
+		if (!filter_completers) {
+			return true;
+		}
+		break;
+
+	case '\\':
+		if (!filter_comments) {
+			return true;
+		}
+		if (!parser_next(p)) {
+			return false;
+		}
+		if (p.c == '\\') {
+			while (parser_next(p)) {
+				if (p.c == '\n' || p.c == PC_EOF) {
+					goto l_continue;
+				}
+			}
+			return false;
+		} else if (p.c == '*') {
+			bool head = false;
+			bool tail = false;
+			unsigned count = 1;
+			while (parser_next(p)) {
+				switch (p.c) {
+				case PC_EOF:
+					return PARSER_ERROR(p, "expected end of block comment, got EOF");
+
+				case '*':
+					if (head) {
+						++count;
+						head = false;
+					} else {
+						tail = true;
+					}
+					break;
+
+				case '\\':
+					if (tail) {
+						--count;
+						tail = false;
+						if (count == 0) {
+							goto l_continue;
+						}
+					} else {
+						head = true;
+					}
+					break;
+
+				default:
+					head = false;
+					tail = false;
+					break;
+				}
+			}
+			return false;
+		} else if (p.c == PC_EOF) {
+			return PARSER_ERROR(p, "expected '\\' or '*' to continue comment lead, got EOF");
+		} else {
+			return PARSER_ERROR_EXPECTED(p, "'\\' or '*' to continue comment lead");
+		}
+		break;
+	}
+
+	l_continue:
 		(void)0;
 	} while (parser_next(p));
 	return false;
@@ -905,16 +864,6 @@ static bool parser_read_source(ObjectParser& p) {
 		}
 	} while (parser_next(p));
 	return false;
-}
-
-static unsigned parse_integer(char const*& it, char const* end) {
-	signed value = 0;
-	for (; it != end && *it == '0'; ++it) {}
-	for (; it != end; ++it) {
-		value *= 10;
-		value += *it - '0';
-	}
-	return value;
 }
 
 static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBufferAs::value) {

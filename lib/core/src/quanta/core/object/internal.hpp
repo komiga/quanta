@@ -24,7 +24,7 @@ namespace {
 enum : unsigned {
 	M_TYPE = (unsigned_cast(ObjectValueType::expression) << 1) - 1,
 
-	P_BASE = 8,
+	P_BASE = 9,
 
 	S_VALUE_UNCERTAIN = P_BASE + 0,
 	M_VALUE_UNCERTAIN = 1 << S_VALUE_UNCERTAIN,
@@ -106,6 +106,10 @@ static constexpr ObjectValueType const
 type_mask_numeric
 	= ObjectValueType::integer
 	| ObjectValueType::decimal
+,
+type_mask_unit_carrier
+	= type_mask_numeric
+	| ObjectValueType::currency
 ,
 type_mask_textual
 	= ObjectValueType::string

@@ -80,6 +80,9 @@ inline bool is_numeric(Object const& obj) {
 	return object::is_type_any(obj, type_mask_numeric);
 }
 
+/// Whether type is ObjectValueType::currency.
+inline bool is_currency(Object const& obj) { return object::is_type(obj, ObjectValueType::currency); }
+
 /// Whether type is ObjectValueType::time.
 inline bool is_time(Object const& obj) { return object::is_type(obj, ObjectValueType::time); }
 
@@ -319,28 +322,28 @@ inline void set_decimal(Object& obj, f64 const value) {
 	obj.value.numeric.decimal = value;
 }
 
-/// Numeric value unit.
+/// Numeric/currency unit.
 inline StringRef unit(Object const& obj) {
-	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
+	TOGO_ASSERTE(object::is_type_any(obj, type_mask_unit_carrier));
 	return obj.value.numeric.unit;
 }
 
-/// Numeric value unit hash.
+/// Numeric/currency unit hash.
 inline ObjectValueHash unit_hash(Object const& obj) {
-	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
+	TOGO_ASSERTE(object::is_type_any(obj, type_mask_unit_carrier));
 	return obj.value.numeric.unit.hash;
 }
 
-/// Whether the numeric value has a unit.
+/// Whether the numeric/currency value has a unit.
 inline bool has_unit(Object const& obj) {
-	return object::is_type_any(obj, type_mask_numeric) && unmanaged_string::any(obj.value.numeric.unit);
+	return object::is_type_any(obj, type_mask_unit_carrier) && unmanaged_string::any(obj.value.numeric.unit);
 }
 
-/// Set numeric value unit.
+/// Set numeric/currency unit.
 ///
-/// Type must be numeric.
+/// Type must be numeric or currency.
 inline void set_unit(Object& obj, StringRef const unit) {
-	TOGO_ASSERTE(object::is_type_any(obj, type_mask_numeric));
+	TOGO_ASSERTE(object::is_type_any(obj, type_mask_unit_carrier));
 	unmanaged_string::set(obj.value.numeric.unit, unit, memory::default_allocator());
 }
 
@@ -356,6 +359,42 @@ inline void set_decimal(Object& obj, f64 const value, StringRef const unit) {
 	object::set_type(obj, ObjectValueType::decimal);
 	obj.value.numeric.decimal = value;
 	object::set_unit(obj, unit);
+}
+
+/// Currency value.
+inline s64 currency(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::currency));
+	return obj.value.numeric.c.value;
+}
+
+/// Currency exponent.
+inline s32 currency_exponent(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::currency));
+	return obj.value.numeric.c.exponent;
+}
+
+/// Set currency value, exponent, and unit.
+inline void set_currency(Object& obj, s64 const value, s32 const exponent, StringRef const unit) {
+	object::set_type(obj, ObjectValueType::currency);
+	obj.value.numeric.c.value = value;
+	obj.value.numeric.c.exponent = exponent;
+	object::set_unit(obj, unit);
+}
+
+/// Set currency value.
+///
+/// Type must currency.
+inline void set_currency(Object& obj, s64 const value) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::currency));
+	obj.value.numeric.c.value = value;
+}
+
+/// Set currency exponent.
+///
+/// Type must currency.
+inline void set_currency_exponent(Object& obj, s64 const exponent) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::currency));
+	obj.value.numeric.c.value = exponent;
 }
 
 // NB: calling the accessors "time" makes them ambiguous with the time
@@ -629,6 +668,10 @@ inline Object::Object(Object&& other)
 		break;
 	case ObjectValueType::decimal:
 		other.value.numeric.decimal = 0.0f;
+		other.value.numeric.unit = {};
+		break;
+	case ObjectValueType::currency:
+		other.value.numeric.c = {};
 		other.value.numeric.unit = {};
 		break;
 	case ObjectValueType::time:

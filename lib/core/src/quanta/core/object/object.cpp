@@ -49,6 +49,10 @@ void object::clear_value(Object& obj) {
 		obj.value.numeric.decimal = 0.0f;
 		unmanaged_string::clear(obj.value.numeric.unit, a);
 		break;
+	case ObjectValueType::currency:
+		obj.value.numeric.c = {};
+		unmanaged_string::clear(obj.value.numeric.unit, a);
+		break;
 	case ObjectValueType::time:
 		obj.value.time = {};
 		internal::clear_property(obj, M_TM_PROPERTIES);
@@ -84,6 +88,10 @@ void object::copy(Object& dst, Object const& src, bool const children IGEN_DEFAU
 		break;
 	case ObjectValueType::decimal:
 		dst.value.numeric.decimal = src.value.numeric.decimal;
+		unmanaged_string::set(dst.value.numeric.unit, src.value.numeric.unit, a);
+		break;
+	case ObjectValueType::currency:
+		dst.value.numeric.c = src.value.numeric.c;
 		unmanaged_string::set(dst.value.numeric.unit, src.value.numeric.unit, a);
 		break;
 	case ObjectValueType::time:

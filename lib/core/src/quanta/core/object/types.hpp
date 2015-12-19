@@ -80,12 +80,14 @@ enum class ObjectValueType : unsigned {
 	decimal		= 1 << 3,
 	/// Time.
 	time		= 1 << 4,
+	/// Currency/money.
+	currency	= 1 << 5,
 	/// String.
-	string		= 1 << 5,
+	string		= 1 << 6,
 	/// Identifier.
-	identifier	= 1 << 6,
+	identifier	= 1 << 7,
 	/// Expression.
-	expression	= 1 << 7,
+	expression	= 1 << 8,
 };
 
 /// Object operator.
@@ -114,15 +116,22 @@ enum class ObjectTimeType : unsigned {
 
 /// Object.
 struct Object {
+	struct Currency {
+		s64 value;
+		s32 exponent;
+	};
+	struct Numeric {
+		union {
+			s64 integer;
+			f64 decimal;
+			Currency c;
+		};
+		HashedUnmanagedString<ObjectValueHash> unit;
+	};
+
 	union Value {
 		bool boolean;
-		struct Numeric {
-			union {
-				s64 integer;
-				f64 decimal;
-			};
-			HashedUnmanagedString<ObjectValueHash> unit;
-		} numeric;
+		Numeric numeric;
 		Time time;
 		UnmanagedString string;
 		HashedUnmanagedString<ObjectValueHash> identifier;

@@ -335,7 +335,7 @@ static bool parser_next(ObjectParser& p) {
 		goto l_return;
 	}
 
-	{char c = '\0';
+	{u8 c = '\0';
 	do {} while (io::read_value(p.stream, c) && c == '\r');
 	p.c = c;
 	IOStatus const& status = io::status(p.stream);
@@ -359,7 +359,7 @@ static bool parser_peek(ObjectParser& p) {
 	if (p.nc != PC_PEEK_EMPTY) {
 		return p.nc;
 	}
-	char c = '\0';
+	u8 c = '\0';
 	do {} while (io::read_value(p.stream, c) && c == '\r');
 	p.nc = c;
 	IOStatus const& status = io::status(p.stream);

@@ -215,10 +215,10 @@ struct Test {
 	TF(":\"a\"")
 	TF(":```a```")
 	TF(":1")
-	TSE(":x", ":x")
 	TF(":x:")
 	TF(":x=")
 	TF("x=:")
+	TSS(":x")
 	TSE("x:y", "x:y")
 	TSE(":x:y", ":x:y")
 
@@ -293,6 +293,25 @@ struct Test {
 	M_TSE("x + y, z / w", "x + y\nz / w")
 	S_TF("x + y, z / w")
 	TSS("x[y] + z")
+
+// scoped expressions
+	TF("(")
+	TF("(x + )")
+	TF("(x + y + )")
+	TF("(x,)")
+	TF("(x;)")
+	TF("(x + y,)")
+	TF("(x + y;)")
+	TSS("()")
+	TSE("(\n)", "()")
+	TSE("(\\*blargh*\\)", "()")
+	TSE("(x\n)", "(x)")
+	TSE("(x + y)", "x + y")
+	TSE("(\\**\\x\\**\\ + y)", "x + y")
+	TSE("(x + y):a", ":a()(x + y)")
+	TSS(":a()()")
+	TSE(":a:b()(x)", ":a:b()(x)")
+	TSE(":a()(x + y):b", ":a:b()(x + y)")
 };
 
 void check(Test const& test) {

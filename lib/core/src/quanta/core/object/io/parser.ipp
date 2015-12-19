@@ -83,21 +83,34 @@ enum : unsigned {
 	BF_S_ROOT					= 1 << 0,
 	BF_TAGS						= 1 << 1,
 	BF_S_CHILDREN				= 1 << 2,
-	BF_S_TAG_CHILDREN			= 1 << 3,
-	BF_QUANTITY					= 1 << 4,
-	BF_S_QUANTITY_COLLECTION	= 1 << 5,
-	BF_EXPRESSION				= 1 << 6,
-	BF_SINGLE_VALUE				= 1 << 7,
+	BF_S_EXPRESSION_SCOPE		= 1 << 3,
+	BF_S_TAG_CHILDREN			= 1 << 4,
+	BF_QUANTITY					= 1 << 5,
+	BF_S_QUANTITY_COLLECTION	= 1 << 6,
+	BF_EXPRESSION				= 1 << 7,
+	BF_SINGLE_VALUE				= 1 << 8,
 
 	BF_M_SCOPE
 		= BF_S_ROOT
 		| BF_S_CHILDREN
+		| BF_S_EXPRESSION_SCOPE
 		| BF_S_TAG_CHILDREN
 		| BF_S_QUANTITY_COLLECTION
 	,
-	BF_M_BOUNDED
+	BF_M_EXPRESSION
+		= BF_S_EXPRESSION_SCOPE
+		| BF_EXPRESSION
+	,
+
+	BF_M_FILTER_NEWLINE
 		= BF_M_SCOPE
-		| BF_QUANTITY
+	,
+	BF_M_FILTER_COMPLETER
+		= BF_M_SCOPE
+		& ~BF_S_EXPRESSION_SCOPE
+	,
+	BF_M_FILTER_COMMENT
+		= BF_M_SCOPE
 	,
 };
 
@@ -105,6 +118,7 @@ enum class Response {
 	error,
 	complete,
 	eof,
+	loopback_exit,
 	jump,
 	jump_sub,
 	pass,
@@ -143,6 +157,7 @@ struct ObjectParser {
 	unsigned nc;
 	unsigned flags;
 	ParserBufferType buffer_type;
+	unsigned hop_count;
 	unsigned time_parts;
 	Branch* branch;
 
@@ -356,15 +371,23 @@ static bool parser_peek(ObjectParser& p) {
 	return true;
 }
 
-static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
+static bool parser_skip_junk(ObjectParser& p, bool stage_exit) {
+	auto flags = (*p.branch->sequence_pos)->flags;
+	bool filter_newline = false;
+	bool filter_completers = false;
+	bool filter_comments = false;
+	if (stage_exit) {
+		filter_newline = flags & BF_M_FILTER_NEWLINE;
+		filter_completers = flags & BF_M_FILTER_COMPLETER;
+		filter_comments = flags & BF_M_FILTER_COMMENT;
+	}
 	do {
 		switch (p.c) {
 		default:
 			return true;
 
 		case '\n':
-		case ',': case ';':
-			if (!filter_completers) {
+			if (!filter_newline) {
 				return true;
 			}
 
@@ -372,8 +395,14 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 		case ' ':
 			break;
 
-		case '\\':
+		case ',': case ';':
 			if (!filter_completers) {
+				return true;
+			}
+			break;
+
+		case '\\':
+			if (!filter_comments) {
 				return true;
 			}
 			if (!parser_next(p)) {
@@ -430,6 +459,7 @@ static bool parser_skip_junk(ObjectParser& p, bool const filter_completers) {
 			}
 			break;
 		}
+
 		l_continue:
 		(void)0;
 	} while (parser_next(p));
@@ -1032,6 +1062,7 @@ extern Stage const
 ** jump_base_unnamed,
 ** jump_base_after_marker_guess,
 ** jump_base_after_value,
+** jump_base_expression_scope,
 ** jump_base_quantity,
 ** jump_base_complete,
 
@@ -1042,7 +1073,8 @@ extern Stage const
 * sub_unit,
 * sub_sub_source,
 * sub_quantity_children,
-* sub_expression
+* sub_expression,
+* sub_expression_scope_lead
 ;
 
 #define STAGE(name, flags, enter, exit) \
@@ -1304,6 +1336,8 @@ STAGE(stage_children, BF_S_CHILDREN,
 [](ObjectParser& p) -> Response {
 	switch (p.c) {
 	case '}':
+		// hop over stage_expression_scope
+		p.hop_count = 1;
 		RESP(next_gobble);
 
 	case PC_EOF:
@@ -1316,6 +1350,68 @@ STAGE(stage_children, BF_S_CHILDREN,
 
 	default:
 		parser_push(p, array::push_back_inplace(object::children(*p.branch->obj)), sequence_base);
+		RESP(jump);
+	}
+});
+
+// Wacky business ahead. Using the exit sequence of a sub-stage to read a lead
+// value (if any) while skipping junk.
+STAGE(stage_expression_scope, BF_S_EXPRESSION_SCOPE,
+[](ObjectParser& p) -> Response {
+	RESP_IF(p.c != '(', pass);
+
+	if (!object::is_null(*p.branch->obj)) {
+		PARSER_ERROR_EXPECTED(p, "scoped expression is a value (must not have preceding value)");
+		RESP(error);
+	}
+	object::set_expression(*p.branch->obj);
+	RESP_SEQ(exit_sub, &sub_expression_scope_lead);
+},
+[](ObjectParser& p) -> Response {
+	auto op = ObjectOperator::none;
+	switch (p.c) {
+	case PC_EOF:
+		PARSER_ERROR(p, "expected sub-object or block close, got EOF");
+		RESP(error);
+
+	case '}': case ']':
+		PARSER_ERRORF(p, "unbalanced block close: '%c'", static_cast<char>(p.c));
+		RESP(error);
+
+	case ')':
+		RESP(next_gobble);
+
+	case '+': op = ObjectOperator::add; goto l_op;
+	case '-': op = ObjectOperator::sub; goto l_op;
+	case '*': op = ObjectOperator::mul; goto l_op;
+	case '/': op = ObjectOperator::div; goto l_op;
+
+	default:
+		break;
+
+	l_op:
+		RESP_IF(!parser_next(p), error)
+		else {
+			auto& obj = array::push_back_inplace(object::children(*p.branch->obj));
+			object::set_op(obj, op);
+			parser_push(p, obj, jump_base_unnamed);
+			RESP(jump);
+		}
+	}
+	PARSER_ERROR_EXPECTED(p, "operator or scope terminator");
+	RESP(error);
+});
+
+STAGE(stage_expression_scope_lead, BF_S_EXPRESSION_SCOPE,
+nullptr,
+[](ObjectParser& p) -> Response {
+	RESP_SEQ_IF(p.c == ')', loopback_exit, jump_base_expression_scope)
+	else {
+		// hack: return to stage_expression_scope on Response::complete
+		p.branch->sequence_pos = jump_base_expression_scope;
+		auto& lead = array::push_back_inplace(object::children(*p.branch->obj));
+		object::set_op(lead, ObjectOperator::none);
+		parser_push(p, lead, jump_base_unnamed);
 		RESP(jump);
 	}
 });
@@ -1340,14 +1436,19 @@ STAGE(stage_tag_children, BF_S_TAG_CHILDREN,
 	RESP_IF_ELSE(p.c == '(', exit, pass);
 },
 [](ObjectParser& p) -> Response {
-	RESP_IF(p.c == ')', complete)
-	else if (p.c == PC_EOF) {
+	switch (p.c) {
+	case ')':
+		RESP(complete);
+
+	case PC_EOF:
 		PARSER_ERROR(p, "expected sub-object or block close, got EOF");
 		RESP(error);
-	} else if (p.c == '}' || p.c == ']') {
+
+	case '}': case ']':
 		PARSER_ERRORF(p, "unbalanced block close: '%c'", static_cast<char>(p.c));
 		RESP(error);
-	} else {
+
+	default:
 		parser_push(p, array::push_back_inplace(object::children(*p.branch->obj)), sequence_base);
 		RESP(jump);
 	}
@@ -1435,7 +1536,7 @@ STAGE(stage_complete, BF_NONE,
 	case '+': case '-':
 	case '*': case '/': {
 		auto flags = parser_parent_flags(p);
-		if (flags & BF_EXPRESSION) {
+		if (flags & BF_M_EXPRESSION) {
 			// do nothing (common case)
 		} else if (flags & (BF_SINGLE_VALUE | BF_QUANTITY)) {
 			parser_pop(p);
@@ -1565,14 +1666,16 @@ Stage const
 	&stage_source, // -> stage_sub_source
 	&stage_tags, // pre
 	&stage_children,
+	&stage_expression_scope, // -> stage_expression_scope_lead
 	&stage_tags, // post
-	&stage_quantity,
+	&stage_quantity, // -> stage_quantity_children
 	&stage_complete,
 	&stage_sequence_end,
 },
 ** jump_base_unnamed = find_stage(sequence_base, &stage_lead) + 1,
 ** jump_base_after_marker_guess = find_stage(sequence_base, &stage_marker_uncertainty) + 1,
 ** jump_base_after_value = find_stage(sequence_base, &stage_value) + 1,
+** jump_base_expression_scope = find_stage(sequence_base, &stage_expression_scope),
 ** jump_base_quantity = find_stage(sequence_base, &stage_quantity),
 ** jump_base_complete = find_stage(sequence_base, &stage_complete),
 
@@ -1591,7 +1694,8 @@ Stage const
 * sub_unit = &stage_unit,
 * sub_sub_source = &stage_sub_source,
 * sub_quantity_children = &stage_quantity_children,
-* sub_expression = &stage_expression
+* sub_expression = &stage_expression,
+* sub_expression_scope_lead = &stage_expression_scope_lead
 ;
 
 static void parser_init(ObjectParser& p, Object& root, bool single_value) {
@@ -1605,6 +1709,7 @@ static void parser_init(ObjectParser& p, Object& root, bool single_value) {
 	p.nc = PC_PEEK_EMPTY;
 	p.flags = PF_NONE;
 	p.buffer_type  = PB_NONE;
+	p.hop_count = 0;
 	p.time_parts = 0;
 	p.branch = nullptr;
 	array::clear(p.stack);
@@ -1624,10 +1729,11 @@ static bool parser_read(ObjectParser& p) {
 	Response response = Response::error;
 
 l_exec:
+	p.hop_count = 0;
 	if (!parser_next(p)) {
 		return false;
 	}
-	if (!parser_skip_junk(p, stage_part == StagePart::exit && (*p.branch->sequence_pos)->flags & BF_M_SCOPE)) {
+	if (!parser_skip_junk(p, stage_part == StagePart::exit)) {
 		return false;
 	}
 
@@ -1662,6 +1768,11 @@ l_exec:
 	case Response::eof:
 		return true;
 
+	case Response::loopback_exit:
+		stage_part = StagePart::exit;
+		p.flags |= PF_CARRY;
+		goto l_exec;
+
 	case Response::jump:
 		base_pos = p.branch->sequence_pos;
 
@@ -1675,7 +1786,7 @@ l_exec:
 		p.flags |= PF_CARRY;
 
 	case Response::next_gobble:
-		p.branch->sequence_pos = ++base_pos;
+		p.branch->sequence_pos = base_pos += (p.hop_count + 1);
 		stage_part = StagePart::enter;
 		goto l_exec;
 

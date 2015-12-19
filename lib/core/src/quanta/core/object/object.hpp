@@ -523,8 +523,7 @@ inline StringRef text(Object const& obj) {
 
 /// Set type to expression.
 ///
-/// Expressions do not have value markers, source, tags, or quantity. The
-/// "value part" of an expression is the object's children.
+/// The "value part" of an expression is the object's children.
 inline void set_expression(Object& obj) {
 	object::set_type(obj, ObjectValueType::expression);
 }

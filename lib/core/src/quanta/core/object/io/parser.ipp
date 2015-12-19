@@ -46,6 +46,7 @@ enum ParserBufferType : unsigned {
 	PB_STRING,
 	PB_IDENTIFIER,
 	PB_TIME,
+	PB_CURRENCY,
 };
 
 enum class ApplyBufferAs : unsigned {
@@ -159,6 +160,9 @@ struct ObjectParser {
 	ParserBufferType buffer_type;
 	unsigned hop_count;
 	unsigned time_parts;
+	struct {
+		unsigned point;
+	} currency_parts;
 	Branch* branch;
 
 	ObjectParser(IReader& stream, ObjectParserInfo& info, Allocator& allocator)
@@ -202,25 +206,6 @@ static bool parser_error(
 
 #define PARSER_ERROR_STREAM(p, what) \
 	PARSER_ERRORF(p, "%s: stream read failure", what)
-
-inline static bool parser_is_identifier_lead(ObjectParser const& p) {
-	return false
-		|| (p.c >= 'a' && p.c <= 'z')
-		|| (p.c >= 'A' && p.c <= 'Z')
-		||  p.c == '_'
-		||  p.c == '.'
-		// UTF-8 sequence lead byte.. but not EOF
-		|| (p.c >= 0xC0 && p.c != PC_EOF)
-	;
-}
-
-inline static bool parser_is_number_lead(ObjectParser const& p) {
-	return false
-		|| (p.c >= '0' && p.c <= '9')
-		||  p.c == '+'
-		||  p.c == '-'
-	;
-}
 
 inline static void parser_buffer_add(ObjectParser& p) {
 	TOGO_DEBUG_ASSERTE(p.c != PC_EOF);
@@ -327,6 +312,33 @@ static bool parser_peek(ObjectParser& p) {
 		return PARSER_ERROR_STREAM(p, "parser_peek()");
 	}
 	return true;
+}
+
+inline static bool parser_is_currency_lead(ObjectParser& p) {
+	// ¤ in UTF-8: C2 A4
+	if (p.c == 0xC2) {
+		return parser_peek(p) && p.nc == 0xA4;
+	}
+	return false;
+}
+
+inline static bool parser_is_identifier_lead(ObjectParser const& p) {
+	return false
+		|| (p.c >= 'a' && p.c <= 'z')
+		|| (p.c >= 'A' && p.c <= 'Z')
+		||  p.c == '_'
+		||  p.c == '.'
+		// UTF-8 sequence lead byte.. but not EOF
+		|| (p.c >= 0xC0 && p.c != PC_EOF)
+	;
+}
+
+inline static bool parser_is_number_lead(ObjectParser const& p) {
+	return false
+		|| (p.c >= '0' && p.c <= '9')
+		||  p.c == '+'
+		||  p.c == '-'
+	;
 }
 
 static bool parser_skip_junk(ObjectParser& p, bool stage_exit) {
@@ -687,7 +699,10 @@ l_complete:
 	return true;
 }
 
-static bool parser_read_identifier(ObjectParser& p) {
+static bool parser_read_identifier(
+	ObjectParser& p,
+	bool const conversion = true
+) {
 	do {
 		switch (p.c) {
 		case PC_EOF:
@@ -702,15 +717,17 @@ static bool parser_read_identifier(ObjectParser& p) {
 		case '*': case '/':
 		case '\\':
 			p.buffer_type = PB_IDENTIFIER;
-			if (array::size(p.buffer) == 4) {
-				if (std::memcmp(array::begin(p.buffer), "null", 4) == 0) {
-					p.buffer_type = PB_NULL;
-				} else if (std::memcmp(array::begin(p.buffer), "true", 4) == 0) {
-					p.buffer_type = PB_TRUE;
-				}
-			} else if (array::size(p.buffer) == 5) {
-				if (std::memcmp(array::begin(p.buffer), "false", 5) == 0) {
-					p.buffer_type = PB_FALSE;
+			if (conversion) {
+				if (array::size(p.buffer) == 4) {
+					if (std::memcmp(array::begin(p.buffer), "null", 4) == 0) {
+						p.buffer_type = PB_NULL;
+					} else if (std::memcmp(array::begin(p.buffer), "true", 4) == 0) {
+						p.buffer_type = PB_TRUE;
+					}
+				} else if (array::size(p.buffer) == 5) {
+					if (std::memcmp(array::begin(p.buffer), "false", 5) == 0) {
+						p.buffer_type = PB_FALSE;
+					}
 				}
 			}
 			return true;
@@ -718,6 +735,79 @@ static bool parser_read_identifier(ObjectParser& p) {
 		parser_buffer_add(p);
 	} while (parser_next(p));
 	return false;
+}
+
+static bool parser_read_currency(ObjectParser& p) {
+	enum : unsigned {
+		PART_SIGN				= 1 << 0,
+		PART_NUMERAL			= 1 << 1,
+		PART_DECIMAL			= 1 << 2,
+		PART_DECIMAL_NUMERAL	= 1 << 3,
+	};
+	// skip lead sign (¤)
+	if (!(parser_next(p) && parser_next(p))) {
+		return false;
+	}
+	unsigned parts = 0;
+	do {
+		switch (p.c) {
+		// Completers
+		case PC_EOF:
+		case '\t':
+		case '\n':
+		case ' ':
+		case ',': case ';':
+		case '=': case ':': case '$':
+		case '}': case ']': case ')':
+		case '{': case '[': case '(':
+		case '*': case '/':
+		case '\\':
+			return PARSER_ERROR_EXPECTED(p, "currency value part or currency unit");
+
+		case '-':
+		case '+':
+			if (parts & PART_SIGN) {
+				return PARSER_ERROR(p, "sign already specified for currency value");
+			} else if (parts != 0) {
+				return PARSER_ERROR_UNEXPECTED(p, "non-leading sign in currency value");
+			}
+			parts |= PART_SIGN;
+			break;
+
+		case '.':
+			if (parts & PART_DECIMAL) {
+				return PARSER_ERROR(p, "decimal point already specified for currency value");
+			}
+			parts |= PART_DECIMAL;
+			p.currency_parts.point = parser_buffer_size(p);
+			break;
+
+		default:
+			if (p.c >= '0' && p.c <= '9') {
+				parts |= (parts & PART_DECIMAL)
+					? PART_DECIMAL_NUMERAL
+					: PART_NUMERAL
+				;
+			} else {
+				goto l_complete;
+			}
+			break;
+		}
+		parser_buffer_add(p);
+	} while (parser_next(p));
+	return false;
+
+l_complete:
+	if (~parts & PART_NUMERAL) {
+		return PARSER_ERROR(p, "missing numeral part in currency value");
+	} else if (parts & PART_DECIMAL && ~parts & PART_DECIMAL_NUMERAL) {
+		return PARSER_ERROR(p, "missing numeral part after decimal in currency value");
+	}
+	if (~parts & PART_DECIMAL) {
+		p.currency_parts.point = parser_buffer_size(p);
+	}
+	p.buffer_type = PB_CURRENCY;
+	return true;
 }
 
 static bool parser_read_string_quote(ObjectParser& p) {
@@ -935,11 +1025,11 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 			auto it = begin(str);
 			switch (p.time_parts & TSP_D_ALL) {
 			case TSP_D_ALL:
-				date.year = parse_integer(it, it + 4); ++it;
+				date.year = parse_integer_unsigned(it, it + 4); ++it;
 			case TSP_D_MM | TSP_D_DD:
-				date.month = parse_integer(it, it + 2); ++it;
+				date.month = parse_integer_unsigned(it, it + 2); ++it;
 			case TSP_D_DD:
-				date.day = parse_integer(it, it + 2); ++it;
+				date.day = parse_integer_unsigned(it, it + 2); ++it;
 				has_date = true;
 			}
 			if (~p.time_parts & TSP_D_MM) {
@@ -948,10 +1038,10 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 				object::set_year_contextual(obj, true);
 			}
 			if (p.time_parts & TSP_T_ALL) {
-				h = parse_integer(it, it + 2); ++it;
-				m = parse_integer(it, it + 2); ++it;
+				h = parse_integer_unsigned(it, it + 2); ++it;
+				m = parse_integer_unsigned(it, it + 2); ++it;
 				if (p.time_parts & TSP_T_SS) {
-					s = parse_integer(it, it + 2); ++it;
+					s = parse_integer_unsigned(it, it + 2); ++it;
 				}
 				has_clock = true;
 			}
@@ -965,6 +1055,32 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 				object::set_time_type(obj, ObjectTimeType::clock);
 				time::set_utc(object::time_value(obj), h, m, s);
 			}
+		}	break;
+
+		case PB_CURRENCY: {
+			auto head = begin(parser_buffer_ref(p));
+			auto it = head;
+			bool negative = *it == '-';
+			if (negative || *it == '+') {
+				++it;
+			}
+			u64 value = parse_integer_unsigned(it, head + p.currency_parts.point);
+			s32 exponent = parser_buffer_size(p) - p.currency_parts.point;
+			if (exponent > 0) {
+				if (--exponent > 0) {
+					if (value > 0) {
+						value *= pow_int(10, exponent);
+					}
+					++it;
+					value += parse_integer_unsigned(it, it + exponent);
+				}
+			}
+			object::set_currency(
+				obj,
+				negative ? -static_cast<s64>(value) : static_cast<s64>(value),
+				exponent,
+				""
+			);
 		}	break;
 		}
 		break;
@@ -1089,7 +1205,7 @@ STAGE(stage_lead, BF_NONE,
 		break;
 
 	default:
-		if (parser_is_identifier_lead(p)) {
+		if (parser_is_identifier_lead(p) && !parser_is_currency_lead(p)) {
 			RESP_IF(!parser_read_identifier(p), error)
 		} else {
 			RESP(pass);
@@ -1197,23 +1313,26 @@ nullptr
 
 STAGE(stage_value, BF_NONE,
 [](ObjectParser& p) -> Response {
-	bool is_numeric = false;
+	bool is_unit_carrier = false;
 	if (p.c == '\"') {
 		parser_read_string_quote(p);
 	} else if (p.c == '`') {
 		parser_read_string_block(p);
+	} else if (parser_is_currency_lead(p)) {
+		parser_read_currency(p);
+		is_unit_carrier = true;
 	} else if (parser_is_identifier_lead(p)) {
 		parser_read_identifier(p);
 	} else if (parser_is_number_lead(p)) {
 		parser_read_number(p);
-		is_numeric = p.buffer_type == PB_INTEGER || p.buffer_type == PB_DECIMAL;
+		is_unit_carrier = p.buffer_type == PB_INTEGER || p.buffer_type == PB_DECIMAL;
 	} else {
 		RESP(pass);
 	}
 	RESP_IF(p.flags & PF_ERROR, error)
 	else {
 		parser_apply(p);
-		RESP_SEQ_IF(is_numeric, jump_sub, &sub_unit)
+		RESP_SEQ_IF(is_unit_carrier, jump_sub, &sub_unit)
 		else RESP(next);
 	}
 },
@@ -1223,11 +1342,14 @@ nullptr
 STAGE(stage_unit, BF_NONE,
 [](ObjectParser& p) -> Response {
 	if (parser_is_identifier_lead(p)) {
-		RESP_IF(!parser_read_identifier(p), error)
+		RESP_IF(!parser_read_identifier(p, false), error)
 		else {
 			parser_apply(p, ApplyBufferAs::unit);
 			RESP(next);
 		}
+	} else if (object::is_currency(*p.branch->obj)) {
+		PARSER_ERROR_EXPECTED(p, "unit following currency value");
+		RESP(error);
 	}
 	RESP(pass);
 },
@@ -1660,6 +1782,7 @@ static void parser_init(ObjectParser& p, Object& root, bool single_value) {
 	p.buffer_type  = PB_NONE;
 	p.hop_count = 0;
 	p.time_parts = 0;
+	p.currency_parts = {};
 	p.branch = nullptr;
 	array::clear(p.stack);
 	array::clear(p.buffer);

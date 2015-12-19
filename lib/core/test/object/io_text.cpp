@@ -135,8 +135,29 @@ struct Test {
 	TSE("-1.1e-1", "-0.11")
 
 // units
-	TSE("1a", "1a")
-	TSE("1µg", "1µg")
+	TSS("1a")
+	TSS("1µg")
+	TSS("1°C")
+
+// currency
+	TF("¤")
+	TF("¤1")
+	TF("¤-1")
+	TF("¤+1")
+	TF("¤1.")
+	TF("¤.1x")
+
+	TSS("¤1x")
+	TSS("¤-1x")
+	TSE("¤+1x", "¤1x")
+	TSS("¤1.0x")
+	TSS("¤1.0023x")
+	TSS("¤-0.9x")
+	TSS("¤-0.00009x")
+	TSS("¤0.00009x")
+	TSS("¤4.23usd")
+	TSS("¤480yen")
+	TSS("¤-124.12eur")
 
 // times
 	TF("2-")

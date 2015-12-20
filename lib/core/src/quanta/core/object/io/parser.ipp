@@ -62,20 +62,43 @@ enum : unsigned {
 	TSP_D_MM		= 1 << 1,
 	TSP_D_DD		= 1 << 2,
 
-	TSP_DIVIDER		= 1 << 3,
+	TSP_T_MARKER	= 1 << 3,
 	TSP_T_HH		= 1 << 4,
 	TSP_T_MM		= 1 << 5,
 	TSP_T_SS		= 1 << 6,
 
-	TSP_D_ALL
+	TSP_Z_UTC		= 1 << 7,
+	TSP_Z_SIGN		= 1 << 8,
+	TSP_Z_HH		= 1 << 9,
+	TSP_Z_MM		= 1 << 10,
+
+	TSP_D_ELEMENTS
 		= TSP_D_YYYY
 		| TSP_D_MM
 		| TSP_D_DD
 	,
-	TSP_T_ALL
+	TSP_D_ALL
+		= TSP_D_ELEMENTS
+	,
+
+	TSP_T_ELEMENTS
 		= TSP_T_HH
 		| TSP_T_MM
 		| TSP_T_SS
+	,
+	TSP_T_ALL
+		= TSP_T_MARKER
+		| TSP_T_ELEMENTS
+	,
+
+	TSP_Z_ELEMENTS
+		= TSP_Z_HH
+		| TSP_Z_MM
+	,
+	TSP_Z_ALL
+		= TSP_Z_SIGN
+		| TSP_Z_UTC
+		| TSP_Z_ELEMENTS
 	,
 };
 
@@ -438,27 +461,41 @@ static bool parser_skip_junk(ObjectParser& p, bool stage_exit) {
 }
 
 static bool parser_read_time(ObjectParser& p) {
-	// [YYYY-]MM-DD
-	// [[[YYYY-]MM-]DDT]HH:MM[:SS]
-	// T must be present if only DD is specified
-	// from parser_read_number():
+	// day:
+	//   DD
+	// date:
+	//   [YYYY-]MM-(day)
+	// daytime:
+	//   HH:MM[:SS]
+	// zz (UTC zone offset):
+	//   Z
+	// zo (zone offset):
+	//   (+|-)HH[:MM]
+	// complete:
+	//   (day)T[zo]
+	//   (date)
+	//   (day|date)(zz)
+	//   (day|date)[T(zo)]
+	//   [(day|date)T](daytime)[zz|zo]
+
+	// init state from parser_read_number():
 	//   YYYY- or MM-
-	//   DDT
+	//   DDT or DDZ
 	//   HH:
+
 	if (!parser_peek(p)) {
 		return false;
 	}
-	if (p.nc < '0' || p.nc > '9') {
-		if (p.c == 'T' && p.nc == PC_EOF) {
-			parser_buffer_add(p);
-			parser_next(p);
+	if ((p.nc < '0' || p.nc > '9') && p.nc != '-' && p.nc != '+') {
+		if ((p.c == 'T' || p.c == 'Z') && p.nc == PC_EOF) {
+			p.time_parts = TSP_D_DD | (p.c == 'T' ? TSP_T_MARKER : TSP_Z_UTC);
 			p.buffer_type = PB_TIME;
-			p.time_parts = TSP_D_DD | TSP_DIVIDER;
+			parser_next(p);
 		} else if (p.c == '-') {
 			parser_next(p);
 			return PARSER_ERROR_EXPECTED(p, "date part following date lead");
 		} else {
-			// T must be a unit
+			// T/Z must be a unit
 			// : must specify a tag
 			p.buffer_type = PB_INTEGER;
 		}
@@ -466,6 +503,11 @@ static bool parser_read_time(ObjectParser& p) {
 	}
 
 #define SET_PART(part) do { \
+	parts |= part; last = now; \
+} while (false)
+
+#define SET_PART_ADD(part) do { \
+	parser_buffer_add(p); \
 	parts |= part; last = now + 1; \
 } while (false)
 
@@ -479,10 +521,20 @@ static bool parser_read_time(ObjectParser& p) {
 		part_length = now - last;
 		switch (p.c) {
 		case '-':
-			if (parts & (TSP_DIVIDER | TSP_T_ALL)) {
-				return PARSER_ERROR_UNEXPECTED(p, "date part separator in daytime segment");
-			} else if (parts == TSP_D_ALL) {
-				return PARSER_ERROR_EXPECTED(p, "date part separator after complete date segment");
+			if (parts & TSP_Z_ALL) {
+				return PARSER_ERROR_UNEXPECTED(p, "zone offset sign in zone offset segment");
+			} else if (parts & TSP_T_ELEMENTS) {
+				if (part_length != 2) {
+					return PARSER_ERROR(p, "daytime part must be 2 numerals long");
+				} else if (parts & TSP_T_MM) { // HH:MM:SS-
+					SET_PART(TSP_T_SS);
+				} else if (parts & TSP_T_HH) { // HH:MM-
+					SET_PART(TSP_T_MM);
+				}
+				SET_PART_ADD(TSP_Z_SIGN);
+			} else if (part_length == 0 && parts & TSP_T_MARKER) { // T-
+				// no daytime part
+				SET_PART_ADD(TSP_Z_SIGN);
 			} else if (part_length == 4) { // YYYY-
 				if (!parts) {
 					SET_PART(TSP_D_YYYY);
@@ -490,7 +542,7 @@ static bool parser_read_time(ObjectParser& p) {
 					return PARSER_ERROR_UNEXPECTED(p, "non-leading year in date segment");
 				}
 			} else if (part_length == 2) {
-				if (~parts & TSP_D_MM) { // YYYY-MM- or MM-
+				if (~parts & TSP_D_MM) { // [YYYY-]MM-
 					SET_PART(TSP_D_MM);
 				} else { // YYYY-MM-DD-
 					return PARSER_ERROR_UNEXPECTED(p, "date part separator after day in date segment");
@@ -503,12 +555,32 @@ static bool parser_read_time(ObjectParser& p) {
 			}
 			if (p.nc < '0' || p.nc > '9') {
 				parser_next(p);
-				return PARSER_ERROR_EXPECTED(p, "date part following separator");
+				return PARSER_ERROR_EXPECTED(p, "numeral following separator");
+			}
+			break;
+
+		case '+':
+			if (parts & TSP_Z_ALL) {
+				return PARSER_ERROR_UNEXPECTED(p, "zone offset sign in zone offset segment");
+			} else if (parts & TSP_T_ELEMENTS) {
+				if (part_length != 2) {
+					return PARSER_ERROR(p, "daytime part must be 2 numerals long");
+				} else if (parts & TSP_T_MM) { // HH:MM:SS+
+					SET_PART(TSP_T_SS);
+				} else if (parts & TSP_T_HH) { // HH:MM+
+					SET_PART(TSP_T_MM);
+				}
+				SET_PART_ADD(TSP_Z_SIGN);
+			} else if (part_length == 0 && parts & TSP_T_MARKER) { // T+
+				// no daytime part
+				SET_PART_ADD(TSP_Z_SIGN);
+			} else { // [YYYY-][MM-]DD+
+				return PARSER_ERROR_UNEXPECTED(p, "ambiguous positive sign immediately following date part");
 			}
 			break;
 
 		case 'T':
-			if (parts & (TSP_DIVIDER | TSP_T_ALL)) {
+			if (parts & TSP_T_ALL) {
 				return PARSER_ERROR_UNEXPECTED(p, "daytime marker in daytime segment");
 			} else if (part_length == 0) { // [YYYY-][MM][-]T
 				return PARSER_ERROR(p, "day must be present in date segment for daytime segment to be specified");
@@ -516,16 +588,49 @@ static bool parser_read_time(ObjectParser& p) {
 				return PARSER_ERROR(p, "day must be 2 numerals long");
 			} else if ((parts & (TSP_D_YYYY | TSP_D_MM)) == TSP_D_YYYY) { // YYYY-XXT
 				return PARSER_ERROR(p, "day unspecified in date segment before daytime marker");
-			} else { // [YYYY-][MM-]DDT
-				SET_PART(TSP_D_DD | TSP_DIVIDER);
+			} else { // [[YYYY-]MM-]DDT
+				SET_PART(TSP_D_DD | TSP_T_MARKER);
 			}
 			break;
 
-		case ':':
-			if (parts && !(parts & (TSP_DIVIDER | TSP_T_ALL))) {
-				return PARSER_ERROR_UNEXPECTED(p, "daytime part separator in date segment");
+		case 'Z':
+			if ((parts & TSP_T_ALL) == TSP_T_MARKER) { // TZ, TX...Z
+				return PARSER_ERROR(p, "UTC zone offset marker following daytime segment must come after minute part");
+			} else if (parts & TSP_Z_ALL) {
+				return PARSER_ERROR_UNEXPECTED(p, "UTC zone offset marker in zone offset segment");
 			} else if (part_length != 2) {
-				return PARSER_ERROR(p, "daytime part must be 2 numerals long");
+				if (parts & TSP_T_ALL) {
+					return PARSER_ERROR(p, "daytime part must be 2 numerals long");
+				} else {
+					return PARSER_ERROR(p, "date part must be 2 numerals long (MM, DD)");
+				}
+			} else if (parts & TSP_T_MM) { // HH:MM:SSZ
+				SET_PART(TSP_T_SS);
+			} else if (parts & TSP_T_HH) { // HH:MMZ
+				SET_PART(TSP_T_MM);
+			} else if (parts & TSP_D_MM) { // [[YYYY-]MM-]DDZ
+				SET_PART(TSP_D_DD);
+			} else { // YYYY-Z or MM-Z
+				return PARSER_ERROR(p, "day unspecified in date segment before UTC zone offset marker");
+			}
+			SET_PART(TSP_Z_UTC);
+			p.time_parts = parts;
+			return parser_next(p);
+
+		case ':':
+			if (parts && !(parts & ~TSP_D_ALL)) {
+				return PARSER_ERROR_UNEXPECTED(p, "time part separator in date segment");
+			} else if (part_length != 2) {
+				return PARSER_ERROR(p, "time part must be 2 numerals long");
+			} else if (parts & TSP_Z_ALL) {
+				if (parts & TSP_Z_HH) { // HH:MM:
+					SET_PART(TSP_Z_MM);
+					// assume tag
+					p.time_parts = parts;
+					return true;
+				} else { // HH:
+					SET_PART(TSP_Z_HH);
+				}
 			} else if (parts & TSP_T_MM) { // HH:MM:SS:
 				SET_PART(TSP_T_SS);
 				// assume tag
@@ -554,14 +659,22 @@ static bool parser_read_time(ObjectParser& p) {
 		case '=': case '$':
 		case '}': case ']': case ')':
 		case '{': case '[': case '(':
-		case '+':
 		case '*': case '/':
 		case '\\':
 			if (part_length == 0) {
+				if ((parts & TSP_Z_ALL) == TSP_Z_SIGN) {
+					return PARSER_ERROR_EXPECTED(p, "time part after zone offset sign");
+				}
 				// complete
 			} else if (part_length != 2) {
 				return PARSER_ERROR(p, "trailing part must be 2 numerals long");
-			} else if (parts & (TSP_DIVIDER | TSP_T_ALL)) {
+			} else if (parts & TSP_Z_ALL) {
+				if (parts & TSP_Z_HH) { // (+|-)HH:MM
+					SET_PART(TSP_Z_MM);
+				} else { // (+|-)HH
+					SET_PART(TSP_Z_HH);
+				}
+			} else if (parts & TSP_T_ALL) {
 				if (parts & TSP_T_MM) { // HH:MM:SS
 					SET_PART(TSP_T_SS);
 				} else if (parts & TSP_T_HH) { // HH:MM
@@ -582,10 +695,11 @@ static bool parser_read_time(ObjectParser& p) {
 		default:
 			if (p.c < '0' || p.c > '9') {
 				return PARSER_ERROR_EXPECTED(p, "time part or terminator");
+			} else {
+				parser_buffer_add(p);
 			}
 			break;
 		}
-		parser_buffer_add(p);
 	} while (parser_next(p));
 	return false;
 
@@ -659,6 +773,7 @@ static bool parser_read_number(ObjectParser& p) {
 
 		case ':': // HH:
 		case 'T': // DDT
+		case 'Z': // DDZ
 			if (parts == PART_NUMERAL && parser_buffer_size(p) == 2) {
 				return parser_read_time(p);
 			} else {
@@ -1021,15 +1136,14 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 
 			object::set_time_value(obj, {});
 			object::set_zoned(obj, false);
-			StringRef str = parser_buffer_ref(p);
-			auto it = begin(str);
-			switch (p.time_parts & TSP_D_ALL) {
-			case TSP_D_ALL:
-				date.year = parse_integer_unsigned(it, it + 4); ++it;
+			auto it = begin(parser_buffer_ref(p));
+			switch (p.time_parts & TSP_D_ELEMENTS) {
+			case TSP_D_YYYY | TSP_D_MM | TSP_D_DD:
+				date.year = parse_integer_unsigned(it, it + 4);
 			case TSP_D_MM | TSP_D_DD:
-				date.month = parse_integer_unsigned(it, it + 2); ++it;
+				date.month = parse_integer_unsigned(it, it + 2);
 			case TSP_D_DD:
-				date.day = parse_integer_unsigned(it, it + 2); ++it;
+				date.day = parse_integer_unsigned(it, it + 2);
 				has_date = true;
 			}
 			if (~p.time_parts & TSP_D_MM) {
@@ -1037,17 +1151,17 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 			} else if (~p.time_parts & TSP_D_YYYY) {
 				object::set_year_contextual(obj, true);
 			}
-			if (p.time_parts & TSP_T_ALL) {
-				h = parse_integer_unsigned(it, it + 2); ++it;
-				m = parse_integer_unsigned(it, it + 2); ++it;
+			if (p.time_parts & TSP_T_ELEMENTS) {
+				h = parse_integer_unsigned(it, it + 2);
+				m = parse_integer_unsigned(it, it + 2);
 				if (p.time_parts & TSP_T_SS) {
-					s = parse_integer_unsigned(it, it + 2); ++it;
+					s = parse_integer_unsigned(it, it + 2);
 				}
 				has_clock = true;
 			}
 			if (has_date && has_clock) {
 				object::set_time_type(obj, ObjectTimeType::date_and_clock);
-				time::gregorian::set(object::time_value(obj), date, h, m, s);
+				time::gregorian::set_utc(object::time_value(obj), date, h, m, s);
 			} else if (has_date) {
 				object::set_time_type(obj, ObjectTimeType::date);
 				time::gregorian::set_utc(object::time_value(obj), date);
@@ -1055,6 +1169,23 @@ static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBu
 				object::set_time_type(obj, ObjectTimeType::clock);
 				time::set_utc(object::time_value(obj), h, m, s);
 			}
+			if (p.time_parts & TSP_Z_UTC) {
+				object::set_zoned(obj, true);
+			} else if (p.time_parts & TSP_Z_ELEMENTS) {
+				bool is_negative = false;
+				if (p.time_parts & TSP_Z_SIGN) {
+					is_negative = *it++ == '-';
+				}
+				object::set_zoned(obj, true);
+				h = parse_integer_unsigned(it, it + 2);
+				if (p.time_parts & TSP_Z_MM) {
+					m = parse_integer_unsigned(it, it + 2);
+				} else {
+					m = 0;
+				}
+				time::adjust_zone_clock(object::time_value(obj), is_negative ? -h : h, m);
+			}
+			TOGO_DEBUG_ASSERTE(it == end(parser_buffer_ref(p)));
 		}	break;
 
 		case PB_CURRENCY: {

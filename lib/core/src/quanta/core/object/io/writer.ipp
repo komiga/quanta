@@ -256,30 +256,42 @@ static bool write_object(
 		break;
 
 	case ObjectValueType::time: {
+		signed h, m, s;
 		Time const& t = object::time_value(obj);
-		bool has_clock = object::has_clock(obj);
 		if (object::has_date(obj)) {
-			bool month_contextual = object::is_month_contextual(obj);
 			Date date = time::gregorian::date(t);
 			if (!object::is_year_contextual(obj)) {
 				RETURN_ERROR(writef(stream, "%04d-", date.year));
 			}
-			if (!month_contextual) {
+			if (!object::is_month_contextual(obj)) {
 				RETURN_ERROR(writef(stream, "%02d-", date.month));
 			}
-			RETURN_ERROR(writef(stream, (month_contextual || has_clock) ? "%02dT" : "%02d", date.day));
+			RETURN_ERROR(writef(stream, "%02d", date.day));
+			if (
+				object::has_clock(obj) || (
+					object::is_zoned(obj)
+					? t.zone_offset != 0
+					: object::is_month_contextual(obj)
+				)
+			) {
+				RETURN_ERROR(io::write_value(stream, 'T'));
+			}
 		}
-		if (has_clock) {
-			signed h, m, s;
+		if (object::has_clock(obj)) {
 			time::clock(t, h, m, s);
 			RETURN_ERROR(writef(stream, "%02d:%02d:%02d", h, m, s));
-			if (!object::is_zoned(obj)) {
-				// no zone to write
-			} else if (t.zone_offset == 0) {
+		}
+		if (object::is_zoned(obj)) {
+			if (t.zone_offset == 0) {
 				RETURN_ERROR(io::write(stream, "Z", 1));
 			} else {
-				time::clock(Time{t.zone_offset, 0}, h, m, s);
-				RETURN_ERROR(writef(stream, "%c%02d%02d", t.zone_offset < 0 ? '-' : '+', h, m));
+				bool negative = t.zone_offset < 0;
+				time::clock(Time{negative ? -t.zone_offset : t.zone_offset, 0}, h, m, s);
+				if (m == 0) {
+					RETURN_ERROR(writef(stream, "%c%02d", negative ? '-' : '+', h));
+				} else {
+					RETURN_ERROR(writef(stream, "%c%02d:%02d", negative ? '-' : '+', h, m));
+				}
 			}
 		}
 	}	break;

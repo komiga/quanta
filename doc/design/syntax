@@ -43,10 +43,12 @@ r
 	24T15:30 \\ combined, context-relative to: year and month
 
 	\\ time zones
-	15:30Z \\ UTC ("Zulu time")
+	15:30Z \\ UTC ("Zulu time"/"zero")
 	15:30+01 \\ +01h00m
-	15:30+0200 \\ +02h00m
-	15:30-04:00 \\ -04h00m
+	15:30+02:30 \\ +02h30m
+	15:30-04:00
+	24Z \\ date, context-relative to: year and month, UTC
+	24T-04:00
 
 \\ time resolution is in seconds.
 \\ times that do not specify a timezone are context-relative.

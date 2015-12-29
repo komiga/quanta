@@ -15,7 +15,7 @@
 #include <quanta/core/types.hpp>
 #include <quanta/core/chrono/types.hpp>
 #include <quanta/core/chrono/internal.hpp>
-#include <quanta/core/scripting/scripting.hpp>
+#include <quanta/core/lua/lua.hpp>
 
 #include <togo/core/utility/utility.hpp>
 

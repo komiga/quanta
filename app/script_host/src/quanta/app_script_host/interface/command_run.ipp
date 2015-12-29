@@ -3,7 +3,7 @@
 @copyright MIT license; see @ref index or the accompanying LICENSE file.
 */
 
-#include <quanta/core/scripting/scripting.hpp>
+#include <quanta/core/lua/lua.hpp>
 
 #include <togo/core/filesystem/filesystem.hpp>
 

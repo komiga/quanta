@@ -5,7 +5,7 @@
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/chrono/time.hpp>
-#include <quanta/core/scripting/scripting.hpp>
+#include <quanta/core/lua/lua.hpp>
 
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>
@@ -30,138 +30,138 @@ static Time& LI_FUNC(next_temporary)() {
 
 LI_FUNC_DEF(temporary) {
 	auto& t = li_next_temporary();
-	auto from = luaL_opt(L, lua::get_lud_t<Time>, 1, nullptr);
+	auto from = luaL_opt(L, lua::get_lightuserdata_typed<Time>, 1, nullptr);
 	if (from) {
 		t = *from;
 	}
-	lua::push_lud(L, &t);
+	lua::push_lightuserdata(L, &t);
 	return 1;
 }
 
 LI_FUNC_DEF(clear) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	*t = {};
 	return 0;
 }
 
 LI_FUNC_DEF(set_zone_offset) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	time::set_zone_offset(*t, luaL_checkinteger(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(set_zone_clock) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	time::set_zone_clock(*t, luaL_checkinteger(L, 2), luaL_opt(L, luaL_checkinteger, 3, 0));
 	return 0;
 }
 
 LI_FUNC_DEF(set_zone_utc) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	time::set_zone_utc(*t);
 	return 0;
 }
 
 LI_FUNC_DEF(adjust_zone_offset) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	time::adjust_zone_offset(*t, luaL_checkinteger(L, 2));
 	return 0;
 }
 
 LI_FUNC_DEF(adjust_zone_clock) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	time::adjust_zone_clock(*t, luaL_checkinteger(L, 2), luaL_opt(L, luaL_checkinteger, 3, 0));
 	return 0;
 }
 
 LI_FUNC_DEF(adjust_zone_utc) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	time::adjust_zone_utc(*t);
 	return 0;
 }
 
 LI_FUNC_DEF(as_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	auto utc = &li_next_temporary();
 	*utc = time::as_utc(*t);
-	lua::push_lud(L, utc);
+	lua::push_lightuserdata(L, utc);
 	return 1;
 }
 
 LI_FUNC_DEF(as_utc_adjusted) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	auto utc = &li_next_temporary();
 	*utc = time::as_utc_adjusted(*t);
-	lua::push_lud(L, utc);
+	lua::push_lightuserdata(L, utc);
 	return 1;
 }
 
 LI_FUNC_DEF(difference) {
-	auto l = lua::get_lud_t<Time const>(L, 1);
-	auto r = lua::get_lud_t<Time const>(L, 2);
+	auto l = lua::get_lightuserdata_typed<Time const>(L, 1);
+	auto r = lua::get_lightuserdata_typed<Time const>(L, 2);
 	lua_pushinteger(L, time::difference(*l, *r));
 	return 1;
 }
 
 LI_FUNC_DEF(add) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	auto d = luaL_checkinteger(L, 2);
 	time::add(*t, d);
 	return 0;
 }
 
 LI_FUNC_DEF(sub) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	auto d = luaL_checkinteger(L, 2);
 	time::sub(*t, d);
 	return 0;
 }
 
 LI_FUNC_DEF(compare_equal) {
-	auto l = lua::get_lud_t<Time const>(L, 1);
-	auto r = lua::get_lud_t<Time const>(L, 2);
+	auto l = lua::get_lightuserdata_typed<Time const>(L, 1);
+	auto r = lua::get_lightuserdata_typed<Time const>(L, 2);
 	lua_pushboolean(L, time::compare_equal(*l, *r));
 	return 1;
 }
 
 LI_FUNC_DEF(hour_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::hour_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(minute_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::minute_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(second_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::second_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(hour) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::hour(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(minute) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::minute(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(second) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::second(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(clock_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	signed h = 0, m = 0, s = 0;
 	time::clock_utc(*t, h, m, s);
 	lua_pushinteger(L, h);
@@ -171,7 +171,7 @@ LI_FUNC_DEF(clock_utc) {
 }
 
 LI_FUNC_DEF(clock) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	signed h = 0, m = 0, s = 0;
 	time::clock(*t, h, m, s);
 	lua_pushinteger(L, h);
@@ -181,31 +181,31 @@ LI_FUNC_DEF(clock) {
 }
 
 LI_FUNC_DEF(clock_seconds_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::clock_seconds_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(clock_seconds) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::clock_seconds(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(date_seconds_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::date_seconds_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(date_seconds) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::date_seconds(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(set_utc) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	auto h = luaL_checkinteger(L, 2);
 	auto m = luaL_checkinteger(L, 3);
 	auto s = luaL_checkinteger(L, 4);
@@ -214,7 +214,7 @@ LI_FUNC_DEF(set_utc) {
 }
 
 LI_FUNC_DEF(set) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	auto h = luaL_checkinteger(L, 2);
 	auto m = luaL_checkinteger(L, 3);
 	auto s = luaL_checkinteger(L, 4);
@@ -269,7 +269,7 @@ static luaL_reg const li_funcs[]{
 namespace gregorian {
 
 LI_FUNC_DEF(date_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	Date d = time::gregorian::date_utc(*t);
 	lua_pushinteger(L, d.year);
 	lua_pushinteger(L, d.month);
@@ -278,31 +278,31 @@ LI_FUNC_DEF(date_utc) {
 }
 
 LI_FUNC_DEF(year_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::gregorian::year_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(month_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::gregorian::month_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(day_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::gregorian::day_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(is_leap_year_utc) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushboolean(L, time::gregorian::is_leap_year_utc(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(date) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	Date d = time::gregorian::date(*t);
 	lua_pushinteger(L, d.year);
 	lua_pushinteger(L, d.month);
@@ -311,26 +311,26 @@ LI_FUNC_DEF(date) {
 }
 
 LI_FUNC_DEF(year) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::gregorian::year(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(month) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::gregorian::month(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(day) {
-	auto t = lua::get_lud_t<Time const>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 	lua_pushinteger(L, time::gregorian::day(*t));
 	return 1;
 }
 
 LI_FUNC_DEF(is_leap_year) {
 	if (lua_type(L, 1) == LUA_TLIGHTUSERDATA) {
-		auto t = lua::get_lud_t<Time const>(L, 1);
+		auto t = lua::get_lightuserdata_typed<Time const>(L, 1);
 		lua_pushboolean(L, time::gregorian::is_leap_year(*t));
 	} else {
 		auto year = luaL_checkinteger(L, 1);
@@ -340,7 +340,7 @@ LI_FUNC_DEF(is_leap_year) {
 }
 
 LI_FUNC_DEF(set_utc) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	auto year = luaL_checkinteger(L, 2);
 	auto month = luaL_checkinteger(L, 3);
 	auto day = luaL_checkinteger(L, 4);
@@ -356,7 +356,7 @@ LI_FUNC_DEF(set_utc) {
 }
 
 LI_FUNC_DEF(set) {
-	auto t = lua::get_lud_t<Time>(L, 1);
+	auto t = lua::get_lightuserdata_typed<Time>(L, 1);
 	auto year = luaL_checkinteger(L, 2);
 	auto month = luaL_checkinteger(L, 3);
 	auto day = luaL_checkinteger(L, 4);

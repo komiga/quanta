@@ -18,7 +18,7 @@
 #include <quanta/core/chrono/time.hpp>
 #include <quanta/core/object/types.hpp>
 #include <quanta/core/object/internal.hpp>
-#include <quanta/core/scripting/scripting.hpp>
+#include <quanta/core/lua/lua.hpp>
 
 #include <togo/core/error/assert.hpp>
 #include <togo/core/utility/utility.hpp>

@@ -17,7 +17,9 @@ group_data["core"] = {
 	args = {},
 }
 group_data["lua"] = {
-	excluded = {},
+	excluded = {
+		["common"] = true,
+	},
 	args = {},
 }
 

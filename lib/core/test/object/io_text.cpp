@@ -388,7 +388,7 @@ struct Test {
 
 void check(Test const& test) {
 	TOGO_LOGF(
-		"reading (%3u): <%.*s>\n",
+		"reading   (%3u): <%.*s>\n",
 		test.data.size, test.data.size, test.data.data
 	);
 	Object root;

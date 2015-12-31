@@ -18,8 +18,8 @@
 
 #include <quanta/app_script_host/config.hpp>
 #include <quanta/app_script_host/types.hpp>
-#include <quanta/core/string/types.hpp>
 #include <togo/core/kvs/types.hpp>
+#include <quanta/core/string/types.hpp>
 
 #include <quanta/app_script_host/interface.gen_interface>
 

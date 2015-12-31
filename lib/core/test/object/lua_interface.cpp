@@ -1,10 +1,10 @@
 
 #include <quanta/core/lua/lua.hpp>
 
-#include <togo/core/log/log.hpp>
 #include <togo/core/error/assert.hpp>
-#include <togo/core/string/string.hpp>
+#include <togo/core/log/log.hpp>
 #include <togo/core/memory/memory.hpp>
+#include <togo/core/string/string.hpp>
 #include <togo/support/test.hpp>
 
 using namespace quanta;

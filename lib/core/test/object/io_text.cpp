@@ -4,8 +4,8 @@
 #include <togo/core/log/log.hpp>
 #include <togo/core/collection/array.hpp>
 #include <togo/core/string/string.hpp>
-#include <togo/core/io/memory_stream.hpp>
 #include <togo/core/io/io.hpp>
+#include <togo/core/io/memory_stream.hpp>
 
 #include <quanta/core/object/object.hpp>
 

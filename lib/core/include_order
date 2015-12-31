@@ -1,5 +1,7 @@
 
 return {
 	M("string", {}),
+	M("chrono", {}),
 	M("object", {}),
+	M("lua", {}),
 }

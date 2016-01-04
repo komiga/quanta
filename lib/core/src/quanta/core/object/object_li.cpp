@@ -15,18 +15,18 @@ namespace quanta {
 
 namespace object {
 
-#define LI_FUNC(name) li_##name
-#define LI_FUNC_DEF(name) static signed LI_FUNC(name)(lua_State* L)
+#define TOGO_LI_FUNC(name) li_##name
+#define TOGO_LI_FUNC_DEF(name) static signed TOGO_LI_FUNC(name)(lua_State* L)
 
-LI_FUNC_DEF(hash_name) {
+TOGO_LI_FUNC_DEF(hash_name) {
 	auto name = lua::get_string(L, 1);
-	lua_pushinteger(L, object::hash_name(name));
+	lua::push_value(L, object::hash_name(name));
 	return 1;
 }
 
-LI_FUNC_DEF(hash_value) {
+TOGO_LI_FUNC_DEF(hash_value) {
 	auto value = lua::get_string(L, 1);
-	lua_pushinteger(L, object::hash_value(value));
+	lua::push_value(L, object::hash_value(value));
 	return 1;
 }
 
@@ -43,325 +43,325 @@ static signed li_create_base(lua_State* L, bool single_value) {
 }
 
 // text, single_value = true
-LI_FUNC_DEF(create) {
+TOGO_LI_FUNC_DEF(create) {
 	return li_create_base(L, luaL_opt(L, lua::get_boolean, 3, true));
 }
 
-LI_FUNC_DEF(create_mv) {
+TOGO_LI_FUNC_DEF(create_mv) {
 	return li_create_base(L, false);
 }
 
-LI_FUNC_DEF(destroy) {
+TOGO_LI_FUNC_DEF(destroy) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	TOGO_DESTROY(memory::default_allocator(), obj);
 	return 0;
 }
 
-LI_FUNC_DEF(type) {
+TOGO_LI_FUNC_DEF(type) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, unsigned_cast(object::type(*obj)));
+	lua::push_value(L, unsigned_cast(object::type(*obj)));
 	return 1;
 }
 
-LI_FUNC_DEF(set_type) {
-	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
-	lua_pushboolean(L, object::set_type(*obj, type));
-	return 1;
-}
-
-LI_FUNC_DEF(is_type) {
+TOGO_LI_FUNC_DEF(set_type) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
-	lua_pushboolean(L, object::is_type(*obj, type));
+	lua::push_value(L, object::set_type(*obj, type));
 	return 1;
 }
 
-LI_FUNC_DEF(is_type_any) {
+TOGO_LI_FUNC_DEF(is_type) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
-	lua_pushboolean(L, object::is_type_any(*obj, type));
+	lua::push_value(L, object::is_type(*obj, type));
 	return 1;
 }
 
-LI_FUNC_DEF(is_null) {
+TOGO_LI_FUNC_DEF(is_type_any) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_null(*obj));
+	auto type = static_cast<ObjectValueType>(luaL_checkinteger(L, 2));
+	lua::push_value(L, object::is_type_any(*obj, type));
 	return 1;
 }
 
-LI_FUNC_DEF(is_boolean) {
+TOGO_LI_FUNC_DEF(is_null) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_boolean(*obj));
+	lua::push_value(L, object::is_null(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_integer) {
+TOGO_LI_FUNC_DEF(is_boolean) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_integer(*obj));
+	lua::push_value(L, object::is_boolean(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_decimal) {
+TOGO_LI_FUNC_DEF(is_integer) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_decimal(*obj));
+	lua::push_value(L, object::is_integer(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_numeric) {
+TOGO_LI_FUNC_DEF(is_decimal) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_numeric(*obj));
+	lua::push_value(L, object::is_decimal(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_time) {
+TOGO_LI_FUNC_DEF(is_numeric) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_time(*obj));
+	lua::push_value(L, object::is_numeric(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_string) {
+TOGO_LI_FUNC_DEF(is_time) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_string(*obj));
+	lua::push_value(L, object::is_time(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_identifier) {
+TOGO_LI_FUNC_DEF(is_string) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_identifier(*obj));
+	lua::push_value(L, object::is_string(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_textual) {
+TOGO_LI_FUNC_DEF(is_identifier) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_textual(*obj));
+	lua::push_value(L, object::is_identifier(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_expression) {
+TOGO_LI_FUNC_DEF(is_textual) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_expression(*obj));
+	lua::push_value(L, object::is_textual(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(name) {
+TOGO_LI_FUNC_DEF(is_expression) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua::push_string(L, object::name(*obj));
+	lua::push_value(L, object::is_expression(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(name_hash) {
+TOGO_LI_FUNC_DEF(name) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, object::name_hash(*obj));
+	lua::push_value(L, object::name(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_named) {
+TOGO_LI_FUNC_DEF(name_hash) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_named(*obj));
+	lua::push_value(L, object::name_hash(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_name) {
+TOGO_LI_FUNC_DEF(is_named) {
+	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
+	lua::push_value(L, object::is_named(*obj));
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(set_name) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_name(*obj, lua::get_string(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(clear_name) {
+TOGO_LI_FUNC_DEF(clear_name) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_name(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(op) {
+TOGO_LI_FUNC_DEF(op) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, unsigned_cast(object::op(*obj)));
+	lua::push_value(L, unsigned_cast(object::op(*obj)));
 	return 1;
 }
 
-LI_FUNC_DEF(set_op) {
+TOGO_LI_FUNC_DEF(set_op) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_op(*obj, static_cast<ObjectOperator>(luaL_checkinteger(L, 2)));
 	return 0;
 }
 
-LI_FUNC_DEF(source) {
+TOGO_LI_FUNC_DEF(source) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, object::source(*obj));
+	lua::push_value(L, object::source(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(marker_source_uncertain) {
+TOGO_LI_FUNC_DEF(marker_source_uncertain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::marker_source_uncertain(*obj));
+	lua::push_value(L, object::marker_source_uncertain(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(sub_source) {
+TOGO_LI_FUNC_DEF(sub_source) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, object::sub_source(*obj));
+	lua::push_value(L, object::sub_source(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(marker_sub_source_uncertain) {
+TOGO_LI_FUNC_DEF(marker_sub_source_uncertain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::marker_sub_source_uncertain(*obj));
+	lua::push_value(L, object::marker_sub_source_uncertain(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(has_source) {
+TOGO_LI_FUNC_DEF(has_source) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_source(*obj));
+	lua::push_value(L, object::has_source(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(has_sub_source) {
+TOGO_LI_FUNC_DEF(has_sub_source) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_sub_source(*obj));
+	lua::push_value(L, object::has_sub_source(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(source_certain) {
+TOGO_LI_FUNC_DEF(source_certain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::source_certain(*obj));
+	lua::push_value(L, object::source_certain(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(source_certain_or_unspecified) {
+TOGO_LI_FUNC_DEF(source_certain_or_unspecified) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::source_certain_or_unspecified(*obj));
+	lua::push_value(L, object::source_certain_or_unspecified(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(clear_source_uncertainty) {
+TOGO_LI_FUNC_DEF(clear_source_uncertainty) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_source_uncertainty(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(set_source_certain) {
+TOGO_LI_FUNC_DEF(set_source_certain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_source_certain(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(set_source) {
+TOGO_LI_FUNC_DEF(set_source) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_source(*obj, luaL_checkinteger(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(set_sub_source_certain) {
+TOGO_LI_FUNC_DEF(set_sub_source_certain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_sub_source_certain(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(set_sub_source) {
+TOGO_LI_FUNC_DEF(set_sub_source) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_sub_source(*obj, luaL_checkinteger(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(clear_source) {
+TOGO_LI_FUNC_DEF(clear_source) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_source(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(marker_value_uncertain) {
+TOGO_LI_FUNC_DEF(marker_value_uncertain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::marker_value_uncertain(*obj));
+	lua::push_value(L, object::marker_value_uncertain(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(marker_value_guess) {
+TOGO_LI_FUNC_DEF(marker_value_guess) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::marker_value_guess(*obj));
+	lua::push_value(L, object::marker_value_guess(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(value_approximation) {
+TOGO_LI_FUNC_DEF(value_approximation) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, object::value_approximation(*obj));
+	lua::push_value(L, object::value_approximation(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(value_certain) {
+TOGO_LI_FUNC_DEF(value_certain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::value_certain(*obj));
+	lua::push_value(L, object::value_certain(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_value_certain) {
+TOGO_LI_FUNC_DEF(set_value_certain) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_value_certain(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(set_value_guess) {
+TOGO_LI_FUNC_DEF(set_value_guess) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_value_guess(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(set_value_approximation) {
+TOGO_LI_FUNC_DEF(set_value_approximation) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_value_approximation(*obj, luaL_checkinteger(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(clear_value_markers) {
+TOGO_LI_FUNC_DEF(clear_value_markers) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_value_markers(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(clear_value) {
+TOGO_LI_FUNC_DEF(clear_value) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_value(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(clear) {
+TOGO_LI_FUNC_DEF(clear) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(copy) {
+TOGO_LI_FUNC_DEF(copy) {
 	auto a = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto b = lua::get_lightuserdata_typed<Object>(L, 2);
 	object::copy(*a, *b);
 	return 0;
 }
 
-LI_FUNC_DEF(set_null) {
+TOGO_LI_FUNC_DEF(set_null) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_null(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(boolean) {
+TOGO_LI_FUNC_DEF(boolean) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::boolean(*obj));
+	lua::push_value(L, object::boolean(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_boolean) {
+TOGO_LI_FUNC_DEF(set_boolean) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_boolean(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(integer) {
+TOGO_LI_FUNC_DEF(integer) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, object::integer(*obj));
+	lua::push_value(L, object::integer(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_integer) {
+TOGO_LI_FUNC_DEF(set_integer) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto value = luaL_checkinteger(L, 2);
 	if (lua_isnone(L, 3)) {
@@ -373,13 +373,13 @@ LI_FUNC_DEF(set_integer) {
 	return 0;
 }
 
-LI_FUNC_DEF(decimal) {
+TOGO_LI_FUNC_DEF(decimal) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushnumber(L, object::decimal(*obj));
+	lua::push_value(L, object::decimal(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_decimal) {
+TOGO_LI_FUNC_DEF(set_decimal) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto value = luaL_checknumber(L, 2);
 	if (lua_isnone(L, 3)) {
@@ -391,191 +391,191 @@ LI_FUNC_DEF(set_decimal) {
 	return 0;
 }
 
-LI_FUNC_DEF(numeric) {
+TOGO_LI_FUNC_DEF(numeric) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	if (object::is_decimal(*obj)) {
-		lua_pushnumber(L, object::decimal(*obj));
+		lua::push_value(L, object::decimal(*obj));
 	} else {
 		// type check in integer()
-		lua_pushinteger(L, object::integer(*obj));
+		lua::push_value(L, object::integer(*obj));
 	}
 	return 1;
 }
 
-LI_FUNC_DEF(unit) {
+TOGO_LI_FUNC_DEF(unit) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua::push_string(L, object::unit(*obj));
+	lua::push_value(L, object::unit(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(unit_hash) {
+TOGO_LI_FUNC_DEF(unit_hash) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, object::unit_hash(*obj));
+	lua::push_value(L, object::unit_hash(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(has_unit) {
+TOGO_LI_FUNC_DEF(has_unit) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_unit(*obj));
+	lua::push_value(L, object::has_unit(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_unit) {
+TOGO_LI_FUNC_DEF(set_unit) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_unit(*obj, lua::get_string(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(time) {
+TOGO_LI_FUNC_DEF(time) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	lua::push_lightuserdata(L, &object::time_value(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(time_type) {
+TOGO_LI_FUNC_DEF(time_type) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, unsigned_cast(object::time_type(*obj)));
+	lua::push_value(L, unsigned_cast(object::time_type(*obj)));
 	return 1;
 }
 
-LI_FUNC_DEF(has_date) {
+TOGO_LI_FUNC_DEF(has_date) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_date(*obj));
+	lua::push_value(L, object::has_date(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(has_clock) {
+TOGO_LI_FUNC_DEF(has_clock) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_clock(*obj));
+	lua::push_value(L, object::has_clock(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_zoned) {
+TOGO_LI_FUNC_DEF(is_zoned) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_zoned(*obj));
+	lua::push_value(L, object::is_zoned(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_year_contextual) {
+TOGO_LI_FUNC_DEF(is_year_contextual) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_year_contextual(*obj));
+	lua::push_value(L, object::is_year_contextual(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(is_month_contextual) {
+TOGO_LI_FUNC_DEF(is_month_contextual) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::is_month_contextual(*obj));
+	lua::push_value(L, object::is_month_contextual(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_zoned) {
+TOGO_LI_FUNC_DEF(set_zoned) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_zoned(*obj, lua::get_boolean(L, 2), /*adjust = */luaL_opt(L, lua::get_boolean, 3, true));
 	return 0;
 }
 
-LI_FUNC_DEF(set_year_contextual) {
+TOGO_LI_FUNC_DEF(set_year_contextual) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_year_contextual(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(set_month_contextual) {
+TOGO_LI_FUNC_DEF(set_month_contextual) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_month_contextual(*obj, lua::get_boolean(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(set_time_type) {
+TOGO_LI_FUNC_DEF(set_time_type) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_time_type(*obj, static_cast<ObjectTimeType>(luaL_checkinteger(L, 2)));
 	return 0;
 }
 
-LI_FUNC_DEF(set_time_value) {
+TOGO_LI_FUNC_DEF(set_time_value) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
 	object::set_time_value(*obj, *t);
 	return 0;
 }
 
-LI_FUNC_DEF(set_time) {
+TOGO_LI_FUNC_DEF(set_time) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
 	object::set_time(*obj, *t);
 	return 0;
 }
 
-LI_FUNC_DEF(set_time_date) {
+TOGO_LI_FUNC_DEF(set_time_date) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
 	object::set_time_date(*obj, *t);
 	return 0;
 }
 
-LI_FUNC_DEF(set_time_clock) {
+TOGO_LI_FUNC_DEF(set_time_clock) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
 	object::set_time_clock(*obj, *t);
 	return 0;
 }
 
-LI_FUNC_DEF(resolve_time) {
+TOGO_LI_FUNC_DEF(resolve_time) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
 	object::resolve_time(*obj, *t);
 	return 0;
 }
 
-LI_FUNC_DEF(string) {
+TOGO_LI_FUNC_DEF(string) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua::push_string(L, object::string(*obj));
+	lua::push_value(L, object::string(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_string) {
+TOGO_LI_FUNC_DEF(set_string) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_string(*obj, lua::get_string(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(identifier) {
+TOGO_LI_FUNC_DEF(identifier) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua::push_string(L, object::identifier(*obj));
+	lua::push_value(L, object::identifier(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(identifier_hash) {
+TOGO_LI_FUNC_DEF(identifier_hash) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, object::identifier_hash(*obj));
+	lua::push_value(L, object::identifier_hash(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_identifier) {
+TOGO_LI_FUNC_DEF(set_identifier) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_identifier(*obj, lua::get_string(L, 2));
 	return 0;
 }
 
-LI_FUNC_DEF(text) {
+TOGO_LI_FUNC_DEF(text) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua::push_string(L, object::text(*obj));
+	lua::push_value(L, object::text(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(set_expression) {
+TOGO_LI_FUNC_DEF(set_expression) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::set_expression(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(array_iter) {
+TOGO_LI_FUNC_DEF(array_iter) {
 	// 1-based index
 	auto& a = *lua::get_lightuserdata_typed<Array<Object>>(L, 1);
 	auto i = luaL_checkinteger(L, 2);
 	++i;
 	if (i <= signed_cast(array::size(a))) {
-		lua_pushinteger(L, i);
+		lua::push_value(L, i);
 		lua::push_lightuserdata(L, &a[i - 1]);
 		return 2;
 	}
@@ -583,7 +583,7 @@ LI_FUNC_DEF(array_iter) {
 }
 
 // returns nil on error
-static signed LI_FUNC(push_sub)(lua_State* L, Object* obj, Array<Object>& a, bool sv_default) {
+static signed TOGO_LI_FUNC(push_sub)(lua_State* L, Object* obj, Array<Object>& a, bool sv_default) {
 	Object* sub = nullptr;
 	if (lua_isnone(L, 2)) {
 		sub = &array::push_back_inplace(a);
@@ -604,73 +604,73 @@ static signed LI_FUNC(push_sub)(lua_State* L, Object* obj, Array<Object>& a, boo
 	return 1;
 }
 
-static signed LI_FUNC(remove_sub)(lua_State* L, Object* /*obj*/, Array<Object>& a) {
+static signed TOGO_LI_FUNC(remove_sub)(lua_State* L, Object* /*obj*/, Array<Object>& a) {
 	auto i = luaL_checkinteger(L, 2);
 	luaL_argcheck(L, i >= 1 && i <= signed_cast(array::size(a)), 2, "index out of bounds");
 	array::remove(a, i - 1);
 	return 0;
 }
 
-static signed LI_FUNC(sub_at)(lua_State* L, Object* /*obj*/, Array<Object>& a) {
+static signed TOGO_LI_FUNC(sub_at)(lua_State* L, Object* /*obj*/, Array<Object>& a) {
 	auto i = luaL_checkinteger(L, 2);
 	luaL_argcheck(L, i >= 1 && i <= signed_cast(array::size(a)), 2, "index out of bounds");
 	lua::push_lightuserdata(L, &a[i - 1]);
 	return 1;
 }
 
-LI_FUNC_DEF(children) {
+TOGO_LI_FUNC_DEF(children) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushcfunction(L, li_array_iter);
+	lua::push_value(L, TOGO_LI_FUNC(array_iter));
 	lua::push_lightuserdata(L, &object::children(*obj));
-	lua_pushinteger(L, 0);
+	lua::push_value(L, 0);
 	return 3;
 }
 
-LI_FUNC_DEF(num_children) {
+TOGO_LI_FUNC_DEF(num_children) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, array::size(object::children(*obj)));
+	lua::push_value(L, array::size(object::children(*obj)));
 	return 1;
 }
 
-LI_FUNC_DEF(has_children) {
+TOGO_LI_FUNC_DEF(has_children) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_children(*obj));
+	lua::push_value(L, object::has_children(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(clear_children) {
+TOGO_LI_FUNC_DEF(clear_children) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_children(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(push_child) {
+TOGO_LI_FUNC_DEF(push_child) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_push_sub(L, obj, object::children(*obj), true);
 }
 
-LI_FUNC_DEF(push_child_mv) {
+TOGO_LI_FUNC_DEF(push_child_mv) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_push_sub(L, obj, object::children(*obj), false);
 }
 
-LI_FUNC_DEF(pop_child) {
+TOGO_LI_FUNC_DEF(pop_child) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	array::pop_back(object::children(*obj));
 	return 0;
 }
 
-LI_FUNC_DEF(remove_child) {
+TOGO_LI_FUNC_DEF(remove_child) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_remove_sub(L, obj, object::children(*obj));
 }
 
-LI_FUNC_DEF(child_at) {
+TOGO_LI_FUNC_DEF(child_at) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_sub_at(L, obj, object::children(*obj));
 }
 
-LI_FUNC_DEF(find_child) {
+TOGO_LI_FUNC_DEF(find_child) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	Object* result = nullptr;
 	if (lua_type(L, 2) == LUA_TSTRING) {
@@ -682,59 +682,59 @@ LI_FUNC_DEF(find_child) {
 	return 1;
 }
 
-LI_FUNC_DEF(tags) {
+TOGO_LI_FUNC_DEF(tags) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushcfunction(L, li_array_iter);
+	lua::push_value(L, li_array_iter);
 	lua::push_lightuserdata(L, &object::tags(*obj));
-	lua_pushinteger(L, 0);
+	lua::push_value(L, 0);
 	return 3;
 }
 
-LI_FUNC_DEF(num_tags) {
+TOGO_LI_FUNC_DEF(num_tags) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushinteger(L, array::size(object::tags(*obj)));
+	lua::push_value(L, array::size(object::tags(*obj)));
 	return 1;
 }
 
-LI_FUNC_DEF(has_tags) {
+TOGO_LI_FUNC_DEF(has_tags) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_tags(*obj));
+	lua::push_value(L, object::has_tags(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(clear_tags) {
+TOGO_LI_FUNC_DEF(clear_tags) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_tags(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(push_tag) {
+TOGO_LI_FUNC_DEF(push_tag) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_push_sub(L, obj, object::tags(*obj), true);
 }
 
-LI_FUNC_DEF(push_tag_mv) {
+TOGO_LI_FUNC_DEF(push_tag_mv) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_push_sub(L, obj, object::tags(*obj), false);
 }
 
-LI_FUNC_DEF(pop_tag) {
+TOGO_LI_FUNC_DEF(pop_tag) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	array::pop_back(object::tags(*obj));
 	return 0;
 }
 
-LI_FUNC_DEF(remove_tag) {
+TOGO_LI_FUNC_DEF(remove_tag) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_remove_sub(L, obj, object::tags(*obj));
 }
 
-LI_FUNC_DEF(tag_at) {
+TOGO_LI_FUNC_DEF(tag_at) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	return li_sub_at(L, obj, object::tags(*obj));
 }
 
-LI_FUNC_DEF(find_tag) {
+TOGO_LI_FUNC_DEF(find_tag) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	Object* result = nullptr;
 	if (lua_type(L, 2) == LUA_TSTRING) {
@@ -746,223 +746,217 @@ LI_FUNC_DEF(find_tag) {
 	return 1;
 }
 
-LI_FUNC_DEF(quantity) {
+TOGO_LI_FUNC_DEF(quantity) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	lua::push_lightuserdata(L, object::quantity(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(has_quantity) {
+TOGO_LI_FUNC_DEF(has_quantity) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	lua_pushboolean(L, object::has_quantity(*obj));
+	lua::push_value(L, object::has_quantity(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(clear_quantity) {
+TOGO_LI_FUNC_DEF(clear_quantity) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::clear_quantity(*obj);
 	return 0;
 }
 
-LI_FUNC_DEF(make_quantity) {
+TOGO_LI_FUNC_DEF(make_quantity) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	lua::push_lightuserdata(L, &object::make_quantity(*obj));
 	return 1;
 }
 
-LI_FUNC_DEF(release_quantity) {
+TOGO_LI_FUNC_DEF(release_quantity) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	object::release_quantity(*obj);
 	return 0;
 }
 
 // obj, path, single_value = false
-LI_FUNC_DEF(read_text_file) {
+TOGO_LI_FUNC_DEF(read_text_file) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto path = lua::get_string(L, 2);
 	bool single_value = luaL_opt(L, lua::get_boolean, 3, false);
-	lua_pushboolean(L, object::read_text_file(*obj, path, single_value));
+	lua::push_value(L, object::read_text_file(*obj, path, single_value));
 	return 1;
 }
 
 // obj, text, single_value = false
-LI_FUNC_DEF(read_text_string) {
+TOGO_LI_FUNC_DEF(read_text_string) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto text = lua::get_string(L, 2);
 	bool single_value = luaL_opt(L, lua::get_boolean, 3, false);
-	lua_pushboolean(L, object::read_text_string(*obj, text, single_value));
+	lua::push_value(L, object::read_text_string(*obj, text, single_value));
 	return 1;
 }
 
 // obj, path, single_value = false
-LI_FUNC_DEF(write_text_file) {
+TOGO_LI_FUNC_DEF(write_text_file) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	auto path = lua::get_string(L, 2);
 	bool single_value = luaL_opt(L, lua::get_boolean, 3, false);
-	lua_pushboolean(L, object::write_text_file(*obj, path, single_value));
+	lua::push_value(L, object::write_text_file(*obj, path, single_value));
 	return 1;
 }
 
 // obj, single_value = false, capacity = 512
-LI_FUNC_DEF(write_text_string) {
+TOGO_LI_FUNC_DEF(write_text_string) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
 	bool single_value = luaL_opt(L, lua::get_boolean, 2, false);
 	auto size = luaL_opt(L, luaL_checkinteger, 3, 512);
 	MemoryStream stream{memory::scratch_allocator(), static_cast<unsigned>(size)};
 	if (object::write_text(*obj, stream, single_value)) {
-		lua::push_string(L, {
+		lua::push_value(L, {
 			reinterpret_cast<char*>(array::begin(stream.data())),
 			static_cast<unsigned>(stream.size())
 		});
 	} else {
-		lua_pushnil(L);
+		lua::push_value(L, null_tag{});
 	}
 	return 1;
 }
 
-#define LI_FUNC_REF(name) {#name, object:: LI_FUNC(name)},
-
 static luaL_reg const li_funcs[]{
-	LI_FUNC_REF(hash_name)
-	LI_FUNC_REF(hash_value)
+	TOGO_LI_FUNC_REF(object, hash_name)
+	TOGO_LI_FUNC_REF(object, hash_value)
 
-	LI_FUNC_REF(create)
-	LI_FUNC_REF(create_mv)
-	LI_FUNC_REF(destroy)
+	TOGO_LI_FUNC_REF(object, create)
+	TOGO_LI_FUNC_REF(object, create_mv)
+	TOGO_LI_FUNC_REF(object, destroy)
 
-	LI_FUNC_REF(type)
-	LI_FUNC_REF(set_type)
-	LI_FUNC_REF(is_type)
-	LI_FUNC_REF(is_type_any)
-	LI_FUNC_REF(is_null)
-	LI_FUNC_REF(is_boolean)
-	LI_FUNC_REF(is_integer)
-	LI_FUNC_REF(is_decimal)
-	LI_FUNC_REF(is_numeric)
-	LI_FUNC_REF(is_time)
-	LI_FUNC_REF(is_string)
-	LI_FUNC_REF(is_identifier)
-	LI_FUNC_REF(is_textual)
-	LI_FUNC_REF(is_expression)
+	TOGO_LI_FUNC_REF(object, type)
+	TOGO_LI_FUNC_REF(object, set_type)
+	TOGO_LI_FUNC_REF(object, is_type)
+	TOGO_LI_FUNC_REF(object, is_type_any)
+	TOGO_LI_FUNC_REF(object, is_null)
+	TOGO_LI_FUNC_REF(object, is_boolean)
+	TOGO_LI_FUNC_REF(object, is_integer)
+	TOGO_LI_FUNC_REF(object, is_decimal)
+	TOGO_LI_FUNC_REF(object, is_numeric)
+	TOGO_LI_FUNC_REF(object, is_time)
+	TOGO_LI_FUNC_REF(object, is_string)
+	TOGO_LI_FUNC_REF(object, is_identifier)
+	TOGO_LI_FUNC_REF(object, is_textual)
+	TOGO_LI_FUNC_REF(object, is_expression)
 
-	LI_FUNC_REF(name)
-	LI_FUNC_REF(name_hash)
-	LI_FUNC_REF(is_named)
-	LI_FUNC_REF(set_name)
-	LI_FUNC_REF(clear_name)
+	TOGO_LI_FUNC_REF(object, name)
+	TOGO_LI_FUNC_REF(object, name_hash)
+	TOGO_LI_FUNC_REF(object, is_named)
+	TOGO_LI_FUNC_REF(object, set_name)
+	TOGO_LI_FUNC_REF(object, clear_name)
 
-	LI_FUNC_REF(op)
-	LI_FUNC_REF(set_op)
+	TOGO_LI_FUNC_REF(object, op)
+	TOGO_LI_FUNC_REF(object, set_op)
 
-	LI_FUNC_REF(source)
-	LI_FUNC_REF(marker_source_uncertain)
-	LI_FUNC_REF(sub_source)
-	LI_FUNC_REF(marker_sub_source_uncertain)
-	LI_FUNC_REF(has_source)
-	LI_FUNC_REF(has_sub_source)
-	LI_FUNC_REF(source_certain)
-	LI_FUNC_REF(source_certain_or_unspecified)
-	LI_FUNC_REF(clear_source_uncertainty)
-	LI_FUNC_REF(set_source_certain)
-	LI_FUNC_REF(set_source)
-	LI_FUNC_REF(set_sub_source_certain)
-	LI_FUNC_REF(set_sub_source)
-	LI_FUNC_REF(clear_source)
+	TOGO_LI_FUNC_REF(object, source)
+	TOGO_LI_FUNC_REF(object, marker_source_uncertain)
+	TOGO_LI_FUNC_REF(object, sub_source)
+	TOGO_LI_FUNC_REF(object, marker_sub_source_uncertain)
+	TOGO_LI_FUNC_REF(object, has_source)
+	TOGO_LI_FUNC_REF(object, has_sub_source)
+	TOGO_LI_FUNC_REF(object, source_certain)
+	TOGO_LI_FUNC_REF(object, source_certain_or_unspecified)
+	TOGO_LI_FUNC_REF(object, clear_source_uncertainty)
+	TOGO_LI_FUNC_REF(object, set_source_certain)
+	TOGO_LI_FUNC_REF(object, set_source)
+	TOGO_LI_FUNC_REF(object, set_sub_source_certain)
+	TOGO_LI_FUNC_REF(object, set_sub_source)
+	TOGO_LI_FUNC_REF(object, clear_source)
 
-	LI_FUNC_REF(marker_value_uncertain)
-	LI_FUNC_REF(marker_value_guess)
-	LI_FUNC_REF(value_approximation)
-	LI_FUNC_REF(value_certain)
-	LI_FUNC_REF(set_value_certain)
-	LI_FUNC_REF(set_value_guess)
-	LI_FUNC_REF(set_value_approximation)
-	LI_FUNC_REF(clear_value_markers)
-	LI_FUNC_REF(clear_value)
-	LI_FUNC_REF(clear)
-	LI_FUNC_REF(copy)
+	TOGO_LI_FUNC_REF(object, marker_value_uncertain)
+	TOGO_LI_FUNC_REF(object, marker_value_guess)
+	TOGO_LI_FUNC_REF(object, value_approximation)
+	TOGO_LI_FUNC_REF(object, value_certain)
+	TOGO_LI_FUNC_REF(object, set_value_certain)
+	TOGO_LI_FUNC_REF(object, set_value_guess)
+	TOGO_LI_FUNC_REF(object, set_value_approximation)
+	TOGO_LI_FUNC_REF(object, clear_value_markers)
+	TOGO_LI_FUNC_REF(object, clear_value)
+	TOGO_LI_FUNC_REF(object, clear)
+	TOGO_LI_FUNC_REF(object, copy)
 
-	LI_FUNC_REF(set_null)
+	TOGO_LI_FUNC_REF(object, set_null)
 
-	LI_FUNC_REF(boolean)
-	LI_FUNC_REF(set_boolean)
+	TOGO_LI_FUNC_REF(object, boolean)
+	TOGO_LI_FUNC_REF(object, set_boolean)
 
-	LI_FUNC_REF(integer)
-	LI_FUNC_REF(set_integer)
-	LI_FUNC_REF(decimal)
-	LI_FUNC_REF(set_decimal)
-	LI_FUNC_REF(numeric)
-	LI_FUNC_REF(unit)
-	LI_FUNC_REF(unit_hash)
-	LI_FUNC_REF(has_unit)
-	LI_FUNC_REF(set_unit)
+	TOGO_LI_FUNC_REF(object, integer)
+	TOGO_LI_FUNC_REF(object, set_integer)
+	TOGO_LI_FUNC_REF(object, decimal)
+	TOGO_LI_FUNC_REF(object, set_decimal)
+	TOGO_LI_FUNC_REF(object, numeric)
+	TOGO_LI_FUNC_REF(object, unit)
+	TOGO_LI_FUNC_REF(object, unit_hash)
+	TOGO_LI_FUNC_REF(object, has_unit)
+	TOGO_LI_FUNC_REF(object, set_unit)
 
-	LI_FUNC_REF(time)
-	LI_FUNC_REF(time_type)
-	LI_FUNC_REF(has_date)
-	LI_FUNC_REF(has_clock)
-	LI_FUNC_REF(is_zoned)
-	LI_FUNC_REF(is_year_contextual)
-	LI_FUNC_REF(is_month_contextual)
-	LI_FUNC_REF(set_zoned)
-	LI_FUNC_REF(set_year_contextual)
-	LI_FUNC_REF(set_month_contextual)
-	LI_FUNC_REF(set_time_type)
-	LI_FUNC_REF(set_time_value)
-	LI_FUNC_REF(set_time)
-	LI_FUNC_REF(set_time_date)
-	LI_FUNC_REF(set_time_clock)
-	LI_FUNC_REF(resolve_time)
+	TOGO_LI_FUNC_REF(object, time)
+	TOGO_LI_FUNC_REF(object, time_type)
+	TOGO_LI_FUNC_REF(object, has_date)
+	TOGO_LI_FUNC_REF(object, has_clock)
+	TOGO_LI_FUNC_REF(object, is_zoned)
+	TOGO_LI_FUNC_REF(object, is_year_contextual)
+	TOGO_LI_FUNC_REF(object, is_month_contextual)
+	TOGO_LI_FUNC_REF(object, set_zoned)
+	TOGO_LI_FUNC_REF(object, set_year_contextual)
+	TOGO_LI_FUNC_REF(object, set_month_contextual)
+	TOGO_LI_FUNC_REF(object, set_time_type)
+	TOGO_LI_FUNC_REF(object, set_time_value)
+	TOGO_LI_FUNC_REF(object, set_time)
+	TOGO_LI_FUNC_REF(object, set_time_date)
+	TOGO_LI_FUNC_REF(object, set_time_clock)
+	TOGO_LI_FUNC_REF(object, resolve_time)
 
-	LI_FUNC_REF(string)
-	LI_FUNC_REF(set_string)
+	TOGO_LI_FUNC_REF(object, string)
+	TOGO_LI_FUNC_REF(object, set_string)
 
-	LI_FUNC_REF(identifier)
-	LI_FUNC_REF(identifier_hash)
-	LI_FUNC_REF(set_identifier)
+	TOGO_LI_FUNC_REF(object, identifier)
+	TOGO_LI_FUNC_REF(object, identifier_hash)
+	TOGO_LI_FUNC_REF(object, set_identifier)
 
-	LI_FUNC_REF(text)
+	TOGO_LI_FUNC_REF(object, text)
 
-	LI_FUNC_REF(set_expression)
+	TOGO_LI_FUNC_REF(object, set_expression)
 
-	LI_FUNC_REF(children)
-	LI_FUNC_REF(num_children)
-	LI_FUNC_REF(has_children)
-	LI_FUNC_REF(clear_children)
-	LI_FUNC_REF(push_child)
-	LI_FUNC_REF(push_child_mv)
-	LI_FUNC_REF(pop_child)
-	LI_FUNC_REF(remove_child)
-	LI_FUNC_REF(child_at)
-	LI_FUNC_REF(find_child)
+	TOGO_LI_FUNC_REF(object, children)
+	TOGO_LI_FUNC_REF(object, num_children)
+	TOGO_LI_FUNC_REF(object, has_children)
+	TOGO_LI_FUNC_REF(object, clear_children)
+	TOGO_LI_FUNC_REF(object, push_child)
+	TOGO_LI_FUNC_REF(object, push_child_mv)
+	TOGO_LI_FUNC_REF(object, pop_child)
+	TOGO_LI_FUNC_REF(object, remove_child)
+	TOGO_LI_FUNC_REF(object, child_at)
+	TOGO_LI_FUNC_REF(object, find_child)
 
-	LI_FUNC_REF(tags)
-	LI_FUNC_REF(num_tags)
-	LI_FUNC_REF(has_tags)
-	LI_FUNC_REF(clear_tags)
-	LI_FUNC_REF(push_tag)
-	LI_FUNC_REF(push_tag_mv)
-	LI_FUNC_REF(pop_tag)
-	LI_FUNC_REF(remove_tag)
-	LI_FUNC_REF(tag_at)
-	LI_FUNC_REF(find_tag)
+	TOGO_LI_FUNC_REF(object, tags)
+	TOGO_LI_FUNC_REF(object, num_tags)
+	TOGO_LI_FUNC_REF(object, has_tags)
+	TOGO_LI_FUNC_REF(object, clear_tags)
+	TOGO_LI_FUNC_REF(object, push_tag)
+	TOGO_LI_FUNC_REF(object, push_tag_mv)
+	TOGO_LI_FUNC_REF(object, pop_tag)
+	TOGO_LI_FUNC_REF(object, remove_tag)
+	TOGO_LI_FUNC_REF(object, tag_at)
+	TOGO_LI_FUNC_REF(object, find_tag)
 
-	LI_FUNC_REF(quantity)
-	LI_FUNC_REF(has_quantity)
-	LI_FUNC_REF(clear_quantity)
-	LI_FUNC_REF(make_quantity)
-	LI_FUNC_REF(release_quantity)
+	TOGO_LI_FUNC_REF(object, quantity)
+	TOGO_LI_FUNC_REF(object, has_quantity)
+	TOGO_LI_FUNC_REF(object, clear_quantity)
+	TOGO_LI_FUNC_REF(object, make_quantity)
+	TOGO_LI_FUNC_REF(object, release_quantity)
 
-	LI_FUNC_REF(read_text_file)
-	LI_FUNC_REF(read_text_string)
-	LI_FUNC_REF(write_text_file)
-	LI_FUNC_REF(write_text_string)
+	TOGO_LI_FUNC_REF(object, read_text_file)
+	TOGO_LI_FUNC_REF(object, read_text_string)
+	TOGO_LI_FUNC_REF(object, write_text_file)
+	TOGO_LI_FUNC_REF(object, write_text_string)
 
 	{nullptr, nullptr}
 };
-
-#undef LI_FUNC_REF
-#undef LI_FUNC_DEF
-#undef LI_FUNC
 
 } // namespace object
 
@@ -970,52 +964,38 @@ static luaL_reg const li_funcs[]{
 void object::register_lua_interface(lua_State* L) {
 	luaL_register(L, "Quanta.Object", object::li_funcs);
 
-#define SET_INT(name_, value_) do { \
-	lua_pushliteral(L, name_); \
-	lua_pushinteger(L, value_); \
-	lua_rawset(L, -3); \
-	} while (false)
+	lua::table_set_raw(L, "NAME_NULL", unsigned_cast(OBJECT_NAME_NULL));
+	lua::table_set_raw(L, "VALUE_NULL", unsigned_cast(OBJECT_VALUE_NULL));
 
-	SET_INT("NAME_NULL", OBJECT_NAME_NULL);
-	SET_INT("VALUE_NULL", OBJECT_VALUE_NULL);
-
-	lua_createtable(L, 0, 7);
-	lua_pushliteral(L, "Type");
-	lua_pushvalue(L, -2);
-	lua_rawset(L, -4);
-	SET_INT("null", unsigned_cast(ObjectValueType::null));
-	SET_INT("boolean", unsigned_cast(ObjectValueType::boolean));
-	SET_INT("integer", unsigned_cast(ObjectValueType::integer));
-	SET_INT("decimal", unsigned_cast(ObjectValueType::decimal));
-	SET_INT("time", unsigned_cast(ObjectValueType::time));
-	SET_INT("string", unsigned_cast(ObjectValueType::string));
-	SET_INT("identifier", unsigned_cast(ObjectValueType::identifier));
-	SET_INT("expression", unsigned_cast(ObjectValueType::expression));
+	lua_createtable(L, 0, 8);
+	lua::table_set_copy_raw(L, -4, "Type", -1);
+	lua::table_set_raw(L, "null", unsigned_cast(ObjectValueType::null));
+	lua::table_set_raw(L, "boolean", unsigned_cast(ObjectValueType::boolean));
+	lua::table_set_raw(L, "integer", unsigned_cast(ObjectValueType::integer));
+	lua::table_set_raw(L, "decimal", unsigned_cast(ObjectValueType::decimal));
+	lua::table_set_raw(L, "time", unsigned_cast(ObjectValueType::time));
+	lua::table_set_raw(L, "string", unsigned_cast(ObjectValueType::string));
+	lua::table_set_raw(L, "identifier", unsigned_cast(ObjectValueType::identifier));
+	lua::table_set_raw(L, "expression", unsigned_cast(ObjectValueType::expression));
 	lua_pop(L, 1);
 
 	lua_createtable(L, 0, 5);
-	lua_pushliteral(L, "Operator");
-	lua_pushvalue(L, -2);
-	lua_rawset(L, -4);
-	SET_INT("none", unsigned_cast(ObjectOperator::none));
-	SET_INT("add", unsigned_cast(ObjectOperator::add));
-	SET_INT("sub", unsigned_cast(ObjectOperator::sub));
-	SET_INT("mul", unsigned_cast(ObjectOperator::mul));
-	SET_INT("div", unsigned_cast(ObjectOperator::div));
+	lua::table_set_copy_raw(L, -4, "Operator", -1);
+	lua::table_set_raw(L, "none", unsigned_cast(ObjectOperator::none));
+	lua::table_set_raw(L, "add", unsigned_cast(ObjectOperator::add));
+	lua::table_set_raw(L, "sub", unsigned_cast(ObjectOperator::sub));
+	lua::table_set_raw(L, "mul", unsigned_cast(ObjectOperator::mul));
+	lua::table_set_raw(L, "div", unsigned_cast(ObjectOperator::div));
 	lua_pop(L, 1);
 
 	lua_createtable(L, 0, 3);
-	lua_pushliteral(L, "TimeType");
-	lua_pushvalue(L, -2);
-	lua_rawset(L, -4);
-	SET_INT("date_and_clock", unsigned_cast(ObjectTimeType::date_and_clock));
-	SET_INT("date", unsigned_cast(ObjectTimeType::date));
-	SET_INT("clock", unsigned_cast(ObjectTimeType::clock));
+	lua::table_set_copy_raw(L, -4, "TimeType", -1);
+	lua::table_set_raw(L, "date_and_clock", unsigned_cast(ObjectTimeType::date_and_clock));
+	lua::table_set_raw(L, "date", unsigned_cast(ObjectTimeType::date));
+	lua::table_set_raw(L, "clock", unsigned_cast(ObjectTimeType::clock));
 	lua_pop(L, 1);
 
 	lua_pop(L, 1); // module table
-
-#undef SET_INT
 }
 
 } // namespace quanta

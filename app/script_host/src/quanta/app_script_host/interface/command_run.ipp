@@ -30,7 +30,8 @@ bool interface::command_run(
 	}
 	lua_State* L = lua::new_state();
 	luaL_openlibs(L);
-	lua::register_interfaces(L);
+	lua::register_core(L);
+	lua::register_quanta_core(L);
 	lua_pushcfunction(L, pcall_message_handler);
 	if (luaL_loadfile(L, script_path.data)) {
 		auto error = lua::get_string(L, -1);

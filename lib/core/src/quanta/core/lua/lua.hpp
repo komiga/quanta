@@ -19,10 +19,10 @@
 namespace togo {
 
 /**
-	@addtogroup lua
+	@addtogroup lib_core_lua
 	@{
 */
 
-/** @} */ // end of doc-group lua
+/** @} */ // end of doc-group lib_core_lua
 
 } // namespace togo

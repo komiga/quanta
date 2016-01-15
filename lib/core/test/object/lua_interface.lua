@@ -1,6 +1,7 @@
 
 local O = require "Quanta.Object"
 local T = require "Quanta.Time"
+require "Quanta.Time.Gregorian"
 
 function print_table(t, level)
 	local function table_to_string(t, level)
@@ -186,7 +187,7 @@ do
 	assert(not O.has_date(a) and O.has_clock(a) and O.time_type(a) == O.TimeType.clock)
 
 	T.adjust_zone_clock(wow, -4)
-	T.Gregorian.set(wow, 1977,8,15)
+	T.G.set(wow, 1977,8,15)
 	O.resolve_time(a, wow)
 	assert(O.is_zoned(a))
 	assert(O.has_date(a) and O.has_clock(a) and O.time_type(a) == O.TimeType.date_and_clock)
@@ -198,22 +199,22 @@ end
 do
 	local y, m, d
 	local t = T.temporary()
-	T.Gregorian.set(t, 1,10,15)
+	T.G.set(t, 1,10,15)
 
 	local a = O.create()
 	O.set_time_value(a, t)
 
 	T.clear(t)
 	O.set_year_contextual(a, true)
-	T.Gregorian.set(t, 2,3,10)
+	T.G.set(t, 2,3,10)
 	O.resolve_time(a, t)
-	y, m, d = T.Gregorian.date(O.time(a))
+	y, m, d = T.G.date(O.time(a))
 	assert(y == 2 and m == 10 and d == 15)
 
 	O.set_month_contextual(a, true) -- implies contextual year
-	T.Gregorian.set(t, 4,6,20)
+	T.G.set(t, 4,6,20)
 	O.resolve_time(a, t)
-	y, m, d = T.Gregorian.date(O.time(a))
+	y, m, d = T.G.date(O.time(a))
 	assert(y == 4 and m == 6 and d == 15)
 	O.destroy(a)
 end

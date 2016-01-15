@@ -15,8 +15,40 @@ namespace quanta {
 
 namespace object {
 
-#define TOGO_LI_FUNC(name) li_##name
-#define TOGO_LI_FUNC_DEF(name) static signed TOGO_LI_FUNC(name)(lua_State* L)
+TOGO_LI_FUNC_DEF(__module_init__) {
+	lua::table_set_raw(L, "NAME_NULL", unsigned_cast(OBJECT_NAME_NULL));
+	lua::table_set_raw(L, "VALUE_NULL", unsigned_cast(OBJECT_VALUE_NULL));
+
+	lua_createtable(L, 0, 8);
+	lua::table_set_copy_raw(L, -4, "Type", -1);
+	lua::table_set_raw(L, "null", unsigned_cast(ObjectValueType::null));
+	lua::table_set_raw(L, "boolean", unsigned_cast(ObjectValueType::boolean));
+	lua::table_set_raw(L, "integer", unsigned_cast(ObjectValueType::integer));
+	lua::table_set_raw(L, "decimal", unsigned_cast(ObjectValueType::decimal));
+	lua::table_set_raw(L, "time", unsigned_cast(ObjectValueType::time));
+	lua::table_set_raw(L, "string", unsigned_cast(ObjectValueType::string));
+	lua::table_set_raw(L, "identifier", unsigned_cast(ObjectValueType::identifier));
+	lua::table_set_raw(L, "expression", unsigned_cast(ObjectValueType::expression));
+	lua_pop(L, 1);
+
+	lua_createtable(L, 0, 5);
+	lua::table_set_copy_raw(L, -4, "Operator", -1);
+	lua::table_set_raw(L, "none", unsigned_cast(ObjectOperator::none));
+	lua::table_set_raw(L, "add", unsigned_cast(ObjectOperator::add));
+	lua::table_set_raw(L, "sub", unsigned_cast(ObjectOperator::sub));
+	lua::table_set_raw(L, "mul", unsigned_cast(ObjectOperator::mul));
+	lua::table_set_raw(L, "div", unsigned_cast(ObjectOperator::div));
+	lua_pop(L, 1);
+
+	lua_createtable(L, 0, 3);
+	lua::table_set_copy_raw(L, -4, "TimeType", -1);
+	lua::table_set_raw(L, "date_and_clock", unsigned_cast(ObjectTimeType::date_and_clock));
+	lua::table_set_raw(L, "date", unsigned_cast(ObjectTimeType::date));
+	lua::table_set_raw(L, "clock", unsigned_cast(ObjectTimeType::clock));
+	lua_pop(L, 1);
+
+	return 0;
+}
 
 TOGO_LI_FUNC_DEF(hash_name) {
 	auto name = lua::get_string(L, 1);
@@ -820,7 +852,13 @@ TOGO_LI_FUNC_DEF(write_text_string) {
 	return 1;
 }
 
-static luaL_reg const li_funcs[]{
+} // namespace object
+
+namespace {
+
+static LuaModuleFunctionArray const li_funcs{
+	TOGO_LI_FUNC_REF(object, __module_init__)
+
 	TOGO_LI_FUNC_REF(object, hash_name)
 	TOGO_LI_FUNC_REF(object, hash_value)
 
@@ -954,48 +992,20 @@ static luaL_reg const li_funcs[]{
 	TOGO_LI_FUNC_REF(object, read_text_string)
 	TOGO_LI_FUNC_REF(object, write_text_file)
 	TOGO_LI_FUNC_REF(object, write_text_string)
-
-	{nullptr, nullptr}
 };
 
-} // namespace object
+static LuaModuleRef const li_module{
+	"Quanta.Object",
+	"quanta/core/object/Object.lua",
+	li_funcs,
+	#include <quanta/core/object/Object.lua>
+};
+
+} // anonymous namespace
 
 /// Register the Lua interface.
 void object::register_lua_interface(lua_State* L) {
-	luaL_register(L, "Quanta.Object", object::li_funcs);
-
-	lua::table_set_raw(L, "NAME_NULL", unsigned_cast(OBJECT_NAME_NULL));
-	lua::table_set_raw(L, "VALUE_NULL", unsigned_cast(OBJECT_VALUE_NULL));
-
-	lua_createtable(L, 0, 8);
-	lua::table_set_copy_raw(L, -4, "Type", -1);
-	lua::table_set_raw(L, "null", unsigned_cast(ObjectValueType::null));
-	lua::table_set_raw(L, "boolean", unsigned_cast(ObjectValueType::boolean));
-	lua::table_set_raw(L, "integer", unsigned_cast(ObjectValueType::integer));
-	lua::table_set_raw(L, "decimal", unsigned_cast(ObjectValueType::decimal));
-	lua::table_set_raw(L, "time", unsigned_cast(ObjectValueType::time));
-	lua::table_set_raw(L, "string", unsigned_cast(ObjectValueType::string));
-	lua::table_set_raw(L, "identifier", unsigned_cast(ObjectValueType::identifier));
-	lua::table_set_raw(L, "expression", unsigned_cast(ObjectValueType::expression));
-	lua_pop(L, 1);
-
-	lua_createtable(L, 0, 5);
-	lua::table_set_copy_raw(L, -4, "Operator", -1);
-	lua::table_set_raw(L, "none", unsigned_cast(ObjectOperator::none));
-	lua::table_set_raw(L, "add", unsigned_cast(ObjectOperator::add));
-	lua::table_set_raw(L, "sub", unsigned_cast(ObjectOperator::sub));
-	lua::table_set_raw(L, "mul", unsigned_cast(ObjectOperator::mul));
-	lua::table_set_raw(L, "div", unsigned_cast(ObjectOperator::div));
-	lua_pop(L, 1);
-
-	lua_createtable(L, 0, 3);
-	lua::table_set_copy_raw(L, -4, "TimeType", -1);
-	lua::table_set_raw(L, "date_and_clock", unsigned_cast(ObjectTimeType::date_and_clock));
-	lua::table_set_raw(L, "date", unsigned_cast(ObjectTimeType::date));
-	lua::table_set_raw(L, "clock", unsigned_cast(ObjectTimeType::clock));
-	lua_pop(L, 1);
-
-	lua_pop(L, 1); // module table
+	lua::preload_module(L, li_module);
 }
 
 } // namespace quanta

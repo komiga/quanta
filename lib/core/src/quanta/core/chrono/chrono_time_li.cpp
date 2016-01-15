@@ -219,7 +219,7 @@ TOGO_LI_FUNC_DEF(set) {
 	return 0;
 }
 
-static luaL_reg const li_funcs[]{
+static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(time, temporary)
 	TOGO_LI_FUNC_REF(time, clear)
 
@@ -256,8 +256,13 @@ static luaL_reg const li_funcs[]{
 
 	TOGO_LI_FUNC_REF(time, set_utc)
 	TOGO_LI_FUNC_REF(time, set)
+};
 
-	{nullptr, nullptr}
+static LuaModuleRef const li_module{
+	"Quanta.Time",
+	"quanta/core/chrono/Time.lua",
+	li_funcs,
+	#include <quanta/core/chrono/Time.lua>
 };
 
 namespace gregorian {
@@ -365,7 +370,7 @@ TOGO_LI_FUNC_DEF(set) {
 	return 0;
 }
 
-static luaL_reg const li_funcs[]{
+static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(time::gregorian, date_utc)
 	TOGO_LI_FUNC_REF(time::gregorian, year_utc)
 	TOGO_LI_FUNC_REF(time::gregorian, month_utc)
@@ -380,8 +385,13 @@ static luaL_reg const li_funcs[]{
 
 	TOGO_LI_FUNC_REF(time::gregorian, set_utc)
 	TOGO_LI_FUNC_REF(time::gregorian, set)
+};
 
-	{nullptr, nullptr}
+static LuaModuleRef const li_module{
+	"Quanta.Time.Gregorian",
+	"quanta/core/chrono/Time.Gregorian.lua",
+	li_funcs,
+	#include <quanta/core/chrono/Time.Gregorian.lua>
 };
 
 } // namespace gregorian
@@ -390,13 +400,8 @@ static luaL_reg const li_funcs[]{
 
 /// Register the Lua interface.
 void time::register_lua_interface(lua_State* L) {
-	luaL_register(L, "Quanta.Time", time::li_funcs);
-
-	luaL_register(L, "Quanta.Time.Gregorian", time::gregorian::li_funcs);
-	lua::table_set_copy_raw(L, -4, "G", -1); // Quanta.Time.G = Quanta.Time.Gregorian
-	lua_pop(L, 1);
-
-	lua_pop(L, 1); // Quanta.Time
+	lua::preload_module(L, time::li_module);
+	lua::preload_module(L, time::gregorian::li_module);
 }
 
 } // namespace quanta

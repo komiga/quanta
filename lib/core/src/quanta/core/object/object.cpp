@@ -64,6 +64,7 @@ void object::clear_value(Object& obj) {
 		unmanaged_string::clear(obj.value.identifier, a);
 		break;
 	case ObjectValueType::expression:
+		// FIXME: why not clear children? it's the value of an expression
 		break;
 	}
 }

@@ -84,7 +84,7 @@ r
 
 \\ operators form an expression object, a type of collection
 
-\\ sources (IDs must be numbers from [0, 0xFFFF) (start-exclusive, end-inclusive))
+\\ sources (IDs must be numbers from [1, 0xFFFF] (inclusive))
 	glitter$1 \\ source ID (1)
 	glitter$1$2 \\ source ID (1) and sub-source ID (2)
 	\\ uncertainty marker only applies here

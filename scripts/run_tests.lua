@@ -33,7 +33,7 @@ for _, group_name in pairs(group_names) do
 	}
 	for file in iterate_dir(root, "file") do
 		local name, ext = split_path(file)
-		if ext == "elf" or ext == "lua" then
+		if file ~= "build.lua" and (ext == "elf" or ext == "lua") then
 			if group.data.excluded[file] or group.data.excluded[name] then
 				printf("EXCLUDED: %s / %s", group_name, file)
 			else

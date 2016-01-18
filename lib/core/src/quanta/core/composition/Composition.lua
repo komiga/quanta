@@ -1,11 +1,12 @@
+u8R""__RAW_STRING__(
 
-local U = require "Quanta.Util"
+local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
-local M = U.module("Quanta.Composition")
+local M = U.module(...)
 
 U.class(M)
 
@@ -107,3 +108,5 @@ M.t_body:add(Match.Pattern{
 })
 
 return M
+
+)"__RAW_STRING__"

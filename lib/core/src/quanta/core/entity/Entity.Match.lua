@@ -1,11 +1,11 @@
+u8R""__RAW_STRING__(
 
-local U = require "Quanta.Util"
+local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
 local Vessel = require "Quanta.Vessel"
-
-local M = U.module("Quanta.EntityMatch")
+local M = U.module(...)
 
 local function compose_string(context, name, obj)
 	local value = not O.value_certain(obj) and "?" or ""
@@ -387,3 +387,5 @@ function M.read_universe(root_path, name)
 end
 
 return M
+
+)"__RAW_STRING__"

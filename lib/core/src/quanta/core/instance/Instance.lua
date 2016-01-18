@@ -1,9 +1,10 @@
+u8R""__RAW_STRING__(
 
-local U = require "Quanta.Util"
+local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
-local M = U.module("Quanta.Instance")
+local M = U.module(...)
 
 U.class(M)
 
@@ -195,3 +196,5 @@ function M.Modifier:apply(items)
 end
 
 return M
+
+)"__RAW_STRING__"

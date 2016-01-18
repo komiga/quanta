@@ -1,7 +1,8 @@
+u8R""__RAW_STRING__(
 
-local U = require "Quanta.Util"
+local U = require "togo.utility"
 local O = require "Quanta.Object"
-local M = U.module("Quanta.Measurement")
+local M = U.module(...)
 
 U.class(M)
 
@@ -300,3 +301,5 @@ function M:__eq(y)
 end
 
 return M
+
+)"__RAW_STRING__"

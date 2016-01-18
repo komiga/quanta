@@ -1,6 +1,7 @@
+u8R""__RAW_STRING__(
 
-local U = require "Quanta.Util"
-local M = U.module("Quanta.Vessel")
+local U = require "togo.utility"
+local M = U.module(...)
 
 function M.active_bucket()
 	return M.work_local and "local" or "vessel"
@@ -33,3 +34,5 @@ function M.init(root_path, work_local)
 end
 
 return M
+
+)"__RAW_STRING__"

@@ -1,7 +1,8 @@
+u8R""__RAW_STRING__(
 
-local U = require "Quanta.Util"
+local U = require "togo.utility"
 local O = require "Quanta.Object"
-local M = U.module("Quanta.Match")
+local M = U.module(...)
 
 M.debug = false
 M.Any = {}
@@ -482,3 +483,5 @@ function M.Error:print()
 end
 
 return M
+
+)"__RAW_STRING__"

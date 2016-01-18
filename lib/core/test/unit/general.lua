@@ -1,5 +1,5 @@
 
-local U = require "Quanta.Util"
+local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"

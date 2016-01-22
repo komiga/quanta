@@ -15,7 +15,10 @@ namespace quanta {
 namespace time {
 
 TOGO_LI_FUNC_DEF(__mm_ctor) {
-	lua::new_userdata<Time>(L);
+	auto t = lua::new_userdata<Time>(L);
+	if (!lua_isnone(L, 1)) {
+		*t = *lua::get_pointer<Time>(L, 1);
+	}
 	return 1;
 }
 
@@ -194,10 +197,14 @@ TOGO_LI_FUNC_DEF(set_utc) {
 
 TOGO_LI_FUNC_DEF(set) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	auto h = luaL_checkinteger(L, 2);
-	auto m = luaL_checkinteger(L, 3);
-	auto s = luaL_checkinteger(L, 4);
-	time::set(*t, h, m, s);
+	if (lua_type(L, 1) != LUA_TNUMBER) {
+		*t = *lua::get_pointer<Time>(L, 1);
+	} else {
+		auto h = luaL_checkinteger(L, 2);
+		auto m = luaL_checkinteger(L, 3);
+		auto s = luaL_checkinteger(L, 4);
+		time::set(*t, h, m, s);
+	}
 	return 0;
 }
 

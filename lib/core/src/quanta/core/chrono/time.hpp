@@ -9,7 +9,7 @@
 
 #pragma once
 
-// igen-source: chrono/chrono_time_li.cpp
+// igen-source: chrono/time_li.cpp
 
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>

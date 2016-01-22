@@ -403,20 +403,30 @@ M.Context = U.class(M.Context)
 function M.Context:__init()
 	self.stack = {}
 	self.error = nil
-	self.error_obj = nil
 end
 
 function M.Context:set_error(err, obj)
 	self.error = err
-	self.error_obj = obj
+	if not self.error.obj then
+		self.error:set_obj(obj)
+	end
+	if not self.error.path then
+		local path = self:path()
+		if path then
+			self.error:set_path(path)
+		end
+	end
 end
 
-function M.Context:push(control, value)
+function M.Context:push(control, value, path)
 	U.type_assert(control, M.Tree)
 	U.assert(value ~= nil)
+	U.type_assert(path, "string", true)
+	path = path or self:path()
 	table.insert(self.stack, {
 		control,
 		value,
+		path,
 	})
 end
 
@@ -440,9 +450,14 @@ function M.Context:value(rel)
 	return l and l[2] or nil
 end
 
-function M.Context:consume(tree, obj, root)
+function M.Context:path(rel)
+	local l = self:at(rel)
+	return l and l[3] or nil
+end
+
+function M.Context:consume(tree, obj, root, path)
 	if root ~= nil then
-		self:push(tree, root)
+		self:push(tree, root, path)
 	end
 	local r = do_object(tree, self, tree.patterns, obj, nil)
 	if root ~= nil then
@@ -451,9 +466,9 @@ function M.Context:consume(tree, obj, root)
 	return r
 end
 
-function M.Context:consume_sub(tree, obj, root)
+function M.Context:consume_sub(tree, obj, root, path)
 	if root ~= nil then
-		self:push(tree, root)
+		self:push(tree, root, path)
 	end
 	local r = do_sub(tree, self, tree.patterns, nil, obj, O.children)
 	if root ~= nil then
@@ -468,12 +483,27 @@ function M.Error:__init(msg, ...)
 	U.type_assert(msg, "string", false, 3)
 	self.msg = string.format(msg, ...)
 	self.location = U.get_trace(3)
+	self.obj = nil
+	self.path = nil
 end
 
-function M.Error:to_string(error_obj)
+function M.Error:set_obj(obj)
+	U.type_assert(obj, "userdata")
+	self.obj = obj
+end
+
+function M.Error:set_path(path)
+	U.type_assert(path, "string")
+	self.path = path
+end
+
+function M.Error:to_string()
 	local str =  self.location .. ": error: " .. self.msg
-	if error_obj then
-		str = str .. "\nat object: ```\n" .. O.write_text_string(error_obj, true) .. "\n```"
+	if self.path then
+		str = str .. string.format("\nin file: %s\n", self.path)
+	end
+	if self.obj then
+		str = str .. "\nat object: ```\n" .. O.write_text_string(self.obj, true) .. "\n```"
 	end
 	return str
 end

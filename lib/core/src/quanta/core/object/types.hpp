@@ -19,6 +19,7 @@
 #include <togo/core/collection/types.hpp>
 #include <togo/core/string/types.hpp>
 #include <togo/core/hash/hash.hpp>
+#include <togo/core/lua/types.hpp>
 
 namespace quanta {
 namespace object {
@@ -116,6 +117,8 @@ enum class ObjectTimeType : unsigned {
 
 /// Object.
 struct Object {
+	TOGO_LUA_MARK_USERDATA(quanta::object::Object);
+
 	struct Currency {
 		s64 value;
 		s32 exponent;

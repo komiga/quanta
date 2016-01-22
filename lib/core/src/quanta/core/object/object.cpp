@@ -12,8 +12,15 @@
 #include <togo/core/utility/utility.hpp>
 #include <togo/core/log/log.hpp>
 #include <togo/core/memory/memory.hpp>
+#include <togo/core/lua/types.hpp>
 
 namespace quanta {
+
+namespace object {
+
+TOGO_LUA_MARK_USERDATA_ANCHOR(Object);
+
+} // namespace object
 
 /// Set type.
 ///

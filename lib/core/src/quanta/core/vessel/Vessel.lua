@@ -1,6 +1,7 @@
 u8R""__RAW_STRING__(
 
 local U = require "togo.utility"
+local FS = require "togo.filesystem"
 local M = U.module(...)
 
 function M.active_bucket()
@@ -30,7 +31,7 @@ function M.init(root_path, work_local)
 	M.initialized = true
 	M.root = root
 	M.set_work_local(U.optional(work_local, true))
-	-- U.assert(Filesystem.is_directory(M.root))
+	U.assert(FS.is_directory(M.root))
 end
 
 return M

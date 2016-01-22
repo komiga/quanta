@@ -14,15 +14,9 @@ namespace quanta {
 
 namespace time {
 
-TOGO_LI_FUNC_DEF(__ctor) {
+TOGO_LI_FUNC_DEF(__mm_ctor) {
 	lua::new_userdata<Time>(L);
 	return 1;
-}
-
-TOGO_LI_FUNC_DEF(destroy) {
-	auto& t = *lua::get_userdata<Time>(L, 1);
-	t.~Time();
-	return 0;
 }
 
 TOGO_LI_FUNC_DEF(clear) {
@@ -208,7 +202,8 @@ TOGO_LI_FUNC_DEF(set) {
 }
 
 static LuaModuleFunctionArray const li_funcs{
-	TOGO_LI_FUNC_REF(time, __ctor)
+	TOGO_LI_FUNC_REF(time, __mm_ctor)
+
 	TOGO_LI_FUNC_REF(time, clear)
 
 	TOGO_LI_FUNC_REF(time, set_zone_offset)
@@ -388,7 +383,7 @@ static LuaModuleRef const li_module{
 
 /// Register the Lua interface.
 void time::register_lua_interface(lua_State* L) {
-	lua::register_userdata<time::Time>(L, time::li_destroy);
+	lua::register_userdata<time::Time>(L, nullptr);
 	lua::preload_module(L, time::li_module);
 	lua::preload_module(L, time::gregorian::li_module);
 }

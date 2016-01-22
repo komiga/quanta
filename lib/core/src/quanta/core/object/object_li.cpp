@@ -15,7 +15,20 @@ namespace quanta {
 
 namespace object {
 
+TOGO_LI_FUNC_DEF(__mm_ctor) {
+	lua::new_userdata<Object>(L);
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(__mm_destroy) {
+	auto obj = lua::get_userdata<Object>(L, 1);
+	obj->~Object();
+	return 0;
+}
+
 TOGO_LI_FUNC_DEF(__module_init__) {
+	lua::register_userdata<Object>(L, li___mm_destroy);
+
 	lua::table_set_raw(L, "NAME_NULL", unsigned_cast(OBJECT_NAME_NULL));
 	lua::table_set_raw(L, "VALUE_NULL", unsigned_cast(OBJECT_VALUE_NULL));
 
@@ -47,17 +60,6 @@ TOGO_LI_FUNC_DEF(__module_init__) {
 	lua::table_set_raw(L, "clock", unsigned_cast(ObjectTimeType::clock));
 	lua_pop(L, 1);
 
-	return 0;
-}
-
-TOGO_LI_FUNC_DEF(__mm_ctor) {
-	lua::new_userdata<Object>(L);
-	return 1;
-}
-
-TOGO_LI_FUNC_DEF(__mm_destroy) {
-	auto obj = lua::get_userdata<Object>(L, 1);
-	obj->~Object();
 	return 0;
 }
 
@@ -1011,7 +1013,6 @@ static LuaModuleRef const li_module{
 
 /// Register the Lua interface.
 void object::register_lua_interface(lua_State* L) {
-	lua::register_userdata<object::Object>(L, object::li___mm_destroy);
 	lua::preload_module(L, li_module);
 }
 

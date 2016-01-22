@@ -5,6 +5,10 @@ local M = U.module(...)
 
 M.debug = false
 
+function M.__module_init__()
+	U.set_functable(M, M.__ctor)
+end
+
 return M
 
 )"__RAW_STRING__"

@@ -526,35 +526,35 @@ TOGO_LI_FUNC_DEF(set_time_type) {
 
 TOGO_LI_FUNC_DEF(set_time_value) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
+	auto t = lua::get_pointer<Time const>(L, 2);
 	object::set_time_value(*obj, *t);
 	return 0;
 }
 
 TOGO_LI_FUNC_DEF(set_time) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
+	auto t = lua::get_pointer<Time const>(L, 2);
 	object::set_time(*obj, *t);
 	return 0;
 }
 
 TOGO_LI_FUNC_DEF(set_time_date) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
+	auto t = lua::get_pointer<Time const>(L, 2);
 	object::set_time_date(*obj, *t);
 	return 0;
 }
 
 TOGO_LI_FUNC_DEF(set_time_clock) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
+	auto t = lua::get_pointer<Time const>(L, 2);
 	object::set_time_clock(*obj, *t);
 	return 0;
 }
 
 TOGO_LI_FUNC_DEF(resolve_time) {
 	auto obj = lua::get_lightuserdata_typed<Object>(L, 1);
-	auto t = lua::get_lightuserdata_typed<Time const>(L, 2);
+	auto t = lua::get_pointer<Time const>(L, 2);
 	object::resolve_time(*obj, *t);
 	return 0;
 }

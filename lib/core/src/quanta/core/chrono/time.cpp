@@ -9,10 +9,13 @@
 #include <quanta/core/chrono/time.hpp>
 
 #include <togo/core/utility/utility.hpp>
+#include <togo/core/lua/types.hpp>
 
 namespace quanta {
 
 namespace time {
+
+TOGO_LUA_MARK_USERDATA_ANCHOR(Time);
 
 namespace {
 

@@ -13,6 +13,8 @@
 #include <quanta/core/config.hpp>
 #include <quanta/core/types.hpp>
 
+#include <togo/core/lua/types.hpp>
+
 namespace quanta {
 namespace time {
 
@@ -26,6 +28,8 @@ using Duration = s64;
 
 /// A point in time relative to 0001-01-01T00:00:00Z in the Gregorian calendar.
 struct Time {
+	TOGO_LUA_MARK_USERDATA(quanta::Time);
+
 	s64 sec; // seconds relative to epoch in UTC
 	s32 zone_offset; // timezone offset in seconds (sec_local = sec + zone_offset)
 };

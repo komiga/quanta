@@ -327,14 +327,14 @@ Match.Pattern{
 		local sub = O.create()
 		for _, path in ipairs(collection) do
 			-- TODO: expand pattern-match path against filesystem
-			if not O.read_text_file(sub, Vessel.data_path("entity/" .. path)) then
+			path = Vessel.data_path("entity/" .. path)
+			if not O.read_text_file(sub, path) then
 				return Match.Error("failed to load include file: %s", path)
 			end
-			if not context:consume_sub(context:control(), sub) then
+			if not context:consume_sub(context:control(), sub, cat, path) then
 				return false
 			end
 		end
-		O.destroy(sub)
 		return true
 	end
 },
@@ -375,14 +375,13 @@ function M.read_universe(root_path, name)
 	if O.read_text_file(root, root_path) then
 		universe = Entity.Universe(name or "universe")
 		local context = Match.Context()
-		if not context:consume_sub(M.universe, root, universe) then
-			U.log("match error:\n%s", context.error:to_string(context.error_obj))
+		if not context:consume_sub(M.universe, root, universe, root_path) then
+			U.log("match error:\n%s", context.error:to_string())
 			universe = nil
 		end
 	else
 		U.log("error: failed to read root")
 	end
-	O.destroy(root)
 	return universe
 end
 

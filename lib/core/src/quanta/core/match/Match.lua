@@ -194,6 +194,42 @@ end
 M.filters.children = make_sub_filter({}, "children", "collect")
 M.filters.tags     = make_sub_filter({}, "tags", "collect_tags")
 
+M.filters.quantity = {}
+
+M.filters.quantity.init = function(p, r)
+	U.assertl(
+		3, U.is_type_any(r.quantity, {M.Tree, "table", "function", "boolean"}, true),
+		"pattern rule 'quantity' has invalid value"
+	)
+	if r.quantity == nil then
+		return M.filters.quantity[false]
+	elseif r.quantity == M.Any then
+		return nil
+	elseif U.is_type(r.quantity, "function") then
+		return r.quantity
+	elseif not U.is_type(r.quantity, "boolean") then
+		p.quantity = r.quantity
+	end
+	return M.filters.quantity[filter_selector(r.quantity)]
+end
+
+M.filters.quantity[false] 	= function(_, _, obj, p) return not O.has_quantity(obj) end
+M.filters.quantity[true] 	= function(_, _, obj, p) return O.has_quantity(obj) end
+
+M.filters_ordered = {}
+
+local function add_filter_group(name)
+	local group = M.filters[name]
+	U.assert(group)
+	table.insert(M.filters_ordered, {name = name, group = group})
+end
+
+add_filter_group("name")
+add_filter_group("value")
+add_filter_group("func")
+add_filter_group("children")
+add_filter_group("tags")
+
 M.Pattern = U.class(M.Pattern)
 
 local function filter_wrapper(name, f)
@@ -220,10 +256,10 @@ function M.Pattern:__init(...)
 		self.any_branch = r.any_branch
 		table.insert(self.filters, M.filters.func.yes)
 	else
-		for name, g in pairs(M.filters) do
-			local f = g.init(self, r)
+		for _, filter in ipairs(M.filters_ordered) do
+			local f = filter.group.init(self, r)
 			if f then
-				table.insert(self.filters, filter_wrapper(name, f))
+				table.insert(self.filters, filter_wrapper(filter.name, f))
 			end
 		end
 	end
@@ -334,6 +370,11 @@ do_object = function(tree, context, patterns, obj, collection)
 				end
 				if not do_sub(tree, context, p.tags, p.collect_tags_post, obj, O.tags) then
 					return false
+				end
+				if p.quantity then
+					if not do_object(tree, context, p.quantity, O.quantity(obj), nil) then
+						return false
+					end
 				end
 			end
 

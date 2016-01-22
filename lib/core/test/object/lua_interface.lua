@@ -48,7 +48,6 @@ do
 	O.pop_child(a)
 	assert(O.num_children(a) == 0)
 	assert(O.push_child(a, "x=") == nil)
-	O.destroy(a)
 end
 
 do
@@ -78,7 +77,6 @@ do
 	assert(not O.find_tag(a, O.NAME_NULL))
 	assert(not O.find_tag(a, ""))
 	assert(not O.find_tag(a, "a"))
-	O.destroy(a)
 end
 
 do
@@ -106,7 +104,6 @@ do
 		not O.source_certain(a) and O.source_certain_or_unspecified(a) and
 		not O.marker_source_uncertain(a) and not O.marker_sub_source_uncertain(a)
 	)
-	O.destroy(a)
 end
 
 do
@@ -131,7 +128,6 @@ do
 		not O.marker_value_uncertain(a) and not O.marker_value_guess(a) and
 		O.value_approximation(a) == 0
 	)
-	O.destroy(a)
 end
 
 do
@@ -140,7 +136,6 @@ do
 	assert(O.is_named(a) and O.name(a) == "name" and O.name_hash(a) == O.hash_name("name"))
 	O.clear_name(a)
 	assert(not O.is_named(a) and O.name(a) == "" and O.name_hash(a) == O.NAME_NULL)
-	O.destroy(a)
 end
 
 do
@@ -165,11 +160,10 @@ do
 	local t = O.push_tag(a)
 	O.set_name(t, "leftover")
 	assert(t == O.find_tag(a, "leftover"))
-	O.destroy(a)
 end
 
 do
-	local wow = T.temporary()
+	local wow = T()
 	-- treated as local when resolve_time() is called (from unzoned to -04:00)
 	T.set(wow, 10,16,0)
 
@@ -193,12 +187,11 @@ do
 	assert(O.has_date(a) and O.has_clock(a) and O.time_type(a) == O.TimeType.date_and_clock)
 
 	assert(T.compare_equal(O.time(a), wow))
-	O.destroy(a)
 end
 
 do
 	local y, m, d
-	local t = T.temporary()
+	local t = T()
 	T.G.set(t, 1,10,15)
 
 	local a = O.create()
@@ -216,7 +209,6 @@ do
 	O.resolve_time(a, t)
 	y, m, d = T.G.date(O.time(a))
 	assert(y == 4 and m == 6 and d == 15)
-	O.destroy(a)
 end
 
 do
@@ -233,5 +225,4 @@ do
 	O.set_op(e2, O.Operator.div)
 	assert(O.op(e2) == O.Operator.div)
 
-	O.destroy(a)
 end

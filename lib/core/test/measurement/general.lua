@@ -56,8 +56,6 @@ function do_translation_test(t)
 	U.assert(m.certain == t.certain)
 
 	U.assert(m == Measurement(t.value, t.unit, t.of, t.approximation, t.certain))
-
-	O.destroy(o)
 end
 
 function main()

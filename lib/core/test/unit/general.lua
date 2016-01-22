@@ -198,8 +198,6 @@ function do_test(t, search_in, controllers)
 	else
 		U.print("(expected)")
 	end
-
-	O.destroy(o)
 end
 
 function main()

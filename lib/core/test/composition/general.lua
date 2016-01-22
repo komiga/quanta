@@ -141,8 +141,6 @@ function do_test(t, search_in, controllers)
 	text = string.gsub(text, "\t", " ")
 	text = string.gsub(text, "\n", ",")
 	U.print("%s  =>\n%s", t.text, text)
-
-	O.destroy(o)
 end
 
 function main()

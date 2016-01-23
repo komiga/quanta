@@ -197,8 +197,8 @@ TOGO_LI_FUNC_DEF(set_utc) {
 
 TOGO_LI_FUNC_DEF(set) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	if (lua_type(L, 1) != LUA_TNUMBER) {
-		*t = *lua::get_pointer<Time>(L, 1);
+	if (lua_type(L, 2) != LUA_TNUMBER) {
+		*t = *lua::get_pointer<Time>(L, 2);
 	} else {
 		auto h = luaL_checkinteger(L, 2);
 		auto m = luaL_checkinteger(L, 3);

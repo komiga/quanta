@@ -30,13 +30,13 @@ TOGO_LI_FUNC_DEF(clear) {
 
 TOGO_LI_FUNC_DEF(set_zone_offset) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	time::set_zone_offset(*t, luaL_checkinteger(L, 2));
+	time::set_zone_offset(*t, lua::get_integer(L, 2));
 	return 0;
 }
 
 TOGO_LI_FUNC_DEF(set_zone_clock) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	time::set_zone_clock(*t, luaL_checkinteger(L, 2), luaL_opt(L, luaL_checkinteger, 3, 0));
+	time::set_zone_clock(*t, lua::get_integer(L, 2), luaL_opt(L, lua::get_integer, 3, 0));
 	return 0;
 }
 
@@ -48,13 +48,13 @@ TOGO_LI_FUNC_DEF(set_zone_utc) {
 
 TOGO_LI_FUNC_DEF(adjust_zone_offset) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	time::adjust_zone_offset(*t, luaL_checkinteger(L, 2));
+	time::adjust_zone_offset(*t, lua::get_integer(L, 2));
 	return 0;
 }
 
 TOGO_LI_FUNC_DEF(adjust_zone_clock) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	time::adjust_zone_clock(*t, luaL_checkinteger(L, 2), luaL_opt(L, luaL_checkinteger, 3, 0));
+	time::adjust_zone_clock(*t, lua::get_integer(L, 2), luaL_opt(L, lua::get_integer, 3, 0));
 	return 0;
 }
 
@@ -81,20 +81,20 @@ TOGO_LI_FUNC_DEF(as_utc_adjusted) {
 TOGO_LI_FUNC_DEF(difference) {
 	auto l = lua::get_pointer<Time const>(L, 1);
 	auto r = lua::get_pointer<Time const>(L, 2);
-	lua_pushinteger(L, time::difference(*l, *r));
+	lua::push_value(L, time::difference(*l, *r));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(add) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	auto d = luaL_checkinteger(L, 2);
+	auto d = lua::get_integer(L, 2);
 	time::add(*t, d);
 	return 0;
 }
 
 TOGO_LI_FUNC_DEF(sub) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	auto d = luaL_checkinteger(L, 2);
+	auto d = lua::get_integer(L, 2);
 	time::sub(*t, d);
 	return 0;
 }
@@ -102,43 +102,43 @@ TOGO_LI_FUNC_DEF(sub) {
 TOGO_LI_FUNC_DEF(compare_equal) {
 	auto l = lua::get_pointer<Time const>(L, 1);
 	auto r = lua::get_pointer<Time const>(L, 2);
-	lua_pushboolean(L, time::compare_equal(*l, *r));
+	lua::push_value(L, time::compare_equal(*l, *r));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(hour_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::hour_utc(*t));
+	lua::push_value(L, time::hour_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(minute_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::minute_utc(*t));
+	lua::push_value(L, time::minute_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(second_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::second_utc(*t));
+	lua::push_value(L, time::second_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(hour) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::hour(*t));
+	lua::push_value(L, time::hour(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(minute) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::minute(*t));
+	lua::push_value(L, time::minute(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(second) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::second(*t));
+	lua::push_value(L, time::second(*t));
 	return 1;
 }
 
@@ -146,9 +146,9 @@ TOGO_LI_FUNC_DEF(clock_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
 	signed h = 0, m = 0, s = 0;
 	time::clock_utc(*t, h, m, s);
-	lua_pushinteger(L, h);
-	lua_pushinteger(L, m);
-	lua_pushinteger(L, s);
+	lua::push_value(L, h);
+	lua::push_value(L, m);
+	lua::push_value(L, s);
 	return 3;
 }
 
@@ -156,41 +156,41 @@ TOGO_LI_FUNC_DEF(clock) {
 	auto t = lua::get_pointer<Time const>(L, 1);
 	signed h = 0, m = 0, s = 0;
 	time::clock(*t, h, m, s);
-	lua_pushinteger(L, h);
-	lua_pushinteger(L, m);
-	lua_pushinteger(L, s);
+	lua::push_value(L, h);
+	lua::push_value(L, m);
+	lua::push_value(L, s);
 	return 3;
 }
 
 TOGO_LI_FUNC_DEF(clock_seconds_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::clock_seconds_utc(*t));
+	lua::push_value(L, time::clock_seconds_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(clock_seconds) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::clock_seconds(*t));
+	lua::push_value(L, time::clock_seconds(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(date_seconds_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::date_seconds_utc(*t));
+	lua::push_value(L, time::date_seconds_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(date_seconds) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::date_seconds(*t));
+	lua::push_value(L, time::date_seconds(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(set_utc) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	auto h = luaL_checkinteger(L, 2);
-	auto m = luaL_checkinteger(L, 3);
-	auto s = luaL_checkinteger(L, 4);
+	auto h = lua::get_integer(L, 2);
+	auto m = lua::get_integer(L, 3);
+	auto s = lua::get_integer(L, 4);
 	time::set_utc(*t, h, m, s);
 	return 0;
 }
@@ -200,9 +200,9 @@ TOGO_LI_FUNC_DEF(set) {
 	if (lua_type(L, 2) != LUA_TNUMBER) {
 		*t = *lua::get_pointer<Time>(L, 2);
 	} else {
-		auto h = luaL_checkinteger(L, 2);
-		auto m = luaL_checkinteger(L, 3);
-		auto s = luaL_checkinteger(L, 4);
+		auto h = lua::get_integer(L, 2);
+		auto m = lua::get_integer(L, 3);
+		auto s = lua::get_integer(L, 4);
 		time::set(*t, h, m, s);
 	}
 	return 0;
@@ -260,85 +260,85 @@ namespace gregorian {
 TOGO_LI_FUNC_DEF(date_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
 	Date d = time::gregorian::date_utc(*t);
-	lua_pushinteger(L, d.year);
-	lua_pushinteger(L, d.month);
-	lua_pushinteger(L, d.day);
+	lua::push_value(L, d.year);
+	lua::push_value(L, d.month);
+	lua::push_value(L, d.day);
 	return 3;
 }
 
 TOGO_LI_FUNC_DEF(year_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::gregorian::year_utc(*t));
+	lua::push_value(L, time::gregorian::year_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(month_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::gregorian::month_utc(*t));
+	lua::push_value(L, time::gregorian::month_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(day_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::gregorian::day_utc(*t));
+	lua::push_value(L, time::gregorian::day_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(is_leap_year_utc) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushboolean(L, time::gregorian::is_leap_year_utc(*t));
+	lua::push_value(L, time::gregorian::is_leap_year_utc(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(date) {
 	auto t = lua::get_pointer<Time const>(L, 1);
 	Date d = time::gregorian::date(*t);
-	lua_pushinteger(L, d.year);
-	lua_pushinteger(L, d.month);
-	lua_pushinteger(L, d.day);
+	lua::push_value(L, d.year);
+	lua::push_value(L, d.month);
+	lua::push_value(L, d.day);
 	return 3;
 }
 
 TOGO_LI_FUNC_DEF(year) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::gregorian::year(*t));
+	lua::push_value(L, time::gregorian::year(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(month) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::gregorian::month(*t));
+	lua::push_value(L, time::gregorian::month(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(day) {
 	auto t = lua::get_pointer<Time const>(L, 1);
-	lua_pushinteger(L, time::gregorian::day(*t));
+	lua::push_value(L, time::gregorian::day(*t));
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(is_leap_year) {
 	if (lua_type(L, 1) == LUA_TLIGHTUSERDATA) {
 		auto t = lua::get_pointer<Time const>(L, 1);
-		lua_pushboolean(L, time::gregorian::is_leap_year(*t));
+		lua::push_value(L, time::gregorian::is_leap_year(*t));
 	} else {
-		auto year = luaL_checkinteger(L, 1);
-		lua_pushboolean(L, time::gregorian::is_leap_year(year));
+		auto year = lua::get_integer(L, 1);
+		lua::push_value(L, time::gregorian::is_leap_year(year));
 	}
 	return 1;
 }
 
 TOGO_LI_FUNC_DEF(set_utc) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	auto year = luaL_checkinteger(L, 2);
-	auto month = luaL_checkinteger(L, 3);
-	auto day = luaL_checkinteger(L, 4);
+	auto year = lua::get_integer(L, 2);
+	auto month = lua::get_integer(L, 3);
+	auto day = lua::get_integer(L, 4);
 	if (lua_gettop(L) == 4) {
 		time::gregorian::set_utc(*t, year, month, day);
 	} else {
-		auto clock_h = luaL_checkinteger(L, 5);
-		auto clock_m = luaL_checkinteger(L, 6);
-		auto clock_s = luaL_checkinteger(L, 7);
+		auto clock_h = lua::get_integer(L, 5);
+		auto clock_m = lua::get_integer(L, 6);
+		auto clock_s = lua::get_integer(L, 7);
 		time::gregorian::set_utc(*t, year, month, day, clock_h, clock_m, clock_s);
 	}
 	return 0;
@@ -346,15 +346,15 @@ TOGO_LI_FUNC_DEF(set_utc) {
 
 TOGO_LI_FUNC_DEF(set) {
 	auto t = lua::get_pointer<Time>(L, 1);
-	auto year = luaL_checkinteger(L, 2);
-	auto month = luaL_checkinteger(L, 3);
-	auto day = luaL_checkinteger(L, 4);
+	auto year = lua::get_integer(L, 2);
+	auto month = lua::get_integer(L, 3);
+	auto day = lua::get_integer(L, 4);
 	if (lua_gettop(L) == 4) {
 		time::gregorian::set(*t, year, month, day);
 	} else {
-		auto clock_h = luaL_checkinteger(L, 5);
-		auto clock_m = luaL_checkinteger(L, 6);
-		auto clock_s = luaL_checkinteger(L, 7);
+		auto clock_h = lua::get_integer(L, 5);
+		auto clock_m = lua::get_integer(L, 6);
+		auto clock_s = lua::get_integer(L, 7);
 		time::gregorian::set(*t, year, month, day, clock_h, clock_m, clock_s);
 	}
 	return 0;

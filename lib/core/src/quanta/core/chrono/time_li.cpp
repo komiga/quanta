@@ -212,6 +212,18 @@ TOGO_LI_FUNC_DEF(set) {
 	return 0;
 }
 
+TOGO_LI_FUNC_DEF(value) {
+	auto t = lua::get_pointer<Time const>(L, 1);
+	lua::push_value(L, t->sec);
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(zone_offset) {
+	auto t = lua::get_pointer<Time const>(L, 1);
+	lua::push_value(L, t->zone_offset);
+	return 1;
+}
+
 static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(time, __mm_ctor)
 
@@ -250,6 +262,9 @@ static LuaModuleFunctionArray const li_funcs{
 
 	TOGO_LI_FUNC_REF(time, set_utc)
 	TOGO_LI_FUNC_REF(time, set)
+
+	TOGO_LI_FUNC_REF(time, value)
+	TOGO_LI_FUNC_REF(time, zone_offset)
 };
 
 static LuaModuleRef const li_module{

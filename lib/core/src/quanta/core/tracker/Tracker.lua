@@ -139,7 +139,7 @@ M.Action.t_head:add(Match.Pattern{
 		name = {"d", ""},
 		vtype = O.Type.string,
 		acceptor = function(context, self, obj)
-			self.description = O.string(obj)
+			self.data.description = O.string(obj)
 		end,
 	}},
 	acceptor = function(context, self, obj)

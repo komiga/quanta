@@ -56,36 +56,44 @@ end
 
 -- TODO: build and solve a dependency graph
 
-local function find_by_ref(entries, start, direction, n, ool)
-	for i = start + direction, direction < 0 and 1 or #entries, direction do
+local function find_by_ref(entries, start, n, ool)
+	local direction = n < 0 and -1 or 1
+	local target = direction < 0 and 1 or #entries
+	for i = start + direction, target, direction do
 		local entry = entries[i]
 		if entry.ool == ool then
-			n = n - 1
-		end
-		if n == 0 then
-			return entry
+			n = n - direction
+			if n == 0 then
+				return entry
+			end
 		end
 	end
 	return nil
 end
 
-local function fixup_time_ref(self, i, entry, time)
-	if time.type < M.EntryTime.Type.ref_prev then
+local function fixup_time_ref(self, i, entry, time, part)
+	if time.type == M.EntryTime.Type.specified then
 		return true
+	elseif time.type == M.EntryTime.Type.placeholder then
+		return obj_error(entry.obj, "entry range %s is unspecified", part)
 	end
 
-	local direction = time.type == M.EntryTime.Type.ref_prev and -1 or 1
-	local ref_entry = find_by_ref(self.entries, i, direction, entry.index, entry.ool)
+	local ref_entry = find_by_ref(self.entries, i, time.index, time.ool)
 	if not ref_entry then
-		return obj_error(entry.obj, "entry reference index is out-of-bounds")
+		return obj_error(entry.obj, "entry range %s reference index is out-of-bounds", part)
 	end
 
 	local ref_time = ref_entry.r_start
 	if ref_time.type ~= M.EntryTime.Type.specified then
-		return obj_error(entry.obj, "entry referent has an unresolved start time")
+		return obj_error(entry.obj, "entry range %s referent has an unresolved start time", part)
 	end
 
+	time.type = M.EntryTime.Type.specified
 	T.set(time.time, T.value(ref_time.time))
+	time.ool = false
+	time.index = 0
+	time.approximation = ref_time.approximation
+	time.certain = ref_time.certain
 	return true
 end
 
@@ -95,9 +103,16 @@ function M:validate_and_fixup()
 	end
 	local success, msg
 	for i, entry in ipairs(self.entries) do
-		success, msg = fixup_time_ref(self, i, entry, entry.r_start)
+		if
+			entry.r_start.type == M.EntryTime.Type.placeholder and
+			entry.r_end.type == M.EntryTime.Type.placeholder
+		then
+			return obj_error(entry.obj, "entry range is incomplete or unspecified")
+		end
+
+		success, msg = fixup_time_ref(self, i, entry, entry.r_start, "start")
 		if not success then return false, msg end
-		success, msg = fixup_time_ref(self, i, entry, entry.r_end)
+		success, msg = fixup_time_ref(self, i, entry, entry.r_end, "end")
 		if not success then return false, msg end
 
 		entry:recalculate()
@@ -168,8 +183,7 @@ M.EntryTime = U.class(M.EntryTime)
 M.EntryTime.Type = {
 	specified		= 1,
 	placeholder		= 2, -- XXX
-	ref_prev		= 3, -- EPREV
-	ref_next		= 4, -- ENEXT
+	ref				= 3, -- EPREV, ENEXT
 }
 
 function M.EntryTime:__init()
@@ -217,8 +231,8 @@ M.EntryTime.t_head:add(Match.Pattern{
 })
 
 local et_ref_type_by_name = {
-	["EPREV"] = M.EntryTime.Type.ref_prev,
-	["ENEXT"] = M.EntryTime.Type.ref_next,
+	["EPREV"] = M.EntryTime.Type.ref,
+	["ENEXT"] = M.EntryTime.Type.ref,
 }
 
 -- EPREV, ENEXT
@@ -241,15 +255,17 @@ M.EntryTime.t_head:add(Match.Pattern{
 			return true
 		end,
 		acceptor = function(context, self, obj)
-			self.index = O.integer(obj)
+			self.index = self.index * O.integer(obj)
 		end,
 	}},
 	acceptor = function(context, self, obj)
-		self.type = et_ref_type_by_name[O.identifier(obj)]
-		entry_time_set_uncertainties(self, obj)
-		if not O.has_quantity(obj) then
+		self.type = M.EntryTime.Type.ref
+		if O.identifier(obj) == "EPREV" then
+			self.index = -1
+		else
 			self.index = 1
 		end
+		entry_time_set_uncertainties(self, obj)
 	end,
 })
 

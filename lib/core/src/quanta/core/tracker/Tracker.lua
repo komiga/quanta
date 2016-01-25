@@ -13,6 +13,7 @@ U.class(M)
 function M:__init()
 	self.date = T()
 	self.entries = {}
+	self.entry_groups = {}
 end
 
 function M:from_object(obj, director)
@@ -20,6 +21,7 @@ function M:from_object(obj, director)
 
 	T.clear(self.date)
 	self.entries = {}
+	self.entry_groups = {}
 
 	local context = Match.Context()
 	context.user = {
@@ -121,6 +123,22 @@ function M:validate_and_fixup()
 			return obj_error(entry.obj, "entry range is degenerate: duration is negative")
 		elseif duration == 0 then
 			return obj_error(entry.obj, "entry range is degenerate: duration is zero")
+		end
+
+		if entry.continue_id then
+			if T.compare_equal(entry.continue_scope, self.date) then
+				local group = self.entry_groups[entry.continue_id]
+				if not group then
+					if #entry.actions == 0 then
+						return obj_error(entry.obj, "local continue group head entry carries no actions")
+					end
+					group = {}
+					self.entry_groups[entry.continue_id] = group
+				end
+				table.insert(group, entry)
+			end
+		elseif #entry.actions == 0 then
+			return obj_error(entry.obj, "entry is empty: carries no actions and doesn't belong to a continue group")
 		end
 		entry.obj = nil
 	end
@@ -278,8 +296,8 @@ function M.Entry:__init()
 	self.r_end = M.EntryTime()
 	self.tags = {}
 	self.rel_id = {}
-	self.continue_scope = nil
 	self.continue_id = nil
+	self.continue_scope = nil
 	self.actions = {}
 end
 
@@ -374,8 +392,8 @@ M.Entry.t_body:add(Match.Pattern{
 	name = "continue_id",
 	vtype = O.Type.identifier,
 	acceptor = function(context, self, obj)
-		self.continue_scope = nil
 		self.continue_id = O.identifier(obj)
+		self.continue_scope = context.user.tracker.date
 	end,
 })
 
@@ -391,8 +409,8 @@ M.Entry.t_body:add(Match.Pattern{
 
 		O.copy(context.user.obj_tmp, obj, false)
 		O.resolve_time(context.user.obj_tmp, context.user.tracker.date)
-		self.continue_scope = T(O.time(context.user.obj_tmp))
 		self.continue_id = O.identifier(O.child_at(obj, 1))
+		self.continue_scope = T(O.time(context.user.obj_tmp))
 	end,
 })
 

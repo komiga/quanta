@@ -112,6 +112,7 @@ function M:validate_and_fixup()
 			return obj_error(entry.obj, "entry range is incomplete or unspecified")
 		end
 
+		entry:fixup()
 		success, msg = fixup_time_ref(self, i, entry, entry.r_start, "start")
 		if not success then return false, msg end
 		success, msg = fixup_time_ref(self, i, entry, entry.r_end, "end")
@@ -162,12 +163,22 @@ M.Action.p_accum = Match.Pattern{
 		table.insert(entry.actions, action)
 		return action
 	end,
+	post_branch = function(context, entry, obj)
+		local tag_action_primary = O.find_tag(obj, "action_primary")
+		if tag_action_primary then
+			if entry.primary_action then
+				return Match.Error("entry already has a primary action")
+			end
+			entry.primary_action = #entry.actions
+		end
+	end,
 }
 
 -- ETODO
 M.Action.t_head:add(Match.Pattern{
 	vtype = O.Type.identifier,
 	value = "ETODO",
+	tags = Match.Any,
 	children = {Match.Pattern{
 		name = {"d", ""},
 		vtype = O.Type.string,
@@ -191,8 +202,13 @@ M.Action.t_head:add(Match.Pattern{
 -- action
 M.Action.t_head:add(Match.Pattern{
 	vtype = O.Type.identifier,
+	tags = Match.Any,
 	acceptor = function(context, self, obj)
-		return context.user.director:read_action(context, self, obj)
+		self.id = O.identifier(obj)
+		self.id_hash = O.identifier_hash(obj)
+
+		local entry = context:value(1)
+		return context.user.director:read_action(context, entry, self, obj)
 	end,
 })
 
@@ -299,6 +315,13 @@ function M.Entry:__init()
 	self.continue_id = nil
 	self.continue_scope = nil
 	self.actions = {}
+	self.primary_action = nil
+end
+
+function M.Entry:fixup()
+	if not self.primary_action and #self.actions > 0 then
+		self.primary_action = 1
+	end
 end
 
 function M.Entry:recalculate()

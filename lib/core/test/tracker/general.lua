@@ -45,7 +45,7 @@ make_test_fail(
 
 make_test(
 [==[Tracker{date = 2016-01-01Z, entries = {
-	Entry{range = 01:00:00 - 02:30:00, actions = {
+	Entry{range = 01:00 - 02:00, actions = {
 		ETODO
 		ETODO{"x"}
 		ETODO{d = "y"}
@@ -55,42 +55,99 @@ make_test(
 	make_tracker_entry(
 		false,
 		make_tracker_entry_time("2016-01-01T01:00:00Z", 0, true),
-		make_tracker_entry_time("2016-01-01T02:30:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
 		{},
 		{},
 		nil, nil,
-		{
+		1, {
 			make_tracker_action("ETODO", {description = ""}),
 			make_tracker_action("ETODO", {description = "x"}),
 			make_tracker_action("ETODO", {description = "y"}),
 		}
 	),
 }),
+
 make_test(
 [==[Tracker{date = 2016-01-01Z, entries = {
-	Entry{range = 01:00:00 - ENEXT, actions = {ETODO}};
-	Entry{range = 02:30:00 - 04:00, actions = {ETODO}};
+	Entry{range = 01:00 - 02:00, actions = {
+		ETODO
+		ETODO:action_primary
+		ETODO
+	}};
 }}]==],
 "2016-01-01Z", {
 	make_tracker_entry(
 		false,
 		make_tracker_entry_time("2016-01-01T01:00:00Z", 0, true),
-		make_tracker_entry_time("2016-01-01T02:30:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
 		{},
 		{},
 		nil, nil,
-		{
+		2, {
+			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", {description = ""}),
+		}
+	),
+}),
+make_test(
+[==[Tracker{date = 2016-01-01Z, entries = {
+	Entry{range = 01:00 - 02:00, actions = {
+		ETODO
+		ETODO
+		ETODO:action_primary
+	}};
+}}]==],
+"2016-01-01Z", {
+	make_tracker_entry(
+		false,
+		make_tracker_entry_time("2016-01-01T01:00:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
+		{},
+		{},
+		nil, nil,
+		3, {
+			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", {description = ""}),
+		}
+	),
+}),
+
+make_test_fail(
+[==[Tracker{date = 2016-01-01Z, entries = {
+	Entry{range = 01:00 - 02:00, actions = {
+		ETODO:action_primary
+		ETODO:action_primary
+	}};
+}}]==]
+),
+
+make_test(
+[==[Tracker{date = 2016-01-01Z, entries = {
+	Entry{range = 01:00:00 - ENEXT, actions = {ETODO}};
+	Entry{range = 02:00:00 - 04:00, actions = {ETODO}};
+}}]==],
+"2016-01-01Z", {
+	make_tracker_entry(
+		false,
+		make_tracker_entry_time("2016-01-01T01:00:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
+		{},
+		{},
+		nil, nil,
+		1, {
 			make_tracker_action("ETODO", {description = ""}),
 		}
 	),
 	make_tracker_entry(
 		false,
-		make_tracker_entry_time("2016-01-01T02:30:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
 		make_tracker_entry_time("2016-01-01T04:00:00Z", 0, true),
 		{},
 		{},
 		nil, nil,
-		{
+		1, {
 			make_tracker_action("ETODO", {description = ""}),
 		}
 	),
@@ -99,40 +156,40 @@ make_test(
 [==[Tracker{date = 2016-01-01Z, entries = {
 	Entry{range = 01:00:00 - ENEXT, actions = {ETODO}};
 	Entry:ool{range = EPREV - ENEXT, actions = {ETODO}};
-	Entry{range = 02:30:00 - 04:00, actions = {ETODO}};
+	Entry{range = 02:00:00 - 04:00, actions = {ETODO}};
 	Entry:ool{range = EPREV:ool - 03:00, actions = {ETODO}};
 }}]==],
 "2016-01-01Z", {
 	make_tracker_entry(
 		false,
 		make_tracker_entry_time("2016-01-01T01:00:00Z", 0, true),
-		make_tracker_entry_time("2016-01-01T02:30:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
 		{},
 		{},
 		nil, nil,
-		{
+		1, {
 			make_tracker_action("ETODO", {description = ""}),
 		}
 	),
 	make_tracker_entry(
 		true,
 		make_tracker_entry_time("2016-01-01T01:00:00Z", 0, true),
-		make_tracker_entry_time("2016-01-01T02:30:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
 		{},
 		{},
 		nil, nil,
-		{
+		1, {
 			make_tracker_action("ETODO", {description = ""}),
 		}
 	),
 	make_tracker_entry(
 		false,
-		make_tracker_entry_time("2016-01-01T02:30:00Z", 0, true),
+		make_tracker_entry_time("2016-01-01T02:00:00Z", 0, true),
 		make_tracker_entry_time("2016-01-01T04:00:00Z", 0, true),
 		{},
 		{},
 		nil, nil,
-		{
+		1, {
 			make_tracker_action("ETODO", {description = ""}),
 		}
 	),
@@ -143,7 +200,7 @@ make_test(
 		{},
 		{},
 		nil, nil,
-		{
+		1, {
 			make_tracker_action("ETODO", {description = ""}),
 		}
 	),

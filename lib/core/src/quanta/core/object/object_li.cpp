@@ -369,9 +369,10 @@ TOGO_LI_FUNC_DEF(clear) {
 }
 
 TOGO_LI_FUNC_DEF(copy) {
-	auto a = lua::get_pointer<Object>(L, 1);
-	auto b = lua::get_pointer<Object>(L, 2);
-	object::copy(*a, *b);
+	auto src = lua::get_pointer<Object>(L, 1);
+	auto dst = lua::get_pointer<Object>(L, 2);
+	auto children = luaL_opt(L, lua::get_boolean, 3, true);
+	object::copy(*src, *dst, children);
 	return 0;
 }
 

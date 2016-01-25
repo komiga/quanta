@@ -337,6 +337,24 @@ static bool parser_peek(ObjectParser& p) {
 	return true;
 }
 
+inline static bool is_identifier_terminator(unsigned const c) {
+	switch (c) {
+	case PC_EOF:
+	case '\t':
+	case '\n':
+	case ' ':
+	case ',': case ';':
+	case '=': case ':': case '$':
+	case '}': case ']': case ')':
+	case '{': case '[': case '(':
+	case '+':
+	case '*': case '/':
+	case '\\':
+		return true;
+	}
+	return false;
+}
+
 inline static bool parser_is_currency_lead(ObjectParser& p) {
 	// ¤ in UTF-8: C2 A4
 	if (p.c == 0xC2) {
@@ -487,7 +505,7 @@ static bool parser_read_time(ObjectParser& p) {
 		return false;
 	}
 	if ((p.nc < '0' || p.nc > '9') && p.nc != '-' && p.nc != '+') {
-		if ((p.c == 'T' || p.c == 'Z') && p.nc == PC_EOF) {
+		if ((p.c == 'T' || p.c == 'Z') && is_identifier_terminator(p.nc)) {
 			p.time_parts = TSP_D_DD | (p.c == 'T' ? TSP_T_MARKER : TSP_Z_UTC);
 			p.buffer_type = PB_TIME;
 			parser_next(p);

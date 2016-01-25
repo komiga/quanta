@@ -350,6 +350,8 @@ do_object = function(tree, context, patterns, obj, collection)
 				local value = p.acceptor(context, context:value(), obj)
 				if U.is_type(value, M.Error) then
 					context:set_error(value, obj)
+				end
+				if context.error ~= nil then
 					return false
 				end
 				if value ~= nil then
@@ -433,6 +435,8 @@ do_sub = function(tree, context, patterns, post, obj, iter_func)
 			elseif context.error == nil then
 				context:set_error(M.Error("unknown error in collection post handler"), obj)
 			end
+		end
+		if context.error ~= nil then
 			return false
 		end
 	end

@@ -7,6 +7,15 @@ local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
 local Unit = require "Quanta.Unit"
+local Tracker = require "Quanta.Tracker"
+
+function make_time(text)
+	local t = Time()
+	local obj = O.create(text)
+	U.assert(obj)
+	Time.set(t, O.time(obj))
+	return t
+end
 
 function make_modifier(name, controller)
 	local m = Instance.Modifier()
@@ -83,6 +92,45 @@ function make_unit(type, name, description, author, note, elements_generic, elem
 		elements_primary,
 	}
 	return u
+end
+
+function make_tracker_action(id, data)
+	local a = Tracker.Action()
+	a.id = id
+	a.data = data
+	return a
+end
+
+function make_tracker_entry_time(type, time, ool, index, approximation, certain)
+	local t = Tracker.EntryTime()
+	t.type = type
+	t.time = make_time(time)
+	t.ool = ool
+	t.index = index
+	t.approximation = approximation
+	t.certain = certain
+	return t
+end
+
+function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_id, actions)
+	local e = Tracker.Entry()
+	e.ool = ool
+	e.r_start = r_start
+	e.r_end = r_end
+	e.tags = tags
+	e.rel_id = rel_id
+	e.continue_id = continue_id
+	e.actions = actions
+
+	e:recalculate()
+	return e
+end
+
+function make_tracker(date, entries)
+	local t = Tracker()
+	t.date = make_time(date)
+	t.entries = entries
+	return t
 end
 
 function check_modifier_equal(x, y)
@@ -187,5 +235,67 @@ function check_unit_equal(x, y)
 	U.assert(#a == #b)
 	for i = 1, #a do
 		check_element_equal(a[i], b[i])
+	end
+end
+
+function check_tracker_action_equal(x, y)
+	U.assert(x.id == y.id)
+
+	U.assert(U.type_class(x.data) == U.type_class(y.data))
+	if x.data then
+		if x.id == "ETODO" then
+			U.assert(x.data.description == y.data.description)
+		else
+			x.data.check_equal(x, y)
+		end
+	end
+end
+
+function check_tracker_entry_time_equal(x, y)
+	U.assert(x.type == y.type)
+	U.assert(Time.compare_equal(x.time, y.time))
+	U.assert(x.ool == y.ool)
+	U.assert(x.index == y.index)
+	U.assert(x.approximation == y.approximation)
+	U.assert(x.certain == y.certain)
+end
+
+function check_tracker_entry_equal(x, y)
+	U.assert(x.ool == y.ool)
+	check_tracker_entry_time_equal(x.r_start, y.r_start)
+	check_tracker_entry_time_equal(x.r_end, y.r_end)
+
+	U.assert(#x.tags == #y.tags)
+	for i = 1, #x.tags do
+		check_tracker_entry_equal(x.tags[i], y.tags[i])
+	end
+
+	U.assert(#x.rel_id == #y.rel_id)
+	for i = 1, #x.rel_id do
+		U.assert(x.rel_id[i] == y.rel_id[i])
+	end
+
+	U.assert(#x.continue_id == #y.continue_id)
+	for i = 1, #x.continue_id do
+		U.assert(x.continue_id[i] == y.continue_id[i])
+	end
+
+	U.assert(#x.continue_id == #y.continue_id)
+	for i = 1, #x.continue_id do
+		U.assert(x.continue_id[i] == y.continue_id[i])
+	end
+
+	U.assert(#x.actions == #y.actions)
+	for i = 1, #x.actions do
+		check_tracker_action_equal(x.actions[i], y.actions[i])
+	end
+end
+
+function check_tracker_equal(x, y)
+	U.assert(Time.compare_equal(x.date, y.date))
+
+	U.assert(#x.entries == #y.entries)
+	for i = 1, #x.entries do
+		check_tracker_entry_equal(x.entries[i], y.entries[i])
 	end
 end

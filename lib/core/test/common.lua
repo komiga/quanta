@@ -97,14 +97,25 @@ end
 function make_tracker_action(id, data)
 	local a = Tracker.Action()
 	a.id = id
+	a.id_hash = O.hash_name(id)
 	a.data = data
 	return a
 end
 
-function make_tracker_entry_time(type, time, ool, index, approximation, certain)
+local entry_time_types = {
+	["XXX"] = Tracker.EntryTime.Type.placeholder,
+	["EPREV"] = Tracker.EntryTime.Type.ref_prev,
+	["ENEXT"] = Tracker.EntryTime.Type.ref_next,
+}
+
+function make_tracker_entry_time(time, ool, index, approximation, certain)
 	local t = Tracker.EntryTime()
-	t.type = type
-	t.time = make_time(time)
+	t.type = entry_time_types[time] or Tracker.EntryTime.Type.specified
+	if t.type == Tracker.EntryTime.Type.specified then
+		t.time = make_time(time)
+	else
+		t.time = T()
+	end
 	t.ool = ool
 	t.index = index
 	t.approximation = approximation
@@ -112,13 +123,14 @@ function make_tracker_entry_time(type, time, ool, index, approximation, certain)
 	return t
 end
 
-function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_id, actions)
+function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_scope, continue_id, actions)
 	local e = Tracker.Entry()
 	e.ool = ool
 	e.r_start = r_start
 	e.r_end = r_end
 	e.tags = tags
 	e.rel_id = rel_id
+	e.continue_scope = continue_scope and make_time(continue_scope) or nil
 	e.continue_id = continue_id
 	e.actions = actions
 
@@ -240,12 +252,13 @@ end
 
 function check_tracker_action_equal(x, y)
 	U.assert(x.id == y.id)
+	U.assert(x.id_hash == y.id_hash)
 
-	U.assert(U.type_class(x.data) == U.type_class(y.data))
-	if x.data then
-		if x.id == "ETODO" then
-			U.assert(x.data.description == y.data.description)
-		else
+	if x.id == "ETODO" then
+		U.assert(x.data.description == y.data.description)
+	else
+		U.assert(U.type_class(x.data) == U.type_class(y.data))
+		if x.data then
 			x.data.check_equal(x, y)
 		end
 	end
@@ -262,6 +275,7 @@ end
 
 function check_tracker_entry_equal(x, y)
 	U.assert(x.ool == y.ool)
+	U.assert(Time.compare_equal(x.duration, y.duration))
 	check_tracker_entry_time_equal(x.r_start, y.r_start)
 	check_tracker_entry_time_equal(x.r_end, y.r_end)
 
@@ -275,15 +289,16 @@ function check_tracker_entry_equal(x, y)
 		U.assert(x.rel_id[i] == y.rel_id[i])
 	end
 
-	U.assert(#x.continue_id == #y.continue_id)
-	for i = 1, #x.continue_id do
-		U.assert(x.continue_id[i] == y.continue_id[i])
+	U.assert(#x.tags == #y.tags)
+	for i = 1, #x.tags do
+		U.assert(x.tags[i] == y.tags[i])
 	end
 
-	U.assert(#x.continue_id == #y.continue_id)
-	for i = 1, #x.continue_id do
-		U.assert(x.continue_id[i] == y.continue_id[i])
+	U.assert(not x.continue_scope == not y.continue_scope)
+	if x.continue_scope then
+		U.assert(Time.compare_equal(x.continue_scope, y.continue_scope))
 	end
+	U.assert(x.continue_id == y.continue_id)
 
 	U.assert(#x.actions == #y.actions)
 	for i = 1, #x.actions do

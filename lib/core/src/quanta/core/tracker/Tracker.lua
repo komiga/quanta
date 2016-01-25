@@ -116,6 +116,7 @@ M.Action = U.class(M.Action)
 
 function M.Action:__init()
 	self.id = nil
+	self.id_hash = O.NAME_NULL
 	self.data = nil
 end
 
@@ -135,13 +136,19 @@ M.Action.t_head:add(Match.Pattern{
 	vtype = O.Type.identifier,
 	value = "ETODO",
 	children = {Match.Pattern{
+		name = {"d", ""},
 		vtype = O.Type.string,
 		acceptor = function(context, self, obj)
 			self.description = O.string(obj)
 		end,
 	}},
 	acceptor = function(context, self, obj)
-		self.id = O.hash_name("ETODO")
+		if O.num_children(obj) > 1 then
+			return Match.Error("ETODO can only carry a single string")
+		end
+
+		self.id = "ETODO"
+		self.id_hash = O.hash_name(self.id)
 		self.data = {
 			description = "",
 		}

@@ -425,6 +425,12 @@ M.t_body:add(Match.Pattern{
 		-- M.SystemData.p_head,
 		M.Entry.p_head,
 	},
+	acceptor = function(context, self, obj)
+		if T.value(self.date) == 0 then
+			-- TODO: pre-match to avoid this
+			return Match.Error("date must be set before entries")
+		end
+	end,
 })
 
 return M

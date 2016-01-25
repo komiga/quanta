@@ -108,7 +108,7 @@ local entry_time_types = {
 	["ENEXT"] = Tracker.EntryTime.Type.ref_next,
 }
 
-function make_tracker_entry_time(time, ool, index, approximation, certain)
+function make_tracker_entry_time(time, approximation, certain)
 	local t = Tracker.EntryTime()
 	t.type = entry_time_types[time] or Tracker.EntryTime.Type.specified
 	if t.type == Tracker.EntryTime.Type.specified then
@@ -116,8 +116,6 @@ function make_tracker_entry_time(time, ool, index, approximation, certain)
 	else
 		t.time = T()
 	end
-	t.ool = ool
-	t.index = index
 	t.approximation = approximation
 	t.certain = certain
 	return t

@@ -384,6 +384,8 @@ do_object = function(tree, context, patterns, obj, collection)
 				local err = f(context, context:value(), obj)
 				if U.is_type(err, M.Error) then
 					context:set_error(err, obj)
+				end
+				if context.error ~= nil then
 					return false
 				end
 				return true

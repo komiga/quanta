@@ -121,7 +121,7 @@ function make_tracker_entry_time(time, approximation, certain)
 	return t
 end
 
-function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_scope, continue_id, actions)
+function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_scope, continue_id, primary_action, actions)
 	local e = Tracker.Entry()
 	e.ool = ool
 	e.r_start = r_start
@@ -131,6 +131,7 @@ function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_scope, c
 	e.continue_scope = continue_scope and make_time(continue_scope) or nil
 	e.continue_id = continue_id
 	e.actions = actions
+	e.primary_action = primary_action
 
 	e:recalculate()
 	return e
@@ -298,6 +299,7 @@ function check_tracker_entry_equal(x, y)
 	end
 	U.assert(x.continue_id == y.continue_id)
 
+	U.assert(x.primary_action == y.primary_action)
 	U.assert(#x.actions == #y.actions)
 	for i = 1, #x.actions do
 		check_tracker_action_equal(x.actions[i], y.actions[i])

@@ -23,7 +23,9 @@ function M:from_object(obj, director)
 
 	local context = Match.Context()
 	context.user = {
+		tracker = self,
 		director = director,
+		obj_tmp = O.create(),
 	}
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
@@ -68,7 +70,6 @@ local function find_by_ref(entries, start, direction, n, ool)
 end
 
 local function fixup_time_ref(self, i, entry, time)
-	T.set_zone_offset(time, T.zone_offset(self.date))
 	if time.type < M.EntryTime.Type.ref_prev then
 		return true
 	end
@@ -191,7 +192,10 @@ M.EntryTime.t_head:add(Match.Pattern{
 		end
 
 		self.type = M.EntryTime.Type.specified
-		T.set(self.time, O.time(obj))
+
+		O.copy(context.user.obj_tmp, obj, false)
+		O.resolve_time(context.user.obj_tmp, context.user.tracker.date)
+		T.set(self.time, O.time(context.user.obj_tmp))
 		entry_time_set_uncertainties(self, obj)
 	end,
 })
@@ -251,14 +255,15 @@ function M.Entry:__init()
 	self.r_end = M.EntryTime()
 	self.tags = {}
 	self.rel_id = {}
-	self.continue_id = {}
+	self.continue_scope = nil
+	self.continue_id = nil
 	self.actions = {}
 end
 
 function M.Entry:recalculate()
 	if
-		entry.r_start.type == M.EntryTime.Type.specified and
-		entry.r_end.type == M.EntryTime.Type.specified
+		self.r_start.type == M.EntryTime.Type.specified and
+		self.r_end.type == M.EntryTime.Type.specified
 	then
 		T.set(self.duration, T.difference(self.r_end.time, self.r_start.time))
 	else
@@ -301,11 +306,11 @@ M.Entry.t_body:add(Match.Pattern{
 			return Match.Error("range operator must be a subtraction")
 		end
 
-		if not context:consume(M.EntryTime.t_head, obj, self.r_start) then
-			return false
+		if not context:consume(M.EntryTime.t_head, O.child_at(obj, 1), self.r_start) then
+			return
 		end
-		if not context:consume(M.EntryTime.t_head, obj, self.r_end) then
-			return false
+		if not context:consume(M.EntryTime.t_head, O.child_at(obj, 2), self.r_end) then
+			return
 		end
 	end,
 })
@@ -341,23 +346,30 @@ M.Entry.t_body:add(Match.Pattern{
 	end,
 })
 
--- continue_id = ...
-M.Entry.t_body:add(Match.Pattern{
-	name = "continue_id",
-	children = {Match.Pattern{
-		vtype = O.Type.identifier,
-		acceptor = function(context, self, obj)
-			table.insert(self.continue_id, O.identifier(obj))
-		end,
-	}},
-})
-
--- continue_id = {...}
+-- continue_id = identifier
 M.Entry.t_body:add(Match.Pattern{
 	name = "continue_id",
 	vtype = O.Type.identifier,
 	acceptor = function(context, self, obj)
-		table.insert(self.continue_id, O.identifier(obj))
+		self.continue_scope = nil
+		self.continue_id = O.identifier(obj)
+	end,
+})
+
+-- continue_id = date{identifier}
+M.Entry.t_body:add(Match.Pattern{
+	name = "continue_id",
+	vtype = O.Type.time,
+	children = 1,
+	acceptor = function(context, self, obj)
+		if O.has_clock(obj) then
+			return Match.Error("scope must not have clock time")
+		end
+
+		O.copy(context.user.obj_tmp, obj, false)
+		O.resolve_time(context.user.obj_tmp, context.user.tracker.date)
+		self.continue_scope = T(O.time(context.user.obj_tmp))
+		self.continue_id = O.identifier(O.child_at(obj, 1))
 	end,
 })
 

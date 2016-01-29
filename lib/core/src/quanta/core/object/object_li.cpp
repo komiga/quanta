@@ -683,6 +683,13 @@ TOGO_LI_FUNC_DEF(clear_children) {
 	return 0;
 }
 
+TOGO_LI_FUNC_DEF(copy_children) {
+	auto src = lua::get_pointer<Object>(L, 1);
+	auto dst = lua::get_pointer<Object>(L, 2);
+	object::copy_children(*src, *dst);
+	return 0;
+}
+
 TOGO_LI_FUNC_DEF(push_child) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	return li_push_sub(L, obj, object::children(*obj), true);
@@ -744,6 +751,13 @@ TOGO_LI_FUNC_DEF(has_tags) {
 TOGO_LI_FUNC_DEF(clear_tags) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	object::clear_tags(*obj);
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(copy_tags) {
+	auto src = lua::get_pointer<Object>(L, 1);
+	auto dst = lua::get_pointer<Object>(L, 2);
+	object::copy_tags(*src, *dst);
 	return 0;
 }
 
@@ -812,6 +826,13 @@ TOGO_LI_FUNC_DEF(make_quantity) {
 TOGO_LI_FUNC_DEF(release_quantity) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	object::release_quantity(*obj);
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(copy_quantity) {
+	auto src = lua::get_pointer<Object>(L, 1);
+	auto dst = lua::get_pointer<Object>(L, 2);
+	object::copy_quantity(*src, *dst);
 	return 0;
 }
 
@@ -973,6 +994,7 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(object, num_children)
 	TOGO_LI_FUNC_REF(object, has_children)
 	TOGO_LI_FUNC_REF(object, clear_children)
+	TOGO_LI_FUNC_REF(object, copy_children)
 	TOGO_LI_FUNC_REF(object, push_child)
 	TOGO_LI_FUNC_REF(object, push_child_mv)
 	TOGO_LI_FUNC_REF(object, pop_child)
@@ -984,6 +1006,7 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(object, num_tags)
 	TOGO_LI_FUNC_REF(object, has_tags)
 	TOGO_LI_FUNC_REF(object, clear_tags)
+	TOGO_LI_FUNC_REF(object, copy_tags)
 	TOGO_LI_FUNC_REF(object, push_tag)
 	TOGO_LI_FUNC_REF(object, push_tag_mv)
 	TOGO_LI_FUNC_REF(object, pop_tag)
@@ -996,6 +1019,7 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(object, clear_quantity)
 	TOGO_LI_FUNC_REF(object, make_quantity)
 	TOGO_LI_FUNC_REF(object, release_quantity)
+	TOGO_LI_FUNC_REF(object, copy_quantity)
 
 	TOGO_LI_FUNC_REF(object, read_text_file)
 	TOGO_LI_FUNC_REF(object, read_text_string)

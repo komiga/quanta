@@ -114,17 +114,11 @@ void object::copy(Object& dst, Object const& src, bool const children IGEN_DEFAU
 	case ObjectValueType::expression:
 		break;
 	}
-	array::copy(dst.tags, src.tags);
+	object::copy_tags(dst, src);
 	if (children) {
-		array::copy(dst.children, src.children);
+		object::copy_children(dst, src);
 	}
-	if (object::has_quantity(src)) {
-		if (object::has_quantity(dst)) {
-			object::copy(*dst.quantity, *src.quantity);
-		} else {
-			dst.quantity = TOGO_CONSTRUCT(a, Object, *src.quantity);
-		}
-	}
+	object::copy_quantity(dst, src);
 }
 
 /// Create quantity or clear existing quantity.

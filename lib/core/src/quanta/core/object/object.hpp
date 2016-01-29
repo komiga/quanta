@@ -583,6 +583,11 @@ inline void clear_children(Object& obj) {
 	array::clear(obj.children);
 }
 
+/// Copy children.
+inline void copy_children(Object& dst, Object const& src) {
+	array::copy(dst.children, src.children);
+}
+
 /// Tags.
 inline Array<Object>& tags(Object& obj) { return obj.tags; }
 inline Array<Object> const& tags(Object const& obj) { return obj.tags; }
@@ -595,6 +600,11 @@ inline bool has_tags(Object const& obj) {
 /// Clear tags.
 inline void clear_tags(Object& obj) {
 	array::clear(obj.tags);
+}
+
+/// Copy tags.
+inline void copy_tags(Object& dst, Object const& src) {
+	array::copy(dst.tags, src.tags);
 }
 
 /// Quantity.
@@ -617,6 +627,19 @@ inline void clear_quantity(Object& obj) {
 inline void release_quantity(Object& obj) {
 	TOGO_DESTROY(memory::default_allocator(), obj.quantity);
 	obj.quantity = nullptr;
+}
+
+/// Copy quantity.
+inline void copy_quantity(Object& dst, Object const& src) {
+	if (object::has_quantity(src)) {
+		if (object::has_quantity(dst)) {
+			object::copy(*dst.quantity, *src.quantity);
+		} else {
+			dst.quantity = TOGO_CONSTRUCT(memory::default_allocator(), Object, *src.quantity);
+		}
+	} else {
+		object::release_quantity(dst);
+	}
 }
 
 /// Destruct.

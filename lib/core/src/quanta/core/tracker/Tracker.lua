@@ -154,6 +154,17 @@ function M.Action:__init()
 	self.data = nil
 end
 
+function M.Action.remove_internal_tags(obj)
+	local function remove_tag(name)
+		local tag = O.find_tag(obj, name)
+		if tag then
+			O.remove_tag(obj, tag)
+		end
+	end
+
+	remove_tag(obj, "action_primary")
+end
+
 M.Action.t_head = Match.Tree()
 
 M.Action.p_accum = Match.Pattern{
@@ -211,6 +222,22 @@ M.Action.t_head:add(Match.Pattern{
 		return context.user.director:read_action(context, entry, self, obj)
 	end,
 })
+
+M.UnknownAction = U.class(M.UnknownAction)
+
+function M.UnknownAction:__init()
+	self.obj = O.create()
+end
+
+function M.UnknownAction:from_object(context, entry, action, obj)
+	O.copy_children(self.obj, obj)
+	O.copy_tags(self.obj, obj)
+	M.Action.remove_internal_tags(self.obj)
+end
+
+function M.UnknownAction:to_object(action, obj)
+	O.copy_children(obj, self.obj)
+end
 
 M.EntryTime = U.class(M.EntryTime)
 

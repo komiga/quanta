@@ -644,9 +644,14 @@ static signed TOGO_LI_FUNC(push_sub)(lua_State* L, Object* obj, Array<Object>& a
 }
 
 static signed TOGO_LI_FUNC(remove_sub)(lua_State* L, Object* /*obj*/, Array<Object>& a) {
-	auto i = luaL_checkinteger(L, 2);
-	luaL_argcheck(L, i >= 1 && i <= signed_cast(array::size(a)), 2, "index out of bounds");
-	array::remove(a, i - 1);
+	if (lua_isuserdata(L, 2)) {
+		auto ptr = lua::get_pointer<Object>(L, 2);
+		array::remove(a, ptr);
+	} else {
+		auto i = luaL_checkinteger(L, 2);
+		luaL_argcheck(L, i >= 1 && i <= signed_cast(array::size(a)), 2, "index out of bounds");
+		array::remove(a, i - 1);
+	}
 	return 0;
 }
 

@@ -524,6 +524,17 @@ inline void set_time_clock(Object& obj, Time const& value) {
 	object::set_time_type(obj, ObjectTimeType::clock);
 }
 
+/// Resolve time value from context.
+///
+/// See object::time_resolved().
+inline void resolve_time(Object& obj, Time context) {
+	obj.value.time = object::time_resolved(obj, context);
+	if (!object::has_date(obj)) {
+		object::set_time_type(obj, ObjectTimeType::date_and_clock);
+	}
+	internal::clear_property(obj, M_TM_UNZONED | M_TM_CONTEXTUAL_MONTH | M_TM_CONTEXTUAL_YEAR);
+}
+
 /// String value.
 inline StringRef string(Object const& obj) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));

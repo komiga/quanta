@@ -471,6 +471,13 @@ TOGO_LI_FUNC_DEF(time) {
 	return 1;
 }
 
+TOGO_LI_FUNC_DEF(time_resolved) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	auto t = lua::get_pointer<Time const>(L, 2);
+	lua::new_userdata<Time>(L, object::time_resolved(*obj, *t));
+	return 1;
+}
+
 TOGO_LI_FUNC_DEF(time_type) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	lua::push_value(L, unsigned_cast(object::time_type(*obj)));
@@ -968,6 +975,7 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(object, set_unit)
 
 	TOGO_LI_FUNC_REF(object, time)
+	TOGO_LI_FUNC_REF(object, time_resolved)
 	TOGO_LI_FUNC_REF(object, time_type)
 	TOGO_LI_FUNC_REF(object, has_date)
 	TOGO_LI_FUNC_REF(object, has_clock)

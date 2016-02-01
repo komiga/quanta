@@ -142,31 +142,27 @@ void object::clear(Object& obj) {
 	object::clear_quantity(obj);
 }
 
-/// Resolve time value from context.
+/// Time value  context.
 ///
 /// Relative date parts are taken from the context time.
 /// If the time value does not specify a zone offset, it is adjusted to the
 /// zone offset of the context (time assumed to be zone-local).
-void object::resolve_time(Object& obj, Time context) {
+Time object::time_resolved(Object const& obj, Time context) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::time));
+
+	Time value = obj.value.time;
 	if (!object::is_zoned(obj)) {
-		time::adjust_zone_offset(obj.value.time, context.zone_offset);
+		time::adjust_zone_offset(value, context.zone_offset);
 	}
 	// context is only used as a date, so we don't want the zone offset to shove
 	// our value into another date as we apply it
 	time::adjust_zone_utc(context);
-	auto ct = time::clock_seconds_utc(obj.value.time);
+	auto ct = time::clock_seconds_utc(value);
 	unsigned rel_parts = internal::get_property(obj, M_TM_CONTEXTUAL_YEAR | M_TM_CONTEXTUAL_MONTH, 0);
 	if (!object::has_date(obj)) {
-		obj.value.time.sec = time::date_seconds_utc(context);
-		if (object::has_clock(obj)) {
-			obj.value.time.sec += ct;
-			object::set_time_type(obj, ObjectTimeType::date_and_clock);
-		} else {
-			object::set_time_type(obj, ObjectTimeType::date);
-		}
+		value.sec = time::date_seconds_utc(context) + ct;
 	} else if (rel_parts) {
-		Date date = time::gregorian::date_utc(obj.value.time);
+		Date date = time::gregorian::date_utc(value);
 		Date const context_date = time::gregorian::date_utc(context);
 		if (rel_parts & M_TM_CONTEXTUAL_MONTH) {
 			date.month = context_date.month;
@@ -174,12 +170,12 @@ void object::resolve_time(Object& obj, Time context) {
 		} else/* if (rel_parts & M_TM_CONTEXTUAL_YEAR)*/ {
 			date.year = context_date.year;
 		}
-		time::gregorian::set_utc(obj.value.time, date);
+		time::gregorian::set_utc(value, date);
 		if (object::has_clock(obj)) {
-			obj.value.time.sec = time::date_seconds_utc(obj.value.time) + ct;
+			value.sec = time::date_seconds_utc(value) + ct;
 		}
 	}
-	internal::clear_property(obj, M_TM_UNZONED | M_TM_CONTEXTUAL_MONTH | M_TM_CONTEXTUAL_YEAR);
+	return value;
 }
 
 IGEN_PRIVATE

@@ -85,19 +85,19 @@ make_test(
 	{}, {}
 ),
 make_test(
-	[[{note = {01T00:00, "x"}}]],
+	[[{note = {01:23, "x"}}]],
 	Unit.Type.none,
 	"",
-	"", {}, {Unit.Note("x", nil)},
+	"", {}, {Unit.Note("x", make_time("2016-01-01T01:23Z"))},
 	{}, {}
 ),
 make_test(
-	[[{note = {{01T00:00, "x"}, "y"}}]],
+	[[{note = {{02T01:23, "x"}, "y"}}]],
 	Unit.Type.none,
 	"",
 	"", {}, {
-		Unit.Note("x", nil),
-		Unit.Note("y", nil),
+		Unit.Note("x", make_time("2016-01-02T01:23Z")),
+		Unit.Note("y"),
 	},
 	{}, {}
 ),
@@ -115,7 +115,7 @@ make_test(
 	{}, {
 		make_element_primary(1, "blah", {}, {}, {
 			make_step(1, Measurement(), {
-				make_instance("x", nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
@@ -131,7 +131,7 @@ make_test(
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, Measurement(), {
-				make_instance("x", nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
@@ -147,7 +147,7 @@ make_test(
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, Measurement(), {
-				make_instance("x", nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
@@ -164,7 +164,7 @@ make_test(
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, Measurement(), {
-				make_instance("x", nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
@@ -183,28 +183,28 @@ make_test_fail(
 ),
 }
 
-function do_test(t, search_in, controllers)
+function do_test(t, scope, controllers)
 	local o = O.create(t.text)
 	U.assert(o ~= nil)
 	local text_rewrite = O.write_text_string(o, true)
 	U.print("%s  =>", text_rewrite)
 
 	local unit = Unit()
-	U.assert(unit:from_object(o, search_in, controllers) or not t.unit)
+	U.assert(unit:from_object(o, scope, controllers) or not t.unit)
 	if t.unit then
-		check_unit_equal(unit, t.unit)
 		unit:to_object(o)
 		U.print("%s", O.write_text_string(o, true))
+		check_unit_equal(unit, t.unit)
 	else
 		U.print("(expected)")
 	end
 end
 
 function main()
-	local search_in = {}
+	local scope = make_time("2016-01-01Z")
 	local controllers = {}
 	for _, t in pairs(translation_tests) do
-		do_test(t, search_in, controllers)
+		do_test(t, scope, controllers)
 	end
 
 	return 0

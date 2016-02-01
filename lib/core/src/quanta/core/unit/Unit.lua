@@ -11,6 +11,7 @@ local M = U.module(...)
 M.Type = {
 	{name = "none", notation = ""},
 	{name = "self", notation = "S"},
+	{name = "meal", notation = "M"},
 	{name = "familiar", notation = "FH"},
 	{name = "familiar_joint", notation = "FHJ"}, -- FH + S
 	{name = "foreign", notation = "FF" },

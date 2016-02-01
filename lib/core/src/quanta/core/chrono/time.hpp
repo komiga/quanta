@@ -196,6 +196,16 @@ inline void set(Time& t, signed h, signed m, signed s) {
 	time::set_utc(t, h, m, s - t.zone_offset);
 }
 
+/// Clear clock.
+inline void clear_clock(Time& t) {
+	t.sec -= time::clock_seconds(t);
+}
+
+/// Clear date.
+inline void clear_date(Time& t) {
+	t.sec -= time::date_seconds(t);
+}
+
 namespace gregorian {
 
 /// Whether a Gregorian year is a leap year.

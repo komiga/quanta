@@ -22,12 +22,6 @@ TOGO_LI_FUNC_DEF(__mm_ctor) {
 	return 1;
 }
 
-TOGO_LI_FUNC_DEF(clear) {
-	auto t = lua::get_pointer<Time>(L, 1);
-	*t = {};
-	return 0;
-}
-
 TOGO_LI_FUNC_DEF(set_zone_offset) {
 	auto t = lua::get_pointer<Time>(L, 1);
 	time::set_zone_offset(*t, lua::get_integer(L, 2));
@@ -212,6 +206,24 @@ TOGO_LI_FUNC_DEF(set) {
 	return 0;
 }
 
+TOGO_LI_FUNC_DEF(clear) {
+	auto t = lua::get_pointer<Time>(L, 1);
+	*t = {};
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(clear_clock) {
+	auto t = lua::get_pointer<Time>(L, 1);
+	time::clear_clock(*t);
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(clear_date) {
+	auto t = lua::get_pointer<Time>(L, 1);
+	time::clear_date(*t);
+	return 0;
+}
+
 TOGO_LI_FUNC_DEF(value) {
 	auto t = lua::get_pointer<Time const>(L, 1);
 	lua::push_value(L, t->sec);
@@ -226,8 +238,6 @@ TOGO_LI_FUNC_DEF(zone_offset) {
 
 static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(time, __mm_ctor)
-
-	TOGO_LI_FUNC_REF(time, clear)
 
 	TOGO_LI_FUNC_REF(time, set_zone_offset)
 	TOGO_LI_FUNC_REF(time, set_zone_clock)
@@ -262,6 +272,10 @@ static LuaModuleFunctionArray const li_funcs{
 
 	TOGO_LI_FUNC_REF(time, set_utc)
 	TOGO_LI_FUNC_REF(time, set)
+
+	TOGO_LI_FUNC_REF(time, clear)
+	TOGO_LI_FUNC_REF(time, clear_clock)
+	TOGO_LI_FUNC_REF(time, clear_date)
 
 	TOGO_LI_FUNC_REF(time, value)
 	TOGO_LI_FUNC_REF(time, zone_offset)

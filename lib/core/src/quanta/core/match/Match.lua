@@ -375,7 +375,7 @@ do_object = function(tree, context, patterns, obj, collection)
 				if not do_sub(tree, context, p.tags, p.collect_tags_post, obj, O.tags) then
 					return false
 				end
-				if p.quantity then
+				if p.quantity and O.has_quantity(obj) then
 					if not do_object(tree, context, p.quantity, O.quantity(obj), nil) then
 						return false
 					end

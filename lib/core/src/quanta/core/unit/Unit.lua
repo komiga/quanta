@@ -58,14 +58,14 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, time_context, controllers)
+function M:from_object(obj, scope, controllers)
 	U.type_assert(obj, "userdata")
-	U.type_assert(time_context, "userdata", true)
+	U.type_assert(scope, "userdata", true)
 	U.type_assert(controllers, "table")
 
 	local context = Match.Context()
 	context.user = {
-		time_context = {time_context},
+		scope = {scope},
 		controllers = controllers,
 	}
 	if not context:consume(M.t_head, obj, self) then

@@ -11,19 +11,19 @@ local M = U.module(...)
 
 U.class(M)
 
-function M:__init(obj, time_context, controllers)
+function M:__init(obj, scope, controllers)
 	-- Instance, Composition
 	self.items = {}
 	self.measurement = Measurement()
 
 	if obj then
-		self:from_object(obj, time_context, controllers)
+		self:from_object(obj, scope, controllers)
 	end
 end
 
-function M:from_object(obj, time_context, controllers)
+function M:from_object(obj, scope, controllers)
 	U.type_assert(obj, "userdata")
-	U.type_assert(time_context, "userdata", true)
+	U.type_assert(scope, "userdata", true)
 	U.type_assert(controllers, "table")
 
 	self.items = {}
@@ -31,7 +31,7 @@ function M:from_object(obj, time_context, controllers)
 
 	local context = Match.Context()
 	context.user = {
-		time_context = {time_context and T(time_context) or nil},
+		scope = {scope and T(scope) or nil},
 		controllers = controllers,
 	}
 	if not context:consume(M.t_head, obj, self) then
@@ -71,14 +71,14 @@ M.p_instance = Match.Pattern{
 		return O.op(obj) == O.Operator.add
 	end,
 	acceptor = function(context, self, obj)
-		local time_context = nil
-		if #context.user.time_context > 1 then
+		local scope = nil
+		if #context.user.scope > 1 then
 			-- Only provide context when stated in composition
 			-- The root context should be used by the request when looking up
 			-- entities & units
-			time_context = U.table_last(context.user.time_context)
+			scope = U.table_last(context.user.scope)
 		end
-		local item = Instance(obj, time_context, context.user.controllers)
+		local item = Instance(obj, scope, context.user.controllers)
 		table.insert(self.items, item)
 	end,
 }
@@ -95,20 +95,20 @@ M.t_head:add(Match.Pattern{
 			return Match.Error("contextual block must not have clock time")
 		elseif O.num_children(obj) == 0 then
 			return Match.Error("contextual block is empty")
-		elseif O.is_month_contextual(obj) then
-			if #context.user.time_context == 0 then
+		elseif O.is_year_contextual(obj) then
+			if #context.user.scope == 0 then
 				return Match.Error("no time context provided; contextual block time cannot be resolved")
 			end
-			t = O.time_resolved(obj, U.table_last(context.user.time_context))
+			t = O.time_resolved(obj, U.table_last(context.user.scope))
 		else
 			t = T(O.time(obj))
 		end
 		T.clear_clock(t)
 		T.adjust_zone_utc(t)
-		table.insert(context.user.time_context, t)
+		table.insert(context.user.scope, t)
 	end,
 	post_branch = function(context, self, obj)
-		table.remove(context.user.time_context)
+		table.remove(context.user.scope)
 	end,
 })
 

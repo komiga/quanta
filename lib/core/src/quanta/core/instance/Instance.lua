@@ -9,11 +9,11 @@ local M = U.module(...)
 
 U.class(M)
 
-function M:__init(obj, time_context, controllers)
+function M:__init(obj, scope, controllers)
 	self.name = ""
 	self.name_hash = O.NAME_NULL
 	-- NB: can be shared!
-	self.context = nil
+	self.scope = nil
 	-- Entity or Unit
 	self.item = nil
 	self.source = 0
@@ -27,7 +27,7 @@ function M:__init(obj, time_context, controllers)
 	self.modifiers = {}
 
 	if obj then
-		self:from_object(obj, time_context, controllers)
+		self:from_object(obj, scope, controllers)
 	end
 end
 
@@ -46,13 +46,13 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, time_context, controllers)
+function M:from_object(obj, scope, controllers)
 	U.type_assert(obj, "userdata")
-	U.type_assert(time_context, "userdata", true)
+	U.type_assert(scope, "userdata", true)
 	U.type_assert(controllers, "table")
 
 	self:set_name(O.is_identifier(obj) and O.identifier(obj) or "")
-	self.context = time_context
+	self.scope = scope
 	self.item = nil
 	self.source = O.source(obj)
 	self.sub_source = O.sub_source(obj)
@@ -100,12 +100,12 @@ function M:to_object(obj)
 	U.type_assert(obj, "userdata", true)
 	if not obj then
 		obj = O.create()
-	elseif self.context then
+	elseif self.scope then
 		O.clear(obj)
 	end
 
-	if self.context then
-		O.set_time_date(obj, self.context)
+	if self.scope then
+		O.set_time_date(obj, self.scope)
 		obj = O.push_child(obj)
 	end
 

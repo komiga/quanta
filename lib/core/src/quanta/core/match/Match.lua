@@ -273,7 +273,9 @@ end
 
 function M.Pattern:matches(context, value, obj)
 	for _, f in pairs(self.filters) do
-		if not f(context, value, obj, self) then
+		local value = f(context, value, obj, self)
+		U.type_assert(value, "boolean")
+		if not value then
 			return false
 		end
 	end
@@ -299,7 +301,6 @@ function M.Tree:add(pattern)
 	end
 	return pattern
 end
-
 
 local function object_debug_info(obj)
 	local s = O.is_named(obj) and O.name(obj) or "<no-name>"

@@ -183,6 +183,7 @@ struct Test {
 	TSE("01-02T", "01-02")
 	TSS("02T")
 	TSS("x = 02T")
+	TSE("x = 02T{}", "x = 02T")
 	TSE("{x = 02T}", "{\n\tx = 02T\n}")
 
 	TSS("2015-01-02Z")

@@ -253,13 +253,10 @@ function check_tracker_action_equal(x, y)
 	U.assert(x.id == y.id)
 	U.assert(x.id_hash == y.id_hash)
 
-	if x.id == "ETODO" then
-		U.assert(x.data.description == y.data.description)
-	else
-		U.assert(U.type_class(x.data) == U.type_class(y.data))
-		if x.data then
-			x.data.check_equal(x, y)
-		end
+	local class = U.type_class(x.data)
+	U.assert(class == U.type_class(y.data))
+	if class.compare_equal then
+		U.assert(x.data:compare_equal(y.data))
 	end
 end
 

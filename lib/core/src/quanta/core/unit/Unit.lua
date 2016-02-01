@@ -148,9 +148,8 @@ function M.Note:to_object(obj)
 	U.type_assert(obj, "userdata")
 
 	if self.time then
-		local properties = O.push_child(obj)
-		O.set_time(O.push_child(properties), self.time)
-		O.set_string(O.push_child(properties), self.text)
+		O.set_time(O.push_child(obj), self.time)
+		O.set_string(O.push_child(obj), self.text)
 	else
 		O.set_string(obj, self.text)
 	end

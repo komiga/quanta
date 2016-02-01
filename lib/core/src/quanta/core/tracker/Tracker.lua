@@ -511,7 +511,7 @@ M.t_body:add(Match.Pattern{
 	name = "date",
 	vtype = O.Type.time,
 	acceptor = function(context, self, obj)
-		if O.is_month_contextual(obj) then
+		if O.is_date_contextual(obj) then
 			return Match.Error("date must be full")
 		elseif not O.is_zoned(obj) then
 			return Match.Error("date must be zoned")

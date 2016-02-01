@@ -25,7 +25,7 @@ function make_modifier(name, controller)
 end
 
 function make_instance(
-	name, item,
+	name, item, scope,
 	source, sub_source,
 	source_certain, sub_source_certain,
 	variant_certain, presence_certain,
@@ -34,6 +34,7 @@ function make_instance(
 	local i = Instance()
 	i.name = name
 	i.name_hash = O.hash_name(name)
+	i.scope = scope and make_time(scope) or nil
 	i.item = item
 	i.source = source
 	i.sub_source = sub_source
@@ -155,6 +156,10 @@ end
 function check_instance_equal(x, y)
 	U.assert(x.name == y.name)
 	U.assert(x.name_hash == y.name_hash)
+	U.assert((x.scope == nil) == (y.scope == nil))
+	if x.scope then
+		U.assert(Time.compare_equal(x.scope, y.scope))
+	end
 	U.assert(x.item == y.item)
 	U.assert(x.source == y.source)
 	U.assert(x.sub_source == y.sub_source)

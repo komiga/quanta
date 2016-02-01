@@ -64,23 +64,38 @@ end
 M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
-M.p_instance = Match.Pattern{
-	vtype = {O.Type.null, O.Type.identifier, O.Type.time},
-	tags = Match.Any,
+local function instance_acceptor(context, self, obj)
+	local scope = nil
+	if #context.user.scope > 1 then
+		-- Only provide context when stated in composition
+		-- The root context should be used by the request when looking up
+		-- entities & units
+		scope = U.table_last(context.user.scope)
+	end
+	table.insert(self.items, Instance(obj, scope, context.user.controllers))
+end
+
+M.p_instance = {
+-- :m
+Match.Pattern{
+	vtype = O.Type.null,
+	tags = true,
 	func = function(_, _, obj, _)
 		return O.op(obj) == O.Operator.add
 	end,
-	acceptor = function(context, self, obj)
-		local scope = nil
-		if #context.user.scope > 1 then
-			-- Only provide context when stated in composition
-			-- The root context should be used by the request when looking up
-			-- entities & units
-			scope = U.table_last(context.user.scope)
-		end
-		local item = Instance(obj, scope, context.user.controllers)
-		table.insert(self.items, item)
+	acceptor = instance_acceptor,
+},
+-- x, x:m, x{...}
+Match.Pattern{
+	vtype = O.Type.identifier,
+	children = Match.Any,
+	tags = Match.Any,
+	quantity = Match.Any,
+	func = function(_, _, obj, _)
+		return O.op(obj) == O.Operator.add
 	end,
+	acceptor = instance_acceptor,
+},
 }
 
 -- time context
@@ -134,7 +149,7 @@ M.t_head:add(Match.Pattern{
 	end,
 })
 
--- x, x:y, :y
+-- instance
 M.t_head:add(M.p_instance)
 M.t_body:add(M.p_instance)
 

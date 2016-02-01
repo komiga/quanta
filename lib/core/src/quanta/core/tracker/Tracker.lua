@@ -185,43 +185,58 @@ M.Action.p_accum = Match.Pattern{
 	end,
 }
 
--- ETODO
-M.Action.t_head:add(Match.Pattern{
-	vtype = O.Type.identifier,
-	value = "ETODO",
-	tags = Match.Any,
-	children = {Match.Pattern{
-		name = {"d", ""},
-		vtype = O.Type.string,
-		acceptor = function(context, self, obj)
-			self.data.description = O.string(obj)
-		end,
-	}},
-	acceptor = function(context, self, obj)
-		if O.num_children(obj) > 1 then
-			return Match.Error("ETODO can only carry a single string")
-		end
-
-		self.id = "ETODO"
-		self.id_hash = O.hash_name(self.id)
-		self.data = {
-			description = "",
-		}
-	end,
-})
-
 -- action
 M.Action.t_head:add(Match.Pattern{
 	vtype = O.Type.identifier,
 	tags = Match.Any,
+	children = Match.Any,
 	acceptor = function(context, self, obj)
 		self.id = O.identifier(obj)
 		self.id_hash = O.identifier_hash(obj)
 
 		local entry = context:value(1)
-		return context.user.director:read_action(context, entry, self, obj)
+		context.user.director:read_action(context, entry, self, obj)
 	end,
 })
+
+M.PlaceholderAction = U.class(M.PlaceholderAction)
+
+M.PlaceholderAction.t_head = Match.Tree({
+Match.Pattern{
+	tags = Match.Any,
+	children = {Match.Pattern{
+		name = {"d", ""},
+		vtype = O.Type.string,
+		acceptor = function(context, self, obj)
+			self.description = O.string(obj)
+		end,
+	}},
+	acceptor = function(context, self, obj)
+		if O.num_children(obj) > 1 then
+			return Match.Error("placeholder action can only carry a single string")
+		end
+	end,
+}
+})
+
+function M.PlaceholderAction:__init(description)
+	self.description = description or ""
+end
+
+function M.PlaceholderAction:from_object(context, entry, action, obj)
+	return context:consume(M.PlaceholderAction.t_head, obj, self)
+end
+
+function M.PlaceholderAction:to_object(action, obj)
+	if self.description and #self.description > 0 then
+		local d = O.push_child(obj)
+		O.set_string(d, self.description)
+	end
+end
+
+function M.PlaceholderAction:compare_equal(other)
+	return self.description == other.description
+end
 
 M.UnknownAction = U.class(M.UnknownAction)
 

@@ -100,6 +100,8 @@ function M:to_object(obj)
 	U.type_assert(obj, "userdata", true)
 	if not obj then
 		obj = O.create()
+	elseif self.context then
+		O.clear(obj)
 	end
 
 	if self.context then

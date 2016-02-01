@@ -237,6 +237,12 @@ end
 
 function M.UnknownAction:to_object(action, obj)
 	O.copy_children(obj, self.obj)
+	O.copy_tags(obj, self.obj)
+end
+
+function M.UnknownAction:compare_equal(other)
+	-- TODO?
+	return true
 end
 
 M.EntryTime = U.class(M.EntryTime)

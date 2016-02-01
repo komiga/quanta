@@ -60,9 +60,9 @@ make_test(
 		{},
 		nil, nil,
 		1, {
-			make_tracker_action("ETODO", {description = ""}),
-			make_tracker_action("ETODO", {description = "x"}),
-			make_tracker_action("ETODO", {description = "y"}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction("x")),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction("y")),
 		}
 	),
 }),
@@ -84,9 +84,9 @@ make_test(
 		{},
 		nil, nil,
 		2, {
-			make_tracker_action("ETODO", {description = ""}),
-			make_tracker_action("ETODO", {description = ""}),
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 }),
@@ -107,9 +107,9 @@ make_test(
 		{},
 		nil, nil,
 		3, {
-			make_tracker_action("ETODO", {description = ""}),
-			make_tracker_action("ETODO", {description = ""}),
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 }),
@@ -137,7 +137,7 @@ make_test(
 		{},
 		nil, nil,
 		1, {
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 	make_tracker_entry(
@@ -148,7 +148,7 @@ make_test(
 		{},
 		nil, nil,
 		1, {
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 }),
@@ -168,7 +168,7 @@ make_test(
 		{},
 		nil, nil,
 		1, {
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 	make_tracker_entry(
@@ -179,7 +179,7 @@ make_test(
 		{},
 		nil, nil,
 		1, {
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 	make_tracker_entry(
@@ -190,7 +190,7 @@ make_test(
 		{},
 		nil, nil,
 		1, {
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 	make_tracker_entry(
@@ -201,7 +201,7 @@ make_test(
 		{},
 		nil, nil,
 		1, {
-			make_tracker_action("ETODO", {description = ""}),
+			make_tracker_action("ETODO", Tracker.PlaceholderAction()),
 		}
 	),
 }),
@@ -262,7 +262,11 @@ function do_test(t, director)
 end
 
 function main()
+	Director.debug = true
+
 	local director = Director()
+	director:register("ETODO", Tracker.PlaceholderAction)
+
 	for i, t in ipairs(translation_tests) do
 		do_test(t, director)
 	end

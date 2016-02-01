@@ -1,6 +1,7 @@
 u8R""__RAW_STRING__(
 
 local U = require "togo.utility"
+local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
@@ -10,19 +11,19 @@ local M = U.module(...)
 
 U.class(M)
 
-function M:__init(obj, search_in, controllers)
+function M:__init(obj, time_context, controllers)
 	-- Instance, Composition
 	self.items = {}
 	self.measurement = Measurement()
 
 	if obj then
-		self:from_object(obj, search_in, controllers)
+		self:from_object(obj, time_context, controllers)
 	end
 end
 
-function M:from_object(obj, search_in, controllers)
+function M:from_object(obj, time_context, controllers)
 	U.type_assert(obj, "userdata")
-	U.type_assert(search_in, "table")
+	U.type_assert(time_context, "userdata", true)
 	U.type_assert(controllers, "table")
 
 	self.items = {}
@@ -30,11 +31,11 @@ function M:from_object(obj, search_in, controllers)
 
 	local context = Match.Context()
 	context.user = {
-		search_in = search_in,
+		time_context = {time_context and T(time_context) or nil},
 		controllers = controllers,
 	}
 	if not context:consume(M.t_head, obj, self) then
-		U.log("match error:\n%s", context.error:to_string(context.error_obj))
+		U.log("match error:\n%s", context.error:to_string())
 		return false
 	end
 	return true
@@ -64,20 +65,58 @@ M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
 M.p_instance = Match.Pattern{
-	vtype = {O.Type.null, O.Type.identifier},
+	vtype = {O.Type.null, O.Type.identifier, O.Type.time},
 	tags = Match.Any,
 	func = function(_, _, obj, _)
 		return O.op(obj) == O.Operator.add
 	end,
 	acceptor = function(context, self, obj)
-		table.insert(self.items, Instance(obj, context.user.search_in, context.user.controllers))
+		local time_context = nil
+		if #context.user.time_context > 1 then
+			-- Only provide context when stated in composition
+			-- The root context should be used by the request when looking up
+			-- entities & units
+			time_context = U.table_last(context.user.time_context)
+		end
+		local item = Instance(obj, time_context, context.user.controllers)
+		table.insert(self.items, item)
 	end,
 }
+
+-- time context
+M.t_head:add(Match.Pattern{
+	vtype = O.Type.time,
+	tags = false,
+	children = M.t_head,
+	quantity = false,
+	acceptor = function(context, self, obj)
+		local t
+		if O.has_clock(obj) then
+			return Match.Error("contextual block must not have clock time")
+		elseif O.num_children(obj) == 0 then
+			return Match.Error("contextual block is empty")
+		elseif O.is_month_contextual(obj) then
+			if #context.user.time_context == 0 then
+				return Match.Error("no time context provided; contextual block time cannot be resolved")
+			end
+			t = O.time_resolved(obj, U.table_last(context.user.time_context))
+		else
+			t = T(O.time(obj))
+		end
+		T.clear_clock(t)
+		T.adjust_zone_utc(t)
+		table.insert(context.user.time_context, t)
+	end,
+	post_branch = function(context, self, obj)
+		table.remove(context.user.time_context)
+	end,
+})
 
 -- {...}, (x + y ...)
 M.t_head:add(Match.Pattern{
 	vtype = {O.Type.null, O.Type.expression},
 	children = M.t_body,
+	quantity = Match.Any,
 	acceptor = function(context, self, obj)
 		-- [XXX, 1g], [1g]
 		if O.has_quantity(obj) then
@@ -103,7 +142,9 @@ M.t_body:add(M.p_instance)
 M.t_body:add(Match.Pattern{
 	any_branch = M.t_head,
 	acceptor = function(context, self, obj)
-		return M()
+		local item = M()
+		table.insert(self.items, item)
+		return item
 	end,
 })
 

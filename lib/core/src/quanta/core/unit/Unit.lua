@@ -5,7 +5,6 @@ local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
-local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
 local M = U.module(...)
 
@@ -58,18 +57,18 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, search_in, controllers)
+function M:from_object(obj, time_context, controllers)
 	U.type_assert(obj, "userdata")
-	U.type_assert(search_in, "table")
+	U.type_assert(time_context, "userdata", true)
 	U.type_assert(controllers, "table")
 
 	local context = Match.Context()
 	context.user = {
-		search_in = search_in,
+		time_context = {time_context},
 		controllers = controllers,
 	}
 	if not context:consume(M.t_head, obj, self) then
-		U.log("match error:\n%s", context.error:to_string(context.error_obj))
+		U.log("match error:\n%s", context.error:to_string())
 		return false
 	end
 	return true

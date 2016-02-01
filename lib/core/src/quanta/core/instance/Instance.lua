@@ -1,6 +1,7 @@
 u8R""__RAW_STRING__(
 
 local U = require "togo.utility"
+local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
@@ -8,9 +9,11 @@ local M = U.module(...)
 
 U.class(M)
 
-function M:__init(obj, search_in, controllers)
+function M:__init(obj, time_context, controllers)
 	self.name = ""
 	self.name_hash = O.NAME_NULL
+	-- NB: can be shared!
+	self.context = nil
 	-- Entity or Unit
 	self.item = nil
 	self.source = 0
@@ -24,7 +27,7 @@ function M:__init(obj, search_in, controllers)
 	self.modifiers = {}
 
 	if obj then
-		self:from_object(obj, search_in, controllers)
+		self:from_object(obj, time_context, controllers)
 	end
 end
 
@@ -43,12 +46,13 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, search_in, controllers)
+function M:from_object(obj, time_context, controllers)
 	U.type_assert(obj, "userdata")
-	U.type_assert(search_in, "table")
+	U.type_assert(time_context, "userdata", true)
 	U.type_assert(controllers, "table")
 
 	self:set_name(O.is_identifier(obj) and O.identifier(obj) or "")
+	self.context = time_context
 	self.item = nil
 	self.source = O.source(obj)
 	self.sub_source = O.sub_source(obj)
@@ -77,20 +81,6 @@ function M:from_object(obj, search_in, controllers)
 		end
 	end
 
-	if self.name_hash ~= O.NAME_NULL then
-		for _, s in pairs(search_in) do
-			if Entity.is_universe(s) then
-				self.item = s.index_hash[self.name_hash]
-			else
-				U.type_assert(s, "table")
-				self.item = s[self.name_hash]
-			end
-			if self.item then
-				break
-			end
-		end
-	end
-
 	for _, sub in O.children(obj) do
 		if O.is_named(sub) then
 			-- TODO: pattern matching
@@ -98,7 +88,7 @@ function M:from_object(obj, search_in, controllers)
 				self.description = O.text(sub)
 			end
 		else
-			table.insert(self.selection, M(sub, search_in, controllers))
+			table.insert(self.selection, M(sub, nil, controllers))
 		end
 	end
 	for _, sub in O.tags(obj) do
@@ -110,6 +100,11 @@ function M:to_object(obj)
 	U.type_assert(obj, "userdata", true)
 	if not obj then
 		obj = O.create()
+	end
+
+	if self.context then
+		O.set_time_date(obj, self.context)
+		obj = O.push_child(obj)
 	end
 
 	if self.name_hash ~= O.NAME_NULL then

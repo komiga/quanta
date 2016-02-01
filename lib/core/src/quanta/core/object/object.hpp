@@ -456,6 +456,11 @@ inline bool is_month_contextual(Object const& obj) {
 	;
 }
 
+/// Whether the time value is context-relative to year or month.
+inline bool is_date_contextual(Object const& obj) {
+	return object::is_year_contextual(obj);
+}
+
 /// Set whether the time value specifies a zone offset (UTC or relative to UTC).
 ///
 /// If zoned is false and the value has a zone offset, it is adjusted to UTC

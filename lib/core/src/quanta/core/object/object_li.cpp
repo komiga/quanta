@@ -514,6 +514,12 @@ TOGO_LI_FUNC_DEF(is_month_contextual) {
 	return 1;
 }
 
+TOGO_LI_FUNC_DEF(is_date_contextual) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, object::is_date_contextual(*obj));
+	return 1;
+}
+
 TOGO_LI_FUNC_DEF(set_zoned) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	object::set_zoned(*obj, lua::get_boolean(L, 2), /*adjust = */luaL_opt(L, lua::get_boolean, 3, true));
@@ -982,6 +988,7 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(object, is_zoned)
 	TOGO_LI_FUNC_REF(object, is_year_contextual)
 	TOGO_LI_FUNC_REF(object, is_month_contextual)
+	TOGO_LI_FUNC_REF(object, is_date_contextual)
 	TOGO_LI_FUNC_REF(object, set_zoned)
 	TOGO_LI_FUNC_REF(object, set_year_contextual)
 	TOGO_LI_FUNC_REF(object, set_month_contextual)

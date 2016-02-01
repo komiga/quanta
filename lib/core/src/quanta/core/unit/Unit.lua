@@ -1,6 +1,7 @@
 u8R""__RAW_STRING__(
 
 local U = require "togo.utility"
+local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
@@ -207,6 +208,20 @@ M.t_body = Match.Tree()
 
 M.t_element_body = Match.Tree()
 
+local function add_timestamped_note(context, thing, obj)
+	local t
+	local obj_time = O.child_at(obj, 1)
+	if not O.has_date(obj_time) or O.is_date_contextual(obj_time) then
+		if #context.user.scope == 0 then
+			return Match.Error("no time context provided; contextual block time cannot be resolved")
+		end
+		t = O.time_resolved(obj_time, U.table_last(context.user.scope))
+	else
+		t = T(O.time(obj_time))
+	end
+	table.insert(thing.note, M.Note(O.string(O.child_at(obj, 2)), t))
+end
+
 -- Unit, Element
 M.p_shared = {
 -- d = "..."
@@ -265,13 +280,8 @@ Match.Pattern{
 			O.is_type(O.child_at(obj, 2), O.Type.string)
 		)
 	end,
-	acceptor = function(_, thing, obj)
-		table.insert(thing.note, M.Note(
-			O.string(O.child_at(obj, 2)),
-			-- TODO: make managed Time object
-			-- O.time(O.child_at(obj, 1))
-			nil
-		))
+	acceptor = function(context, thing, obj)
+		return add_timestamped_note(context, thing, obj)
 	end,
 },
 -- note = {...}
@@ -296,13 +306,8 @@ Match.Pattern{
 					O.is_type(O.child_at(obj, 2), O.Type.string)
 				)
 			end,
-			acceptor = function(_, thing, obj)
-				table.insert(thing.note, M.Note(
-					O.string(O.child_at(obj, 2)),
-					-- TODO: make managed Time object
-					-- O.time(O.child_at(obj, 1))
-					nil
-				))
+			acceptor = function(context, thing, obj)
+				return add_timestamped_note(context, thing, obj)
 			end,
 		},
 	},

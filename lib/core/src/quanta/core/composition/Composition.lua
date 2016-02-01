@@ -95,7 +95,7 @@ M.t_head:add(Match.Pattern{
 			return Match.Error("contextual block must not have clock time")
 		elseif O.num_children(obj) == 0 then
 			return Match.Error("contextual block is empty")
-		elseif O.is_year_contextual(obj) then
+		elseif O.is_date_contextual(obj) then
 			if #context.user.scope == 0 then
 				return Match.Error("no time context provided; contextual block time cannot be resolved")
 			end

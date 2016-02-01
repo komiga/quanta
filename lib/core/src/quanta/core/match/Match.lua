@@ -229,6 +229,7 @@ add_filter_group("value")
 add_filter_group("func")
 add_filter_group("children")
 add_filter_group("tags")
+add_filter_group("quantity")
 
 M.Pattern = U.class(M.Pattern)
 

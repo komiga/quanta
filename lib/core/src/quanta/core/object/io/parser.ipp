@@ -786,6 +786,16 @@ static bool parser_read_number(ObjectParser& p) {
 			if (parts & PART_EXPONENT) {
 				return PARSER_ERROR(p, "exponent in number specified twice");
 			}
+			if (!parser_peek(p)) {
+				return false;
+			}
+			if (
+				(p.nc < '0' || p.nc > '9') &&
+				p.nc != '-' && p.nc != '+' &&
+				p.nc != '.'
+			) {
+				goto l_complete;
+			}
 			parts |= PART_EXPONENT;
 			break;
 

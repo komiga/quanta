@@ -138,6 +138,10 @@ struct Test {
 	TSS("1a")
 	TSS("1µg")
 	TSS("1°C")
+	TSS("1e")
+	TSE("1e{}", "1e")
+	TSS("1exact")
+	TSS("1.1e")
 
 // currency
 	TF("¤")

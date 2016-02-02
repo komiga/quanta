@@ -837,18 +837,7 @@ static bool parser_read_identifier(
 	bool const conversion = true
 ) {
 	do {
-		switch (p.c) {
-		case PC_EOF:
-		case '\t':
-		case '\n':
-		case ' ':
-		case ',': case ';':
-		case '=': case ':': case '$':
-		case '}': case ']': case ')':
-		case '{': case '[': case '(':
-		case '+':
-		case '*': case '/':
-		case '\\':
+		if (is_identifier_terminator(p.c)) {
 			p.buffer_type = PB_IDENTIFIER;
 			if (conversion) {
 				if (array::size(p.buffer) == 4) {

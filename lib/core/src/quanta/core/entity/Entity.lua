@@ -25,14 +25,8 @@ end
 function M:set_name(name)
 	U.type_assert(name, "string")
 	U.assert(#name > 0, "name cannot be empty")
-	if self.universe then
-		M.Universe.remove_index(self.universe, self)
-	end
 	self.name = name
 	self.name_hash = O.hash_name(name)
-	if self.universe then
-		M.Universe.add_index(self.universe, self)
-	end
 end
 
 function M:set_compositor(compositor)
@@ -78,7 +72,6 @@ function M:add(entity)
 	if not entity.compositor and self.compositor then
 		entity.compositor = self.compositor
 	end
-	M.Universe.add_index(self.universe, entity)
 	return entity
 end
 
@@ -121,31 +114,15 @@ M.Universe = {}
 U.set_functable(M.Universe, function(_, name)
 	local e = M.Category(name)
 	e.universe = e
-	e.index = {}
 	return e
 end)
-
--- NB: not actually usable as metamethods; M is the only metatable for entities
-function M.Universe:add_index(entity)
-	local current = self.index[entity.name_hash]
-	U.assert(
-		current == nil,
-		"entity name '%s' is not unique by hash (%d => '%s') within the universe",
-		entity.name, entity.name_hash, current and current.name or ""
-	)
-	self.index[entity.name_hash] = entity
-end
-
-function M.Universe:remove_index(entity)
-	self.index[entity.name_hash] = nil
-end
 
 function M.is_category(entity)
 	return U.is_type(entity, Entity) and entity.is_category
 end
 
 function M.is_universe(entity)
-	return M.is_category(entity) and U.is_type(entity.index, "table")
+	return M.is_category(entity) and entity.universe == entity.universe
 end
 
 M.Source = U.class(M.Source)

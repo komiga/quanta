@@ -39,6 +39,8 @@ local function first_string(obj)
 	return prefix
 end
 
+M.universe = Match.Tree()
+
 M.source = Match.Tree()
 
 M.source:add({
@@ -237,9 +239,25 @@ Match.Pattern{
 },--]]
 })
 
-M.entity = Match.Tree()
+M.t_shared_body = Match.Tree({
+Match.Pattern{
+	name = "aliases",
+	children = {Match.Pattern{
+		children = true,
+		acceptor = function(_, cat, obj)
+			if O.num_children(obj) < 2 then
+				return Match.Error("alias definition must have at least one target")
+			end
+			-- TODO
+		end,
+	}},
+},
+})
 
-local entity_patterns = {
+M.t_entity_head = Match.Tree()
+
+M.t_entity_body = Match.Tree({
+M.t_shared_body,
 Match.Pattern{
 	name = "sources",
 	children = {Match.Pattern{
@@ -255,8 +273,8 @@ Match.Pattern{
 	end
 },
 Match.Pattern{
-	name = "specializations",
-	children = M.entity,
+	name = {"specializations", "children"},
+	children = M.universe,
 },
 Match.Pattern{
 	any_branch = M.source,
@@ -277,21 +295,22 @@ Match.Pattern{
 --[[Match.Pattern{
 	any = true,
 },--]]
-}
+})
 
-M.entity:add(Match.Pattern{
+M.t_entity_head:add(Match.Pattern{
 	name = true,
 	vtype = O.Type.identifier,
 	value = "Entity",
-	children = entity_patterns,
+	children = M.t_entity_body,
 	acceptor = function(_, parent, obj)
 		return parent:add(Entity(O.name(obj)))
 	end
 })
 
-M.universe = Match.Tree()
+M.t_category_head = Match.Tree()
 
-local category_patterns = {
+M.t_category_body = Match.Tree({
+M.t_shared_body,
 Match.Pattern{
 	name = "d",
 	vtype = {O.Type.null, O.Type.string, O.Type.expression},
@@ -339,32 +358,24 @@ Match.Pattern{
 	end
 },
 Match.Pattern{
-	name = "aliases",
-	children = {Match.Pattern{
-		children = true,
-		acceptor = function(_, cat, obj)
-			if O.num_children(obj) < 2 then
-				return Match.Error("alias definition must have at least one target")
-			end
-			-- TODO
-		end,
-	}},
+	name = "children",
+	children = M.universe,
 },
-}
+})
 
-M.universe:add(Match.Pattern{
+M.t_category_head:add(Match.Pattern{
 	name = true,
 	vtype = O.Type.identifier,
 	value = "EntityCategory",
-	children = category_patterns,
+	children = M.t_category_body,
 	acceptor = function(_, parent, obj)
 		return parent:add(Entity.Category(O.name(obj)))
 	end
 })
 
-table.insert(category_patterns, Match.Pattern{
-	name = "children",
-	children = U.table_ijoined(M.universe.patterns, M.entity.patterns),
+M.universe:add({
+	M.t_category_head,
+	M.t_entity_head,
 })
 
 function M.read_universe(root_path, name)

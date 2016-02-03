@@ -286,21 +286,26 @@ end
 M.Tree = U.class(M.Tree)
 
 function M.Tree:__init(patterns)
-	self.patterns = U.type_assert(patterns, "table", true) or {}
+	self.patterns = {}
+
+	if patterns ~= nil then
+		self:add(patterns)
+	end
 end
 
-function M.Tree:add(pattern)
-	if U.is_type(pattern, M.Pattern) then
-		table.insert(self.patterns, pattern)
-	elseif U.is_type(pattern, "table") then
-		for _, p in pairs(pattern) do
-			U.type_assert(p, M.Pattern)
-			table.insert(self.patterns, p)
+function M.Tree:add(p)
+	if U.is_type(p, M.Pattern) then
+		table.insert(self.patterns, p)
+	elseif U.is_type(p, M.Tree) then
+		self:add(p.patterns)
+	elseif U.is_type(p, "table") then
+		for _, pattern in pairs(p) do
+			self:add(pattern)
 		end
 	else
-		U.assert(false, "pattern must be a table or a Match.Pattern")
+		U.assert(false, "p must be a Match.Tree, a Match.Pattern, or a table containing either")
 	end
-	return pattern
+	return p
 end
 
 local function object_debug_info(obj)

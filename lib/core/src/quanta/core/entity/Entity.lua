@@ -25,8 +25,14 @@ end
 function M:set_name(name)
 	U.type_assert(name, "string")
 	U.assert(#name > 0, "name cannot be empty")
+	if self.parent then
+		self.parent.children[self.name_hash] = nil
+	end
 	self.name = name
 	self.name_hash = O.hash_name(name)
+	if self.parent then
+		self.parent:add_key(self)
+	end
 end
 
 function M:set_compositor(compositor)
@@ -66,16 +72,32 @@ function M:add(entity)
 		return
 	end
 	U.assert(entity.parent == nil)
-	table.insert(self.children, entity)
 	entity.universe = self.universe
 	entity.parent = self
+	self:add_key(entity)
 	if not entity.compositor and self.compositor then
 		entity.compositor = self.compositor
 	end
 	return entity
 end
 
-function M:find_child(name)
+function M:add_key(entity)
+	U.type_assert(entity, M)
+	local current = self.children[entity.name_hash]
+	if current then
+		if current == entity then
+			return
+		end
+		U.assert(
+			false,
+			"entity name '%s' is not unique by hash (%d => '%s')",
+			entity.name, entity.name_hash, current.name
+		)
+	end
+	self.children[entity.name_hash] = entity
+end
+
+function M:find(name)
 	U.type_assert_any(name, {"string", "number"})
 	local name_hash
 	if U.is_type(name, "string") then
@@ -83,12 +105,7 @@ function M:find_child(name)
 	else
 		name_hash = name
 	end
-	for _, e in ipairs(self.children) do
-		if e.name_hash == name_hash then
-			return e
-		end
-	end
-	return nil
+	return self.children[name_hash]
 end
 
 M.Category = {}

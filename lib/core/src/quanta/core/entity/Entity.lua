@@ -6,10 +6,16 @@ local Match = require "Quanta.Match"
 local Measurement = require "Quanta.Measurement"
 local M = U.module(...)
 
+M.Type = {
+	generic = 1,
+	category = 2,
+	universe = 3,
+}
+
 U.class(M)
 
 function M:__init(name)
-	self.is_category = false
+	self.type = M.Type.generic
 	self.name = nil
 	self.name_hash = O.NAME_NULL
 	self.description = nil
@@ -20,6 +26,14 @@ function M:__init(name)
 	self.parent = nil
 	self.children = {}
 	self:set_name(name)
+end
+
+function M:is_category()
+	return U.is_type(self, M) and self.type == M.Type.category
+end
+
+function M:is_universe()
+	return U.is_type(self, M) and self.type == M.Type.universe
 end
 
 function M:set_name(name)
@@ -112,7 +126,7 @@ M.Category = {}
 
 U.set_functable(M.Category, function(_, name)
 	local e = M(name)
-	e.is_category = true
+	e.type = M.Type.category
 	e.sources = {}
 	return e
 end)
@@ -130,17 +144,10 @@ M.Universe = {}
 
 U.set_functable(M.Universe, function(_, name)
 	local e = M.Category(name)
+	e.type = M.Type.universe
 	e.universe = e
 	return e
 end)
-
-function M.is_category(entity)
-	return U.is_type(entity, Entity) and entity.is_category
-end
-
-function M.is_universe(entity)
-	return M.is_category(entity) and entity.universe == entity.universe
-end
 
 M.Source = U.class(M.Source)
 

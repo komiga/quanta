@@ -49,6 +49,16 @@ function M:set_name(name)
 	end
 end
 
+function M:ref()
+	local parts = {}
+	local entity = self
+	while entity and entity.type ~= M.Type.universe do
+		table.insert(parts, 1, entity.name)
+		entity = entity.parent
+	end
+	return table.concat(parts, '.')
+end
+
 function M:set_compositor(compositor)
 	U.type_assert(compositor, Match.Tree)
 	self.compositor = compositor
@@ -148,6 +158,93 @@ U.set_functable(M.Universe, function(_, name)
 	e.universe = e
 	return e
 end)
+
+function M.make_search_branch(entity, depth)
+	U.type_assert(entity, M)
+	U.type_assert(depth, "number")
+	return {entity, depth}
+end
+
+local BYTE_DOT = string.byte('.')
+
+local function ref_parts(ref)
+	local parts = {}
+	local root_ref = string.byte(ref, 1, 1) == BYTE_DOT
+	local s = root_ref and 1 or 0
+	local e = s
+	local hash
+	repeat
+		e, _ = string.find(ref, ".", s, true)
+		if e == nil then
+			e = #ref + 1
+		end
+		hash = O.hash_name(string.sub(ref, s, e - 1))
+		if hash ~= O.NAME_NULL then
+			table.insert(parts, hash)
+		end
+		s = e + 1
+	until e >= #ref
+	return parts, root_ref
+end
+
+local function find_part(entity, search_depth, parts, index, hash)
+	if index > #parts then
+		return entity
+	end
+	local next_index = index + 1
+	local next_hash = parts[next_index]
+	local child = entity.children[hash]
+	if child then
+		local f = find_part(child, 0, parts, next_index, next_hash)
+		if f then
+			return f
+		end
+	end
+
+	if search_depth > 0 then
+		-- BFS
+		local search_list = {{entity, 0}}
+		repeat
+			local node = table.remove(search_list)
+			local above_depth = node[2] <= search_depth
+			for child_hash, child in pairs(node[1].children) do
+				if child_hash == hash then
+					local f = find_part(child, 0, parts, next_index, next_hash)
+					if f then
+						return f
+					end
+				end
+				if above_depth and next(child.children) ~= nil then
+					table.insert(search_list, {child, node[2] + 1})
+				end
+			end
+		until #search_list == 0
+	end
+	return nil
+end
+
+function M:search(branches, ref)
+	U.type_assert(branches, "table", true)
+	U.type_assert(ref, "string")
+
+	local parts, root_ref = ref_parts(ref)
+	if #parts == 0 then
+		return root_ref and self or nil
+	end
+
+	local index = 1
+	local hash = parts[index]
+	if root_ref or not branches or #branches == 0 then
+		return find_part(self, 0, parts, index, hash)
+	end
+	for _, branch in ipairs(branches) do
+		local f = find_part(branch[1], branch[2], parts, index, hash)
+		if f then
+			return f
+		end
+	end
+	return nil
+end
 
 M.Source = U.class(M.Source)
 

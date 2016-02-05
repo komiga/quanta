@@ -89,6 +89,17 @@ function M:source(i)
 	return self.sources[i]
 end
 
+function M:has_variant(source, sub_source)
+	if source == 0 then
+		return true
+	end
+	local s = self:source(source)
+	if s then
+		return sub_source == 0 or s:vendor(sub_source) ~= nil
+	end
+	return nil
+end
+
 function M:add(entity)
 	U.type_assert(entity, M)
 	U.assert(self.universe)

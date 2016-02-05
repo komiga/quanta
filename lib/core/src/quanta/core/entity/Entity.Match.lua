@@ -378,22 +378,31 @@ M.universe:add({
 	M.t_entity_head,
 })
 
-function M.read_universe(root_path, name)
+function M.read_universe(rp, name)
+	U.type_assert(rp, "string")
 	U.type_assert(name, "string", true)
 
-	local universe = nil
-	local root = O.create()
-	if O.read_text_file(root, root_path) then
-		universe = Entity.Universe(name or "universe")
-		local context = Match.Context()
-		if not context:consume_sub(M.universe, root, universe, root_path) then
-			U.log("match error:\n%s", context.error:to_string())
-			universe = nil
+	local path, root
+	if U.is_type(rp, "string") then
+		path = rp
+		root = O.create()
+		if not O.read_text_file(root, path) then
+			U.log("error: failed to read root")
+			return nil
 		end
 	else
-		U.log("error: failed to read root")
+		U.type_assert(rp, "userdata")
+		root = rp
 	end
-	return universe
+
+	local universe = Entity.Universe(name or "universe")
+	local context = Match.Context()
+	if context:consume_sub(M.universe, root, universe, path) then
+		return universe
+	else
+		U.log("match error:\n%s", context.error:to_string())
+	end
+	return nil
 end
 
 return M

@@ -64,7 +64,7 @@ function M:set_compositor(compositor)
 	self.compositor = compositor
 end
 
-function M:has_source()
+function M:any_sources()
 	return #self.sources > 0
 end
 

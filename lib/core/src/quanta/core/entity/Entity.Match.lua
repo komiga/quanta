@@ -267,7 +267,7 @@ Match.Pattern{
 		end
 	}},
 	acceptor = function(_, e, obj)
-		if e:has_source() then
+		if e:any_sources() then
 			return Match.Error("entity source(s) already defined")
 		end
 	end

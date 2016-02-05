@@ -379,7 +379,6 @@ M.universe:add({
 })
 
 function M.read_universe(rp, name)
-	U.type_assert(rp, "string")
 	U.type_assert(name, "string", true)
 
 	local path, root

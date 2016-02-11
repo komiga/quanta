@@ -1,7 +1,28 @@
 
 return {
-	M("string", {}),
-	M("chrono", {}),
-	M("object", {}),
+	M("string", {
+		N("unmanaged_string"),
+	}),
+	M("chrono", {
+		N("internal"),
+		N("time"),
+	}),
+	M("object", {
+		N("internal"),
+		I("io", {
+			N("common"),
+			N("parser"),
+			N("writer"),
+		}),
+	}),
+	M("vessel", {}),
+	M("match", {}),
+	M("measurement", {}),
+	M("entity", {}),
+	M("instance", {}),
+	M("composition", {}),
+	M("unit", {}),
+	M("tracker", {}),
+	M("director", {}),
 	M("lua", {}),
 }

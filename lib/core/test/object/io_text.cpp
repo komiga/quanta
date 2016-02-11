@@ -11,8 +11,6 @@
 
 #include <togo/support/test.hpp>
 
-#include <cmath>
-
 using namespace quanta;
 
 #define M_TSN(d)	{true, false, d, {}},

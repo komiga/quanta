@@ -48,13 +48,7 @@ template<class H>
 struct HashedUnmanagedString
 	: UnmanagedString
 {
-	static_assert(
-		is_same<H, hash32>::value ||
-		is_same<H, hash64>::value,
-		"H must be a hash value type"
-	);
-
-	H hash;
+	typename H::Value hash;
 
 	operator StringRef() const {
 		return StringRef{data, size};

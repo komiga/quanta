@@ -24,7 +24,7 @@ signed main() {
 		unmanaged_string::clear(s, a);
 	}
 	{
-		HashedUnmanagedString<hash32> s{};
+		HashedUnmanagedString<hash::Default32> s{};
 		unmanaged_string::set(s, "", a);
 		TOGO_ASSERTE(s.data == nullptr && s.size == 0);
 		TOGO_ASSERTE(s.hash == hash::IDENTITY32);

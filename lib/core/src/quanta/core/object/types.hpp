@@ -29,11 +29,17 @@ namespace object {
 	@{
 */
 
-/// Object name hash.
-using ObjectNameHash = hash32;
+/// Object name hasher.
+using ObjectNameHasher = hash::Default32;
 
-/// Object value hash (numeric unit, identifier).
-using ObjectValueHash = hash32;
+/// Object name hash.
+using ObjectNameHash = ObjectNameHasher::Value;
+
+/// Object value hasher (numeric unit, identifier).
+using ObjectValueHasher = hash::Default32;
+
+/// Object value hash.
+using ObjectValueHash = ObjectValueHasher::Value;
 
 namespace hash_literals {
 
@@ -43,7 +49,7 @@ operator"" _object_name(
 	char const* const data,
 	std::size_t const size
 ) {
-	return hash::calc_generic_ce<ObjectNameHash>(data, size);
+	return hash::calc_ce<ObjectNameHasher>(data, size);
 }
 
 /// Object value hash literal.
@@ -52,7 +58,7 @@ operator"" _object_value(
 	char const* const data,
 	std::size_t const size
 ) {
-	return hash::calc_generic_ce<ObjectValueHash>(data, size);
+	return hash::calc_ce<ObjectValueHasher>(data, size);
 }
 
 } // namespace hash_literals
@@ -129,7 +135,7 @@ struct Object {
 			f64 decimal;
 			Currency c;
 		};
-		HashedUnmanagedString<ObjectValueHash> unit;
+		HashedUnmanagedString<ObjectValueHasher> unit;
 	};
 
 	union Value {
@@ -137,13 +143,13 @@ struct Object {
 		Numeric numeric;
 		Time time;
 		UnmanagedString string;
-		HashedUnmanagedString<ObjectValueHash> identifier;
+		HashedUnmanagedString<ObjectValueHasher> identifier;
 	};
 
 	u64 properties;
 	u16 source;
 	u16 sub_source;
-	HashedUnmanagedString<ObjectNameHash> name;
+	HashedUnmanagedString<ObjectNameHasher> name;
 	Value value;
 	Array<Object> tags;
 	Array<Object> children;

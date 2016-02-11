@@ -40,12 +40,12 @@ namespace object {
 
 /// Calculate object name hash of a string.
 inline ObjectNameHash hash_name(StringRef const& name) {
-	return hash::calc_generic<ObjectNameHash>(name);
+	return hash::calc<ObjectNameHasher>(name);
 }
 
 /// Calculate value hash of a string.
 inline ObjectValueHash hash_value(StringRef const& name) {
-	return hash::calc_generic<ObjectValueHash>(name);
+	return hash::calc<ObjectValueHasher>(name);
 }
 
 /// Value type.

@@ -40,13 +40,13 @@ inline bool any(UnmanagedString const& s) { return s.size > 0; }
 template<class H>
 void set(HashedUnmanagedString<H>& s, StringRef value, Allocator& a) {
 	unmanaged_string::set(static_cast<UnmanagedString&>(s), value, a);
-	s.hash = hash::calc_generic<H>(s.data, s.size);
+	s.hash = hash::calc<H>(s.data, s.size);
 }
 
 template<class H>
 void clear(HashedUnmanagedString<H>& s, Allocator& a) {
 	unmanaged_string::clear(static_cast<UnmanagedString&>(s), a);
-	s.hash = hash::traits<H>::identity;
+	s.hash = H::identity;
 }
 
 /** @} */ // end of doc-group lib_core_unmanaged_string

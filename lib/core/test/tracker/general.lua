@@ -1,8 +1,8 @@
 
 local U = require "togo.utility"
 local O = require "Quanta.Object"
-local Director = require "Quanta.Director"
 local Tracker = require "Quanta.Tracker"
+local Director = require "Quanta.Director"
 
 require "common"
 
@@ -265,7 +265,7 @@ function main()
 	Director.debug = true
 
 	local director = Director()
-	director:register("ETODO", Tracker.PlaceholderAction)
+	director:register_action("ETODO", Tracker.PlaceholderAction)
 
 	for i, t in ipairs(translation_tests) do
 		do_test(t, director)

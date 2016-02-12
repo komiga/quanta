@@ -4,7 +4,6 @@ local O = require "Quanta.Object"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
-local Entity = require "Quanta.Entity"
 local Director = require "Quanta.Director"
 
 require "common"

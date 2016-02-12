@@ -17,10 +17,11 @@ function make_time(text)
 	return t
 end
 
-function make_modifier(name, controller)
+function make_modifier(id, data)
 	local m = Instance.Modifier()
-	m.name = name
-	m.controller = controller
+	m.id = id
+	m.id_hash = O.hash_name(id)
+	m.data = data
 	return m
 end
 
@@ -146,10 +147,13 @@ function make_tracker(date, entries)
 end
 
 function check_modifier_equal(x, y)
-	U.assert(x.name == y.name)
-	U.assert(x.controller == y.controller)
-	if x.controller then
-		x.controller.check_equal(x, y)
+	U.assert(x.id == y.id)
+	U.assert(x.id_hash == y.id_hash)
+
+	local class = U.type_class(x.data)
+	U.assert(class == U.type_class(y.data))
+	if class.compare_equal then
+		U.assert(x.data:compare_equal(y.data))
 	end
 end
 

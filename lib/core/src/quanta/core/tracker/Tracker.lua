@@ -27,7 +27,6 @@ function M:from_object(obj, director)
 	context.user = {
 		tracker = self,
 		director = director,
-		obj_tmp = O.create(),
 	}
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
@@ -296,9 +295,7 @@ M.EntryTime.t_head:add(Match.Pattern{
 
 		self.type = M.EntryTime.Type.specified
 
-		O.copy(context.user.obj_tmp, obj, false)
-		O.resolve_time(context.user.obj_tmp, context.user.tracker.date)
-		T.set(self.time, O.time(context.user.obj_tmp))
+		T.set(self.time, O.time_resolved(obj, context.user.tracker.date))
 		entry_time_set_uncertainties(self, obj)
 	end,
 })
@@ -478,10 +475,8 @@ M.Entry.t_body:add(Match.Pattern{
 			return Match.Error("scope must not have clock time")
 		end
 
-		O.copy(context.user.obj_tmp, obj, false)
-		O.resolve_time(context.user.obj_tmp, context.user.tracker.date)
 		self.continue_id = O.identifier(O.child_at(obj, 1))
-		self.continue_scope = T(O.time(context.user.obj_tmp))
+		self.continue_scope = T(O.time_resolved(obj, context.user.tracker.date))
 	end,
 })
 

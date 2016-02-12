@@ -5,6 +5,7 @@ local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
 local Entity = require "Quanta.Entity"
+local Director = require "Quanta.Director"
 
 require "common"
 
@@ -113,14 +114,14 @@ make_test(
 	"x:m",
 	Measurement(), {
 	make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {
-		make_modifier("m", nil, nil),
+		make_modifier("m", Instance.UnknownModifier()),
 	}),
 }),
 make_test(
 	":m",
 	Measurement(), {
 	make_instance("", nil, nil, 0, 0, true, true, true, true, {}, {}, {
-		make_modifier("m", nil, nil),
+		make_modifier("m", Instance.UnknownModifier()),
 	}),
 }),
 
@@ -161,14 +162,18 @@ make_test(
 }),
 }
 
-function do_test(t, scope, controllers)
+function do_test(t, implicit_scope, director)
 	local o = O.create(t.text)
 	U.assert(o ~= nil)
 	local text_rewrite = O.write_text_string(o, true)
 	U.print("%s  =>", text_rewrite)
 
 	local comp = Composition()
-	U.assert(comp:from_object(o, scope, controllers) or not t.comp)
+	local success, msg = comp:from_object(o, implicit_scope, director)
+	if not success then
+		U.print("translation error: %s", msg)
+	end
+	U.assert(success == not not t.comp, "unexpected success value: %s", success)
 	check_composition_equal(comp, t.comp)
 	if t.comp then
 		check_composition_equal(comp, t.comp)
@@ -180,10 +185,13 @@ function do_test(t, scope, controllers)
 end
 
 function main()
-	local scope = make_time("2016-01-01Z")
-	local controllers = {}
+	Director.debug = true
+
+	local implicit_scope = make_time("2016-01-01Z")
+	local director = Director()
+
 	for _, t in pairs(translation_tests) do
-		do_test(t, scope, controllers)
+		do_test(t, implicit_scope, director)
 	end
 
 	return 0

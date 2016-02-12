@@ -6,6 +6,7 @@ local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
+local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
 local M = U.module(...)
 
@@ -59,16 +60,11 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, scope, controllers)
+function M:from_object(obj, implicit_scope, director)
 	U.type_assert(obj, "userdata")
-	U.type_assert(scope, "userdata", true)
-	U.type_assert(controllers, "table")
 
 	local context = Match.Context()
-	context.user = {
-		scope = {scope},
-		controllers = controllers,
-	}
+	Instance.init_match_context(context, implicit_scope, director)
 	if not context:consume(M.t_head, obj, self) then
 		U.log("match error:\n%s", context.error:to_string())
 		return false
@@ -91,7 +87,7 @@ local function to_object_shared(self, obj)
 	if #self.author == 1 then
 		O.set_string(author_obj, self.author[1])
 	elseif #self.author > 1 then
-		for _, author in pairs(self.author) do
+		for _, author in ipairs(self.author) do
 			if author ~= "" then
 				O.set_string(O.push_child(author_obj), author)
 			end
@@ -106,7 +102,7 @@ local function to_object_shared(self, obj)
 	if #self.note == 1 then
 		self.note[1]:to_object(O.push_child(note_obj))
 	elseif #self.note > 1 then
-		for _, note in pairs(self.note) do
+		for _, note in ipairs(self.note) do
 			note:to_object(O.push_child(note_obj))
 		end
 	end
@@ -129,8 +125,8 @@ function M:to_object(obj)
 	end
 
 	to_object_shared(self, obj)
-	for _, bucket in pairs(self.elements) do
-		for _, e in pairs(bucket) do
+	for _, bucket in ipairs(self.elements) do
+		for _, e in ipairs(bucket) do
 			e:to_object(O.push_child(obj))
 		end
 	end
@@ -196,7 +192,7 @@ function M.Element:to_object(obj)
 	U.type_assert(obj, "userdata")
 
 	O.set_name(obj, M.Element.Type[self.type].notation .. tostring(self.index))
-	for _, s in pairs(self.steps) do
+	for _, s in ipairs(self.steps) do
 		s:to_object(O.push_child(obj))
 	end
 end
@@ -212,10 +208,11 @@ local function add_timestamped_note(context, thing, obj)
 	local t
 	local obj_time = O.child_at(obj, 1)
 	if not O.has_date(obj_time) or O.is_date_contextual(obj_time) then
-		if #context.user.scope == 0 then
-			return Match.Error("no time context provided; contextual block time cannot be resolved")
+		local parent_scope = U.table_last(context.user.scope, true) or context.user.implicit_scope
+		if not parent_scope then
+			return Match.Error("no time context provided; note time cannot be resolved")
 		end
-		t = O.time_resolved(obj_time, U.table_last(context.user.scope))
+		t = O.time_resolved(obj_time, parent_scope)
 	else
 		t = T(O.time(obj_time))
 	end

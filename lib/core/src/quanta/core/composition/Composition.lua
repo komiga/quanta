@@ -11,32 +11,22 @@ local M = U.module(...)
 
 U.class(M)
 
-function M:__init(obj, scope, controllers)
+function M:__init()
 	-- Instance, Composition
 	self.items = {}
 	self.measurement = Measurement()
-
-	if obj then
-		self:from_object(obj, scope, controllers)
-	end
 end
 
-function M:from_object(obj, scope, controllers)
+function M:from_object(obj, implicit_scope, director)
 	U.type_assert(obj, "userdata")
-	U.type_assert(scope, "userdata", true)
-	U.type_assert(controllers, "table")
 
 	self.items = {}
 	self.measurement:__init()
 
 	local context = Match.Context()
-	context.user = {
-		scope = {scope and T(scope) or nil},
-		controllers = controllers,
-	}
+	Instance.init_match_context(context, implicit_scope, director)
 	if not context:consume(M.t_head, obj, self) then
-		U.log("match error:\n%s", context.error:to_string())
-		return false
+		return false, context.error:to_string()
 	end
 	return true
 end
@@ -65,26 +55,12 @@ M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
 local function instance_acceptor(context, self, obj)
-	local scope = nil
-	if #context.user.scope > 1 then
-		-- Only provide context when stated in composition
-		-- The root context should be used by the request when looking up
-		-- entities & units
-		scope = U.table_last(context.user.scope)
-	end
-	table.insert(self.items, Instance(obj, scope, context.user.controllers))
+	local item = Instance()
+	table.insert(self.items, item)
+	return context:consume(Instance.t_head, obj, item)
 end
 
 M.p_instance = {
--- :m
-Match.Pattern{
-	vtype = O.Type.null,
-	tags = true,
-	func = function(_, _, obj, _)
-		return O.op(obj) == O.Operator.add
-	end,
-	acceptor = instance_acceptor,
-},
 -- x, x:m, x{...}
 Match.Pattern{
 	vtype = O.Type.identifier,
@@ -96,10 +72,20 @@ Match.Pattern{
 	end,
 	acceptor = instance_acceptor,
 },
+-- :m
+Match.Pattern{
+	vtype = O.Type.null,
+	tags = true,
+	func = function(_, _, obj, _)
+		return O.op(obj) == O.Operator.add
+	end,
+	acceptor = instance_acceptor,
+},
 }
 
 -- time context
-M.t_head:add(Match.Pattern{
+M.t_head:add({
+Match.Pattern{
 	vtype = O.Type.time,
 	tags = false,
 	children = M.t_head,
@@ -111,10 +97,11 @@ M.t_head:add(Match.Pattern{
 		elseif O.num_children(obj) == 0 then
 			return Match.Error("contextual block is empty")
 		elseif O.is_date_contextual(obj) then
-			if #context.user.scope == 0 then
+			local parent_scope = U.table_last(context.user.scope, true) or context.user.implicit_scope
+			if not parent_scope then
 				return Match.Error("no time context provided; contextual block time cannot be resolved")
 			end
-			t = O.time_resolved(obj, U.table_last(context.user.scope))
+			t = O.time_resolved(obj, parent_scope)
 		else
 			t = T(O.time(obj))
 		end
@@ -125,10 +112,9 @@ M.t_head:add(Match.Pattern{
 	post_branch = function(context, self, obj)
 		table.remove(context.user.scope)
 	end,
-})
-
+},
 -- {...}, (x + y ...)
-M.t_head:add(Match.Pattern{
+Match.Pattern{
 	vtype = {O.Type.null, O.Type.expression},
 	children = M.t_body,
 	quantity = Match.Any,
@@ -147,6 +133,7 @@ M.t_head:add(Match.Pattern{
 			end
 		end
 	end,
+},
 })
 
 -- instance

@@ -3,19 +3,32 @@ u8R""__RAW_STRING__(
 local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
+local Match = require "Quanta.Match"
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
 local M = U.module(...)
 
 U.class(M)
 
-function M:__init(obj, scope, controllers)
+function M.init_match_context(context, implicit_scope, director)
+	U.type_assert(context, Match.Context)
+	U.type_assert(implicit_scope, "userdata", true)
+
+	context.user = context.user or {}
+	context.user.implicit_scope = implicit_scope and T(implicit_scope) or nil
+	context.user.scope_save = {}
+	context.user.scope = {}
+	context.user.director = director
+end
+
+function M:__init()
 	self.name = ""
 	self.name_hash = O.NAME_NULL
 	-- NB: can be shared!
 	self.scope = nil
 	-- Entity or Unit
 	self.item = nil
+	self.description = ""
 	self.source = 0
 	self.sub_source = 0
 	self.source_certain = true
@@ -25,10 +38,6 @@ function M:__init(obj, scope, controllers)
 	self.measurements = {}
 	self.selection = {}
 	self.modifiers = {}
-
-	if obj then
-		self:from_object(obj, scope, controllers)
-	end
 end
 
 function M:set_name(name)
@@ -46,54 +55,17 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, scope, controllers)
+function M:from_object(obj, implicit_scope, director)
 	U.type_assert(obj, "userdata")
-	U.type_assert(scope, "userdata", true)
-	U.type_assert(controllers, "table")
 
-	self:set_name(O.is_identifier(obj) and O.identifier(obj) or "")
-	self.scope = scope
-	self.item = nil
-	self.source = O.source(obj)
-	self.sub_source = O.sub_source(obj)
-	self.source_certain = not O.marker_source_uncertain(obj)
-	self.sub_source_certain = not O.marker_sub_source_uncertain(obj)
-	self.presence_certain = not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
+	self:__init()
 
-	self.measurements = {}
-	self.selection = {}
-	self.modifiers = {}
-
-	if O.has_quantity(obj) then
-		local quantity = O.quantity(obj)
-		if O.is_null(quantity) and O.has_children(quantity) then
-			for _, sub in O.children(quantity) do
-				local m = Measurement(sub)
-				if not m:is_empty() then
-					table.insert(self.measurements, m)
-				end
-			end
-		elseif not O.is_null(quantity) then
-			local m = Measurement(quantity)
-			if not m:is_empty() then
-				table.insert(self.measurements, m)
-			end
-		end
+	local context = Match.Context()
+	M.init_match_context(context, implicit_scope, director)
+	if not context:consume(M.t_head, obj, self) then
+		return false, context.error:to_string()
 	end
-
-	for _, sub in O.children(obj) do
-		if O.is_named(sub) then
-			-- TODO: pattern matching
-			if O.name_hash(sub) == O.name_hash("d") then
-				self.description = O.text(sub)
-			end
-		else
-			table.insert(self.selection, M(sub, nil, controllers))
-		end
-	end
-	for _, sub in O.tags(obj) do
-		table.insert(self.modifiers, M.Modifier(sub, controllers))
-	end
+	return true
 end
 
 function M:to_object(obj)
@@ -151,26 +123,10 @@ end
 
 M.Modifier = U.class(M.Modifier)
 
-function M.Modifier:__init(obj, controllers)
-	self.name = nil
-	self.name_hash = nil
-	self.controller = nil
-
-	if obj then
-		self:from_object(obj, controllers)
-	end
-end
-
-function M.Modifier:from_object(obj, controllers)
-	U.type_assert(obj, "userdata")
-	U.type_assert(controllers, "table")
-
-	self.name = O.name(obj)
-	self.name_hash = O.name_hash(obj)
-	self.controller = controllers[self.name_hash] -- or controllers[self.name]
-	if self.controller then
-		self.controller.from_object(self, obj, controllers)
-	end
+function M.Modifier:__init()
+	self.id = nil
+	self.id_hash = O.NAME_NULL
+	self.data = nil
 end
 
 function M.Modifier:to_object(obj)
@@ -179,18 +135,125 @@ function M.Modifier:to_object(obj)
 		obj = O.create()
 	end
 
-	O.set_name(obj, self.name)
-	if self.controller then
-		self.controller.to_object(self, obj)
+	O.set_name(obj, self.id)
+	if self.data then
+		self.data:to_object(self, obj)
 	end
 end
 
-function M.Modifier:apply(items)
-	if self.controller then
-		return self.controller.apply(self, items)
-	end
-	return nil
+M.UnknownModifier = U.class(M.UnknownModifier)
+
+function M.UnknownModifier:__init(obj)
+	U.type_assert(obj, "userdata", true)
+
+	self.obj = obj or O.create()
 end
+
+function M.UnknownModifier:from_object(context, instance, modifier, obj)
+	O.copy_children(self.obj, obj)
+end
+
+function M.UnknownModifier:to_object(modifier, obj)
+	O.copy_children(obj, self.obj)
+end
+
+function M.UnknownModifier:compare_equal(other)
+	-- TODO?
+	return true
+end
+
+M.Modifier.t_head = Match.Tree({
+Match.Pattern{
+	name = true,
+	children = Match.Any,
+	acceptor = function(context, self, obj)
+		self.id = O.name(obj)
+		self.id_hash = O.name_hash(obj)
+
+		local instance = context:value(1)
+		context.user.director:read_modifier(context, instance, self, obj)
+	end,
+},
+})
+
+M.t_head = Match.Tree()
+M.t_body = Match.Tree()
+
+M.p_modifier_accum = Match.Pattern{
+	any_branch = M.Modifier.t_head,
+	acceptor = function(context, self, obj)
+		local modifier = M.Modifier()
+		table.insert(self.modifiers, modifier)
+		return modifier
+	end,
+}
+
+M.t_head:add({
+-- x, x:m, x{...}
+Match.Pattern{
+	vtype = O.Type.identifier,
+	children = M.t_body,
+	tags = {M.p_modifier_accum},
+	quantity = Match.Any,
+	acceptor = function(context, self, obj)
+		self:set_name(O.identifier(obj))
+		if #context.user.scope > 0 then
+			self.scope = U.table_last(context.user.scope)
+		end
+
+		self.source = O.source(obj)
+		self.sub_source = O.sub_source(obj)
+		self.source_certain = not O.marker_source_uncertain(obj)
+		self.sub_source_certain = not O.marker_sub_source_uncertain(obj)
+		self.presence_certain = not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
+
+		if O.has_quantity(obj) then
+			local quantity = O.quantity(obj)
+			if O.is_null(quantity) and O.has_children(quantity) then
+				for _, sub in O.children(quantity) do
+					local m = Measurement(sub)
+					if not m:is_empty() then
+						table.insert(self.measurements, m)
+					end
+				end
+			elseif not O.is_null(quantity) then
+				local m = Measurement(quantity)
+				if not m:is_empty() then
+					table.insert(self.measurements, m)
+				end
+			end
+		end
+	end,
+},
+-- :m
+Match.Pattern{
+	vtype = O.Type.null,
+	tags = {M.p_modifier_accum},
+},
+})
+
+M.t_body:add({
+Match.Pattern{
+	name = "d",
+	vtype = O.Type.string,
+	acceptor = function(context, self, obj)
+		self.description = O.string(obj)
+	end,
+},
+Match.Pattern{
+	any_branch = M.t_head,
+	acceptor = function(context, self, obj)
+		table.insert(context.user.scope_save, context.user.scope)
+		context.user.scope = {}
+		local instance = M()
+		table.insert(self.selection, instance)
+		return instance
+	end,
+	post_branch = function(context, self, obj)
+		context.user.scope = table.remove(context.user.scope_save)
+	end,
+},
+})
 
 return M
 

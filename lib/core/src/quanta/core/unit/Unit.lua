@@ -363,7 +363,17 @@ Match.Pattern{
 		element.index = tonumber(string.sub(name, 2))
 
 		local bucket = unit.elements[element.type]
-		if bucket[element.index] then
+		if element.index <= 0 then
+			return Match.Error(
+				"element '%s' (%s, %d) index must be greater than 0",
+				name, M.Element.Type[element.type].notation, element.index
+			)
+		elseif element.index ~= #bucket + 1 then
+			return Match.Error(
+				"element '%s' (%s, %d) is not sequentially ordered",
+				name, M.Element.Type[element.type].notation, element.index
+			)
+		elseif bucket[element.index] then
 			return Match.Error(
 				"element '%s' (%s, %d) already exists",
 				name, M.Element.Type[element.type].notation, element.index
@@ -416,7 +426,11 @@ Match.Pattern{
 	acceptor = function(_, element, obj)
 		local step = M.Step()
 		step.index = tonumber(string.sub(O.identifier(obj), 3))
-		if element.steps[step.index] then
+		if step.index <= 0 then
+			return Match.Error("step 'RS%d' index must be greater than 0", step.index)
+		elseif step.index ~= #element.steps + 1 then
+			return Match.Error("step 'RS%d' is not sequentially ordered", step.index)
+		elseif element.steps[step.index] then
 			return Match.Error("step 'RS%d' was already specified", step.index)
 		end
 		element.steps[step.index] = step

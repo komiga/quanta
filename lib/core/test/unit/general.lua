@@ -1,11 +1,11 @@
 
 local U = require "togo.utility"
 local O = require "Quanta.Object"
-local Entity = require "Quanta.Entity"
+local Prop = require "Quanta.Prop"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
-local Composition = require "Quanta.Composition"
 local Unit = require "Quanta.Unit"
+local Director = require "Quanta.Director"
 
 require "common"
 
@@ -183,14 +183,18 @@ make_test_fail(
 ),
 }
 
-function do_test(t, scope, controllers)
+function do_test(t, implicit_scope, director)
 	local o = O.create(t.text)
 	U.assert(o ~= nil)
 	local text_rewrite = O.write_text_string(o, true)
 	U.print("%s  =>", text_rewrite)
 
 	local unit = Unit()
-	U.assert(unit:from_object(o, scope, controllers) or not t.unit)
+	local success, msg = unit:from_object(o, implicit_scope, director)
+	if not success then
+		U.print("translation error: %s", msg)
+	end
+	U.assert(success == not not t.unit, "unexpected success value: %s", success)
 	if t.unit then
 		unit:to_object(o)
 		U.print("%s", O.write_text_string(o, true))
@@ -201,10 +205,12 @@ function do_test(t, scope, controllers)
 end
 
 function main()
-	local scope = make_time("2016-01-01Z")
-	local controllers = {}
+	Director.debug = true
+
+	local implicit_scope = make_time("2016-01-01Z")
+	local director = Director()
 	for _, t in pairs(translation_tests) do
-		do_test(t, scope, controllers)
+		do_test(t, implicit_scope, director)
 	end
 
 	return 0

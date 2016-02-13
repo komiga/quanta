@@ -75,7 +75,7 @@ Match.Pattern{
 		vtype = {O.Type.null, O.Type.string},
 		acceptor = function(_, model, obj)
 			if O.is_string(obj) then
-				model:set_id(O.string(obj))
+				model.id = O.string(obj)
 			end
 		end
 	}},
@@ -90,7 +90,7 @@ Match.Pattern{
 	acceptor = function(_, p, obj)
 		local base_model = Entity.Model()
 		if O.is_string(obj) then
-			base_model:set_name(O.string(obj))
+			base_model.name = O.string(obj)
 		end
 		p:set_base_model(base_model)
 		return base_model
@@ -103,7 +103,7 @@ Match.Pattern{
 	acceptor = function(_, p, obj)
 		local model = Entity.Model()
 		if O.is_string(obj) then
-			model:set_name(O.string(obj))
+			model.name = O.string(obj)
 		end
 		p:set_model(model)
 		return model
@@ -230,7 +230,7 @@ Match.Pattern{
 Match.Pattern{
 	any_branch = M.source,
 	acceptor = function(_, e, obj)
-		return e:source()
+		return e.sources[0]
 	end
 },
 Match.Pattern{

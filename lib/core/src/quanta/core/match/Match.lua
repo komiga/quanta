@@ -95,7 +95,7 @@ M.filters.value.init = function(p, r)
 	end
 end
 
-M.filters.value.reject = function(_, _, obj, p)
+M.filters.value[false] = function(_, _, obj, p)
 	return O.is_null(obj)
 end
 

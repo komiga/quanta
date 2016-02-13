@@ -146,6 +146,21 @@ function make_tracker(date, entries)
 	return t
 end
 
+function check_author_equal(x, y)
+	U.assert(x.name == y.name)
+	U.assert(x.certain == y.certain)
+	U.assert(x.address == y.address)
+	U.assert(x.address_certain == y.address_certain)
+end
+
+function check_note_equal(x, y)
+	U.assert(x.text == y.text)
+	U.assert((x.time == nil) == (y.time == nil))
+	if x.time then
+		U.assert(Time.compare_equal(x.time, y.time))
+	end
+end
+
 function check_modifier_equal(x, y)
 	U.assert(x.id == y.id)
 	U.assert(x.id_hash == y.id_hash)
@@ -208,20 +223,12 @@ function check_element_equal(x, y)
 
 	U.assert(#x.author == #y.author)
 	for i = 1, #x.author do
-		U.assert(x.author[i] == y.author[i])
+		check_author_equal(x.author[i], y.author[i])
 	end
 
 	U.assert(#x.steps == #y.steps)
 	for i = 1, #x.steps do
 		check_step_equal(x.steps[i], y.steps[i])
-	end
-end
-
-function check_unit_note_equal(x, y)
-	U.assert(x.text == y.text)
-	U.assert((x.time == nil) == (y.time == nil))
-	if x.time then
-		U.assert(Time.compare_equal(x.time, y.time))
 	end
 end
 
@@ -233,12 +240,12 @@ function check_unit_equal(x, y)
 
 	U.assert(#x.author == #y.author)
 	for i = 1, #x.author do
-		U.assert(x.author[i] == y.author[i])
+		check_author_equal(x.author[i], y.author[i])
 	end
 
 	U.assert(#x.note == #y.note)
 	for i = 1, #x.note do
-		check_unit_note_equal(x.note[i], y.note[i])
+		check_note_equal(x.note[i], y.note[i])
 	end
 
 	U.assert(#x.elements == #y.elements)

@@ -82,21 +82,13 @@ function M:add_source(source)
 	return source
 end
 
-function M:source(i)
-	U.type_assert(i, "number", true)
-	if i == nil then
-		return self.sources[0]
-	end
-	return self.sources[i]
-end
-
 function M:has_variant(source, sub_source)
 	if source == 0 then
 		return true
 	end
-	local s = self:source(source)
+	local s = self.sources[source]
 	if s then
-		return sub_source == 0 or s:vendor(sub_source) ~= nil
+		return sub_source == 0 or s.vendor[sub_source] ~= nil
 	end
 	return false
 end
@@ -261,16 +253,6 @@ function M.Source:__init()
 	self.composition = {}
 end
 
-function M.Source:set_description(description)
-	U.type_assert(description, "string")
-	self.description = description
-end
-
-function M.Source:set_label(label)
-	U.type_assert(label, "string")
-	self.label = label
-end
-
 function M.Source:has_author()
 	return #self.author > 0
 end
@@ -287,11 +269,6 @@ function M.Source:add_author(author)
 	U.type_assert(author, Prop.Author)
 	table.insert(self.author, author)
 	return author
-end
-
-function M.Source:vendor(i)
-	U.type_assert(i, "number")
-	return self.vendor[i]
 end
 
 function M.Source:set_base_model(base_model)
@@ -321,26 +298,11 @@ function M.Source:add_vendor(vendor)
 	return vendor
 end
 
-function M.Source:vendor(i)
-	U.type_assert(i, "number")
-	return self.vendor[i]
-end
-
 M.Model = U.class(M.Model)
 
 function M.Model:__init()
 	self.name = nil
 	self.id = nil
-end
-
-function M.Model:set_name(name)
-	U.type_assert(name, "string", true)
-	self.name = name
-end
-
-function M.Model:set_id(id)
-	U.type_assert(id, "string", true)
-	self.id = id
 end
 
 return M

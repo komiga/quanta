@@ -59,21 +59,24 @@ make_test(
 	[[{author = "X%Y"}]],
 	Unit.Type.none,
 	"",
-	"", {"X%Y"}, {},
+	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {}
 ),
 make_test(
 	[[{author = {"X%Y"}}]],
 	Unit.Type.none,
 	"",
-	"", {"X%Y"}, {},
+	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {}
 ),
 make_test(
 	[[{author = {"X%Y", "Z%W"}}]],
 	Unit.Type.none,
 	"",
-	"", {"X%Y", "Z%W"}, {},
+	"", {
+		Prop.Author("X%Y", true, nil, true),
+		Prop.Author("Z%W", true, nil, true),
+	}, {},
 	{}, {}
 ),
 
@@ -81,14 +84,14 @@ make_test(
 	[[{note = "x"}]],
 	Unit.Type.none,
 	"",
-	"", {}, {Unit.Note("x")},
+	"", {}, {Prop.Note("x")},
 	{}, {}
 ),
 make_test(
 	[[{note = {01:23, "x"}}]],
 	Unit.Type.none,
 	"",
-	"", {}, {Unit.Note("x", make_time("2016-01-01T01:23Z"))},
+	"", {}, {Prop.Note("x", make_time("2016-01-01T01:23Z"))},
 	{}, {}
 ),
 make_test(
@@ -96,8 +99,8 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {
-		Unit.Note("x", make_time("2016-01-02T01:23Z")),
-		Unit.Note("y"),
+		Prop.Note("x", make_time("2016-01-02T01:23Z")),
+		Prop.Note("y"),
 	},
 	{}, {}
 ),

@@ -154,9 +154,11 @@ function M.Author.adapt_struct(serialized_name, property_name)
 	-- = ?
 	-- = "..."
 	element_pattern(serialized_name, acceptor),
+	-- = ... + ...
 	-- = {...}
 	Match.Pattern{
 		name = serialized_name,
+		vtype = {O.Type.null, O.Type.expression},
 		children = {
 			element_pattern(nil, function() end),
 		},
@@ -222,7 +224,6 @@ function M.Note.adapt_struct(serialized_name, property_name)
 	-- = {time, string}
 	Match.Pattern{
 		name = serialized_name,
-		vtype = O.Type.null,
 		children = function(_, _, obj, _)
 			return (
 				O.num_children(obj) == 2 and
@@ -237,7 +238,6 @@ function M.Note.adapt_struct(serialized_name, property_name)
 	-- = {...}
 	Match.Pattern{
 		name = serialized_name,
-		vtype = O.Type.null,
 		children = {
 			-- string
 			Match.Pattern{

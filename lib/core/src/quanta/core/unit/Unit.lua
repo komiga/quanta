@@ -66,8 +66,7 @@ function M:from_object(obj, implicit_scope, director)
 	local context = Match.Context()
 	Instance.init_match_context(context, implicit_scope, director)
 	if not context:consume(M.t_head, obj, self) then
-		U.log("match error:\n%s", context.error:to_string())
-		return false
+		return false, context.error:to_string()
 	end
 	return true
 end

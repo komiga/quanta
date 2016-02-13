@@ -149,17 +149,8 @@ M.Category = {}
 U.set_functable(M.Category, function(_, name)
 	local e = M(name)
 	e.type = M.Type.category
-	e.sources = {}
 	return e
 end)
-
-function M.Category:set_description(description)
-	self.description = Prop.Description.struct(description)
-end
-
-function M.Category:description()
-	return self.description
-end
 
 M.Universe = {}
 

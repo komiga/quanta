@@ -277,14 +277,14 @@ end
 
 function M.Source:set_author(i, author)
 	U.type_assert(i, "number")
-	U.type_assert(author, M.Author)
+	U.type_assert(author, Prop.Author)
 	U.assert(i > 0)
 	self.author[i] = author
 	return author
 end
 
 function M.Source:add_author(author)
-	U.type_assert(author, M.Author)
+	U.type_assert(author, Prop.Author)
 	table.insert(self.author, author)
 	return author
 end
@@ -310,13 +310,13 @@ end
 
 function M.Source:set_vendor(i, vendor)
 	U.type_assert(i, "number")
-	U.type_assert(vendor, M.Author)
+	U.type_assert(vendor, Prop.Author)
 	self.vendor[i] = vendor
 	return vendor
 end
 
 function M.Source:add_vendor(vendor)
-	U.type_assert(vendor, M.Author)
+	U.type_assert(vendor, Prop.Author)
 	table.insert(self.vendor, vendor)
 	return vendor
 end

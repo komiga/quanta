@@ -39,6 +39,7 @@ TOGO_LI_FUNC_DEF(__module_init__) {
 	lua::table_set_raw(L, "integer", unsigned_cast(ObjectValueType::integer));
 	lua::table_set_raw(L, "decimal", unsigned_cast(ObjectValueType::decimal));
 	lua::table_set_raw(L, "time", unsigned_cast(ObjectValueType::time));
+	lua::table_set_raw(L, "currency", unsigned_cast(ObjectValueType::currency));
 	lua::table_set_raw(L, "string", unsigned_cast(ObjectValueType::string));
 	lua::table_set_raw(L, "identifier", unsigned_cast(ObjectValueType::identifier));
 	lua::table_set_raw(L, "expression", unsigned_cast(ObjectValueType::expression));

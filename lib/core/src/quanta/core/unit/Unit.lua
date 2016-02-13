@@ -4,8 +4,7 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
-local Entity = require "Quanta.Entity"
-local Measurement = require "Quanta.Measurement"
+local Prop = require "Quanta.Prop"
 local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
 local M = U.module(...)
@@ -34,9 +33,9 @@ function M:__init()
 	self.type = M.Type.none
 	self.name = ""
 	self.name_hash = O.NAME_NULL
-	self.description = ""
-	self.author = {}
-	self.note = {}
+	self.description = Prop.Description.struct("")
+	self.author = Prop.Author.struct({})
+	self.note = Prop.Note.struct({})
 	self.elements = {
 		{}, -- M.Element.Type.generic
 		{}, -- M.Element.Type.primary
@@ -72,39 +71,9 @@ function M:from_object(obj, implicit_scope, director)
 end
 
 local function to_object_shared(self, obj)
-	if self.description ~= "" then
-		local description_obj = O.push_child(obj)
-		O.set_name(description_obj, "d")
-		O.set_string(description_obj, self.description)
-	end
-
-	local author_obj
-	if #self.author > 0 then
-		author_obj = O.push_child(obj)
-		O.set_name(author_obj, "author")
-	end
-	if #self.author == 1 then
-		O.set_string(author_obj, self.author[1])
-	elseif #self.author > 1 then
-		for _, author in ipairs(self.author) do
-			if author ~= "" then
-				O.set_string(O.push_child(author_obj), author)
-			end
-		end
-	end
-
-	local note_obj
-	if #self.note > 0 then
-		note_obj = O.push_child(obj)
-		O.set_name(note_obj, "note")
-	end
-	if #self.note == 1 then
-		self.note[1]:to_object(O.push_child(note_obj))
-	elseif #self.note > 1 then
-		for _, note in ipairs(self.note) do
-			note:to_object(O.push_child(note_obj))
-		end
-	end
+	Prop.Description.struct_to_object(self.description, obj)
+	Prop.Author.struct_to_object(self.author, obj)
+	Prop.Note.struct_to_object(self.note, obj)
 end
 
 function M:to_object(obj)
@@ -131,24 +100,6 @@ function M:to_object(obj)
 	end
 
 	return obj
-end
-
-M.Note = U.class(M.Note)
-
-function M.Note:__init(text, time)
-	self.text = U.type_assert(text, "string")
-	self.time = U.type_assert(time, "userdata", true)
-end
-
-function M.Note:to_object(obj)
-	U.type_assert(obj, "userdata")
-
-	if self.time then
-		O.set_time(O.push_child(obj), self.time)
-		O.set_string(O.push_child(obj), self.text)
-	else
-		O.set_string(obj, self.text)
-	end
 end
 
 M.Step = U.class(M.Step)
@@ -181,9 +132,9 @@ end
 function M.Element:__init()
 	self.type = M.Element.Type.generic
 	self.index = 1
-	self.description = ""
-	self.author = {}
-	self.note = {}
+	self.description = Prop.Description.struct("")
+	self.author = Prop.Author.struct({})
+	self.note = Prop.Note.struct({})
 	self.steps = {}
 end
 
@@ -191,123 +142,20 @@ function M.Element:to_object(obj)
 	U.type_assert(obj, "userdata")
 
 	O.set_name(obj, M.Element.Type[self.type].notation .. tostring(self.index))
+	to_object_shared(self, obj)
 	for _, s in ipairs(self.steps) do
 		s:to_object(O.push_child(obj))
 	end
 end
 
--- Pattern matching for M:from_object()
-
 M.t_head = Match.Tree()
 M.t_body = Match.Tree()
-
 M.t_element_body = Match.Tree()
 
-local function add_timestamped_note(context, thing, obj)
-	local t
-	local obj_time = O.child_at(obj, 1)
-	if not O.has_date(obj_time) or O.is_date_contextual(obj_time) then
-		local parent_scope = U.table_last(context.user.scope, true) or context.user.implicit_scope
-		if not parent_scope then
-			return Match.Error("no time context provided; note time cannot be resolved")
-		end
-		t = O.time_resolved(obj_time, parent_scope)
-	else
-		t = T(O.time(obj_time))
-	end
-	table.insert(thing.note, M.Note(O.string(O.child_at(obj, 2)), t))
-end
-
--- Unit, Element
-M.p_shared = {
--- d = "..."
-Match.Pattern{
-	name = "d",
-	vtype = O.Type.string,
-	acceptor = function(_, thing, obj)
-		thing.description = O.string(obj)
-	end,
-},
--- author = "..."
-Match.Pattern{
-	name = "author",
-	vtype = O.Type.string,
-	acceptor = function(_, thing, obj)
-		if #thing.author > 0 then
-			return Match.Error("author was already specified")
-		end
-		table.insert(thing.author, O.string(obj))
-	end,
-},
--- author = {...}
-Match.Pattern{
-	name = "author",
-	vtype = O.Type.null,
-	children = {
-		Match.Pattern{
-			vtype = O.Type.string,
-			acceptor = function(_, thing, obj)
-				table.insert(thing.author, O.string(obj))
-			end,
-		},
-	},
-	acceptor = function(_, thing, obj)
-		if #thing.author > 0 then
-			return Match.Error("author was already specified")
-		end
-	end,
-},
--- note = "..."
-Match.Pattern{
-	name = "note",
-	vtype = O.Type.string,
-	acceptor = function(_, thing, obj)
-		table.insert(thing.note, M.Note(O.string(obj)))
-	end,
-},
--- note = {time, string}
-Match.Pattern{
-	name = "note",
-	vtype = O.Type.null,
-	children = function(_, _, obj, _)
-		return (
-			O.num_children(obj) == 2 and
-			O.is_type(O.child_at(obj, 1), O.Type.time) and
-			O.is_type(O.child_at(obj, 2), O.Type.string)
-		)
-	end,
-	acceptor = function(context, thing, obj)
-		return add_timestamped_note(context, thing, obj)
-	end,
-},
--- note = {...}
-Match.Pattern{
-	name = "note",
-	vtype = O.Type.null,
-	children = {
-		-- string
-		Match.Pattern{
-			vtype = O.Type.string,
-			acceptor = function(_, thing, obj)
-				table.insert(thing.note, M.Note(O.string(obj)))
-			end,
-		},
-		-- {time, string}
-		Match.Pattern{
-			vtype = O.Type.null,
-			children = function(_, _, obj, _)
-				return (
-					O.num_children(obj) == 2 and
-					O.is_type(O.child_at(obj, 1), O.Type.time) and
-					O.is_type(O.child_at(obj, 2), O.Type.string)
-				)
-			end,
-			acceptor = function(context, thing, obj)
-				return add_timestamped_note(context, thing, obj)
-			end,
-		},
-	},
-},
+local shared_props = {
+	Prop.Description.t_struct_head,
+	Prop.Author.t_struct_head,
+	Prop.Note.t_struct_head,
 }
 
 -- {...}
@@ -333,7 +181,7 @@ M.t_head:add(Match.Pattern{
 	end,--]]
 })
 
-M.t_body:add(M.p_shared)
+M.t_body:add(shared_props)
 
 local function element_post_branch(_, element, _)
 	if #element.steps == 0 then
@@ -405,7 +253,7 @@ Match.Pattern{
 },
 })
 
-M.t_element_body:add(M.p_shared)
+M.t_element_body:add(shared_props)
 
 local function step_post_branch(_, composition, _)
 	if #composition.items == 0 then

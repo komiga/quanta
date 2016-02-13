@@ -203,12 +203,21 @@ Match.Pattern{
 		end,
 	}},
 },
+Match.Pattern{
+	name = "children",
+	children = M.universe,
+},
+Match.Pattern{
+	any_branch = M.source,
+	acceptor = function(_, e, obj)
+		return e.sources[0]
+	end
+},
 })
 
 M.t_entity_head = Match.Tree()
 
 M.t_entity_body = Match.Tree({
-M.t_shared_body,
 Match.Pattern{
 	name = "sources",
 	children = {Match.Pattern{
@@ -223,16 +232,7 @@ Match.Pattern{
 		end
 	end
 },
-Match.Pattern{
-	name = {"specializations", "children"},
-	children = M.universe,
-},
-Match.Pattern{
-	any_branch = M.source,
-	acceptor = function(_, e, obj)
-		return e.sources[0]
-	end
-},
+M.t_shared_body,
 Match.Pattern{
 	func = function(_, e, _, _)
 		return e.compositor ~= nil
@@ -261,17 +261,6 @@ M.t_entity_head:add(Match.Pattern{
 M.t_category_head = Match.Tree()
 
 M.t_category_body = Match.Tree({
-M.t_shared_body,
-Match.Pattern{
-	name = "d",
-	vtype = {O.Type.null, O.Type.string, O.Type.expression},
-	children = function(_, _, obj, _)
-		return O.has_children(obj) == O.is_expression(obj)
-	end,
-	acceptor = function(context, cat, obj)
-		Entity.Category.set_description(cat, compose_description(context, obj))
-	end
-},
 Match.Pattern{
 	name = "compositor",
 	vtype = O.Type.string,
@@ -308,16 +297,7 @@ Match.Pattern{
 		return true
 	end
 },
-Match.Pattern{
-	name = "children",
-	children = M.universe,
-},
-Match.Pattern{
-	any_branch = M.source,
-	acceptor = function(_, cat, obj)
-		return cat.sources[0]
-	end
-},
+M.t_shared_body,
 })
 
 M.t_category_head:add(Match.Pattern{

@@ -4,7 +4,6 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
-local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local M = U.module(...)

@@ -112,7 +112,7 @@ Match.Pattern{
 })
 
 M.source:add({
-Prop.Author.t_head,
+Prop.Author.t_struct_head,
 Match.Pattern{
 	name = "vendor",
 	vtype = {O.Type.null, O.Type.string},

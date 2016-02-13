@@ -3,16 +3,18 @@ u8R""__RAW_STRING__(
 local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
+local Prop = require "Quanta.Prop"
 local Entity = require "Quanta.Entity"
 local Vessel = require "Quanta.Vessel"
 local M = U.module(...)
 
-local function compose_string(context, name, obj)
-	local value = not O.value_certain(obj) and "?" or ""
+local function compose_description(context, obj)
+	local value = Prop.prefix_certainty(obj, "")
 	if O.is_string(obj) then
 		value = value .. O.string(obj)
 	elseif O.has_children(obj) then
-		local parent = context:value(1).parent:source(0)[name]
+		local parent_entity = context:value(1).parent
+		local parent = parent_entity:source(0).description or parent_entity.description
 		parent = parent or ""
 		for _, sub in O.children(obj) do
 			if O.is_identifier(sub) and O.identifier(sub) == "_" then
@@ -25,36 +27,12 @@ local function compose_string(context, name, obj)
 	return value
 end
 
-local function first_string(obj)
-	local prefix = not O.value_certain(obj) and "?" or ""
-	if O.is_string(obj) then
-		return prefix .. O.string(obj)
-	elseif O.has_children(obj) then
-		for _, sub in O.children(obj) do
-			if O.is_string(sub) then
-				return prefix .. O.string(sub)
-			end
-		end
-	end
-	return prefix
-end
-
 M.universe = Match.Tree()
 
 M.source = Match.Tree()
 
 M.source:add({
--- TODO
-Match.Pattern{
-	name = "note",
-	vtype = O.Type.string,
-},
-Match.Pattern{
-	name = "note",
-	children = {
-		Match.Pattern{vtype = O.Type.string}
-	},
-},
+Prop.Note.t_struct_head,
 Match.Pattern{
 	name = "d",
 	vtype = {O.Type.null, O.Type.string, O.Type.expression},
@@ -62,7 +40,7 @@ Match.Pattern{
 		return O.has_children(obj) == O.is_expression(obj)
 	end,
 	acceptor = function(context, p, obj)
-		p:set_description(compose_string(context, "description", obj))
+		p:set_description(compose_description(context, obj))
 	end
 },
 Match.Pattern{
@@ -133,58 +111,31 @@ Match.Pattern{
 },
 })
 
-local source_place_tags = {
-Match.Pattern{
-	name = {"address", "addr"},
-	children = {Match.Pattern{
-		vtype = {O.Type.null, O.Type.string},
-		acceptor = function(_, place, obj)
-			if O.is_string(obj) then
-				place:set_address(O.string(obj))
-			end
-		end
-	}},
-},
-}
-
 M.source:add({
-Match.Pattern{
-	name = "author",
-	vtype = {O.Type.null, O.Type.string, O.Type.expression},
-	tags = source_place_tags,
-	acceptor = function(_, p, obj)
-		local author = Entity.Place()
-		author:set_name(first_string(obj))
-		p:set_author(author)
-		return author
-	end
-},
+Prop.Author.t_head,
 Match.Pattern{
 	name = "vendor",
-	vtype = {O.Type.null, O.Type.string, O.Type.expression},
-	children = function(_, _, obj, _)
-		return O.has_children(obj) == O.is_expression(obj)
-	end,
-	tags = source_place_tags,
+	vtype = {O.Type.null, O.Type.string},
+	tags = Prop.Author.t_head_tags,
 	acceptor = function(_, p, obj)
-		local vendor = Entity.Place()
-		vendor:set_name(first_string(obj))
-		p:set_vendor(0, vendor)
-		return vendor
+		return p:set_vendor(0, Prop.Author(
+			O.is_string(obj) and O.string(obj) or nil,
+			O.value_certain(obj),
+			nil, true
+		))
 	end
 },
 Match.Pattern{
 	name = "vendors",
 	children = {Match.Pattern{
 		vtype = {O.Type.null, O.Type.string},
-		tags = source_place_tags,
+		tags = Prop.Author.t_head_tags,
 		acceptor = function(_, p, obj)
-			local vendor = Entity.Place()
-			if O.is_string(obj) then
-				vendor:set_name(O.string(obj))
-			end
-			p:add_vendor(vendor)
-			return vendor
+			return p:add_vendor(Prop.Author(
+				O.is_string(obj) and O.string(obj) or nil,
+				O.value_certain(obj),
+				nil, true
+			))
 		end
 	}},
 },
@@ -318,7 +269,7 @@ Match.Pattern{
 		return O.has_children(obj) == O.is_expression(obj)
 	end,
 	acceptor = function(context, cat, obj)
-		Entity.Category.set_description(cat, compose_string(context, "description", obj))
+		Entity.Category.set_description(cat, compose_description(context, obj))
 	end
 },
 Match.Pattern{

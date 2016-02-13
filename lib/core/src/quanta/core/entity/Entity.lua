@@ -4,6 +4,7 @@ local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Measurement = require "Quanta.Measurement"
+local Prop = require "Quanta.Prop"
 local M = U.module(...)
 
 M.Type = {
@@ -18,7 +19,7 @@ function M:__init(name)
 	self.type = M.Type.generic
 	self.name = nil
 	self.name_hash = O.NAME_NULL
-	self.description = nil
+	self.description = Prop.Description.struct("")
 	self.compositor = nil
 	self.sources = {}
 	self.sources[0] = M.Source()
@@ -153,8 +154,7 @@ U.set_functable(M.Category, function(_, name)
 end)
 
 function M.Category:set_description(description)
-	U.type_assert(description, "string")
-	self.description = description
+	self.description = Prop.Description.struct(description)
 end
 
 function M.Category:description()
@@ -260,10 +260,11 @@ end
 M.Source = U.class(M.Source)
 
 function M.Source:__init()
-	self.description = ""
+	self.description = Prop.Description.struct("")
 	self.label = nil
-	self.author = nil
-	self.vendors = {}
+	self.author = Prop.Author.struct({})
+	self.vendor = Prop.Author.struct({})
+	self.note = Prop.Note.struct({})
 	self.base_model = nil
 	self.model = nil
 	self.composition = {}
@@ -279,9 +280,27 @@ function M.Source:set_label(label)
 	self.label = label
 end
 
-function M.Source:set_author(author)
-	U.type_assert(author, M.Place)
-	self.author = author
+function M.Source:has_author()
+	return #self.author > 0
+end
+
+function M.Source:set_author(i, author)
+	U.type_assert(i, "number")
+	U.type_assert(author, M.Author)
+	U.assert(i > 0)
+	self.author[i] = author
+	return author
+end
+
+function M.Source:add_author(author)
+	U.type_assert(author, M.Author)
+	table.insert(self.author, author)
+	return author
+end
+
+function M.Source:vendor(i)
+	U.type_assert(i, "number")
+	return self.vendor[i]
 end
 
 function M.Source:set_base_model(base_model)
@@ -295,42 +314,25 @@ function M.Source:set_model(model)
 end
 
 function M.Source:has_vendor()
-	return self.vendor[0] ~= nil or #self.vendors
+	return self.vendor[0] ~= nil or #self.vendor > 0
 end
 
 function M.Source:set_vendor(i, vendor)
 	U.type_assert(i, "number")
-	U.type_assert(vendor, M.Place)
-	self.vendors[i] = vendor
+	U.type_assert(vendor, M.Author)
+	self.vendor[i] = vendor
 	return vendor
 end
 
 function M.Source:add_vendor(vendor)
-	U.type_assert(vendor, M.Place)
-	table.insert(self.vendors, vendor)
+	U.type_assert(vendor, M.Author)
+	table.insert(self.vendor, vendor)
 	return vendor
 end
 
 function M.Source:vendor(i)
 	U.type_assert(i, "number")
-	return self.vendors[i]
-end
-
-M.Place = U.class(M.Place)
-
-function M.Place:__init()
-	self.name = nil
-	self.address = nil
-end
-
-function M.Place:set_name(name)
-	U.type_assert(name, "string", true)
-	self.name = name
-end
-
-function M.Place:set_address(address)
-	U.type_assert(address, "string", true)
-	self.address = address
+	return self.vendor[i]
 end
 
 M.Model = U.class(M.Model)

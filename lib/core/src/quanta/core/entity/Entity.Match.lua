@@ -197,7 +197,7 @@ Match.Pattern{
 		children = true,
 		acceptor = function(_, cat, obj)
 			if O.num_children(obj) < 2 then
-				return Match.Error("alias definition must have at least one target")
+				return Match.Error("alias definition must have at least one source")
 			end
 			-- TODO
 		end,
@@ -311,6 +311,12 @@ Match.Pattern{
 Match.Pattern{
 	name = "children",
 	children = M.universe,
+},
+Match.Pattern{
+	any_branch = M.source,
+	acceptor = function(_, cat, obj)
+		return cat.sources[0]
+	end
 },
 })
 

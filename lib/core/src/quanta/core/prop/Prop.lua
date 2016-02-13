@@ -31,6 +31,23 @@ function M.prefix_certainty(obj, str)
 	return str
 end
 
+function M.compose_string(parent_accessor, context, obj)
+	local value = M.prefix_certainty(obj, "")
+	if O.is_string(obj) then
+		value = value .. O.string(obj)
+	elseif O.has_children(obj) then
+		local parent = parent_accessor(context) or ""
+		for _, sub in O.children(obj) do
+			if O.is_identifier(sub) and O.identifier(sub) == "_" then
+				value = value .. parent
+			elseif O.is_string(sub) then
+				value = value .. O.string(sub)
+			end
+		end
+	end
+	return value
+end
+
 --[[function M.string_or_expr_first(obj)
 	if O.is_string(obj) then
 		return M.prefix_certainty(obj, O.string(obj))
@@ -51,7 +68,7 @@ function M.Description.struct(description)
 	return description
 end
 
-function M.Description.adapt_struct(serialized_name, property_name)
+function M.Description.adapt_struct(serialized_name, property_name, parent_accessor)
 	local to_object = function(description, obj)
 		if description ~= nil and description ~= "" then
 			local description_obj = O.push_child(obj)
@@ -60,15 +77,25 @@ function M.Description.adapt_struct(serialized_name, property_name)
 		end
 	end
 	local t_head = Match.Tree({
-	-- d = "..."
+	-- = "..."
 	Match.Pattern{
 		name = serialized_name,
-		vtype = O.Type.string,
+		vtype = {O.Type.null, O.Type.string},
 		acceptor = function(_, thing, obj)
-			thing[property_name] = O.string(obj)
+			thing[property_name] = M.prefix_certainty(obj, O.is_string(obj) and O.string(obj) or "")
 		end,
 	},
 	})
+	if parent_accessor then
+		-- = (...)
+		t_head:add(Match.Pattern{
+			name = serialized_name,
+			vtype = O.Type.expression,
+			acceptor = function(context, thing, obj)
+				thing[property_name] = M.compose_string(parent_accessor, context, obj)
+			end,
+		})
+	end
 	return to_object, t_head
 end
 

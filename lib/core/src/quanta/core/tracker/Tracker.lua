@@ -202,6 +202,7 @@ M.PlaceholderAction = U.class(M.PlaceholderAction)
 
 M.PlaceholderAction.t_head = Match.Tree({
 Match.Pattern{
+	vtype = Match.Any,
 	tags = Match.Any,
 	children = {Match.Pattern{
 		name = {"d", ""},

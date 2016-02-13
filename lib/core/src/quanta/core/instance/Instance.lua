@@ -4,8 +4,8 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
-local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
+local Prop = require "Quanta.Prop"
 local M = U.module(...)
 
 U.class(M)
@@ -110,6 +110,7 @@ function M:to_object(obj)
 	end
 
 	O.clear_children(obj)
+	Prop.Description.struct_to_object(self.description, obj)
 	for _, sel in pairs(self.selection) do
 		sel:to_object(O.push_child(obj))
 	end
@@ -233,13 +234,7 @@ Match.Pattern{
 })
 
 M.t_body:add({
-Match.Pattern{
-	name = "d",
-	vtype = O.Type.string,
-	acceptor = function(context, self, obj)
-		self.description = O.string(obj)
-	end,
-},
+Prop.Description.t_struct_head,
 Match.Pattern{
 	any_branch = M.t_head,
 	acceptor = function(context, self, obj)

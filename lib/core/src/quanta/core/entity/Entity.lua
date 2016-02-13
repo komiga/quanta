@@ -30,11 +30,11 @@ function M:__init(name)
 end
 
 function M:is_category()
-	return U.is_type(self, M) and self.type == M.Type.category
+	return self.type == M.Type.category
 end
 
 function M:is_universe()
-	return U.is_type(self, M) and self.type == M.Type.universe
+	return self.type == M.Type.universe
 end
 
 function M:set_name(name)

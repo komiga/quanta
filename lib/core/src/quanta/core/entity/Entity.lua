@@ -244,7 +244,7 @@ M.Source = U.class(M.Source)
 
 function M.Source:__init()
 	self.description = Prop.Description.struct("")
-	self.label = nil
+	self.label = Prop.Description.struct("")
 	self.author = Prop.Author.struct({})
 	self.vendor = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})

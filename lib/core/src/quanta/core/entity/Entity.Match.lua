@@ -8,48 +8,29 @@ local Entity = require "Quanta.Entity"
 local Vessel = require "Quanta.Vessel"
 local M = U.module(...)
 
-local function compose_description(context, obj)
-	local value = Prop.prefix_certainty(obj, "")
-	if O.is_string(obj) then
-		value = value .. O.string(obj)
-	elseif O.has_children(obj) then
+local function parent_source_value(name)
+	return function(context)
 		local parent_entity = context:value(1).parent
-		local parent = parent_entity:source(0).description or parent_entity.description
-		parent = parent or ""
-		for _, sub in O.children(obj) do
-			if O.is_identifier(sub) and O.identifier(sub) == "_" then
-				value = value .. parent
-			elseif O.is_string(sub) then
-				value = value .. O.string(sub)
-			end
-		end
+		return parent_entity and parent_entity.sources[0][name]
 	end
-	return value
 end
 
 M.universe = Match.Tree()
-
 M.source = Match.Tree()
+
+local _, t_source_description = Prop.Description.adapt_struct(
+	"d", "description",
+	parent_source_value("description")
+)
+local _, t_source_label = Prop.Description.adapt_struct(
+	"label", "label",
+	parent_source_value("label")
+)
 
 M.source:add({
 Prop.Note.t_struct_head,
-Match.Pattern{
-	name = "d",
-	vtype = {O.Type.null, O.Type.string, O.Type.expression},
-	children = function(_, _, obj, _)
-		return O.has_children(obj) == O.is_expression(obj)
-	end,
-	acceptor = function(context, p, obj)
-		p:set_description(compose_description(context, obj))
-	end
-},
-Match.Pattern{
-	name = "label",
-	vtype = O.Type.string,
-	acceptor = function(_, p, obj)
-		p:set_label(O.string(obj))
-	end
-},
+t_source_description,
+t_source_label,
 Match.Pattern{
 	name = "composition",
 	vtype = {O.Type.identifier, O.Type.string},

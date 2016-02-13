@@ -10,6 +10,7 @@
 #include <quanta/core/vessel/vessel.hpp>
 #include <quanta/core/match/match.hpp>
 #include <quanta/core/measurement/measurement.hpp>
+#include <quanta/core/prop/prop.hpp>
 #include <quanta/core/entity/entity.hpp>
 #include <quanta/core/instance/instance.hpp>
 #include <quanta/core/composition/composition.hpp>
@@ -30,6 +31,7 @@ void lua::register_quanta_core(lua_State* L) {
 	quanta::vessel::register_lua_interface(L);
 	quanta::match::register_lua_interface(L);
 	quanta::measurement::register_lua_interface(L);
+	quanta::prop::register_lua_interface(L);
 	quanta::entity::register_lua_interface(L);
 	quanta::instance::register_lua_interface(L);
 	quanta::composition::register_lua_interface(L);

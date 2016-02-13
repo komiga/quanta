@@ -97,7 +97,7 @@ function M:has_variant(source, sub_source)
 	if s then
 		return sub_source == 0 or s:vendor(sub_source) ~= nil
 	end
-	return nil
+	return false
 end
 
 function M:add(entity)

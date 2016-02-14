@@ -2,6 +2,7 @@ u8R""__RAW_STRING__(
 
 local U = require "togo.utility"
 local FS = require "togo.filesystem"
+local T = require "Quanta.Time"
 local M = U.module(...)
 
 local function check_initialized()
@@ -22,6 +23,26 @@ function M.sys_path(...) return M.path(M.active_bucket(), "sys", ...) end
 function M.data_path(...) return M.path(M.active_bucket(), "data", ...) end
 function M.script_path(...) return M.path(M.active_bucket(), "scripts", ...) end
 function M.sublime_path(...) return M.path(M.active_bucket(), "sublime", ...) end
+
+function M.data_chrono_path(...) return M.data_path("chrono", ...) end
+
+function M.tracker_path(date)
+	check_initialized()
+	if date ~= nil then
+		U.type_assert(date, "userdata")
+		local y, m, d = T.date_utc(date)
+		return M.data_chrono_path(string.format("%d/%d/%d.q", y, m, d))
+	else
+		local slug = nil
+		local f = io.open(M.data_chrono_path("active"), "r")
+		if f then
+			slug = f:read("*l")
+			f:close()
+		end
+		U.assert(slug ~= nil, "failed to read active tracker date")
+		return M.data_chrono_path(slug .. ".q")
+	end
+end
 
 function M.set_work_local(work_local)
 	check_initialized()

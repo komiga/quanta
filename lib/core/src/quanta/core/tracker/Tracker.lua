@@ -406,7 +406,8 @@ M.Entry.t_head_tags:add(Match.Pattern{
 })
 
 -- range = (EntryTime - EntryTime)
-M.Entry.t_body:add(Match.Pattern{
+M.Entry.t_body:add({
+Match.Pattern{
 	name = "range",
 	vtype = O.Type.expression,
 	acceptor = function(context, self, obj)
@@ -423,10 +424,10 @@ M.Entry.t_body:add(Match.Pattern{
 			return
 		end
 	end,
-})
+},
 
 -- tags = {...}
-M.Entry.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "tags",
 	children = {Match.Pattern{
 		vtype = {O.Type.identifier, O.Type.string},
@@ -434,10 +435,10 @@ M.Entry.t_body:add(Match.Pattern{
 			table.insert(self.tags, O.text(obj))
 		end,
 	}},
-})
+},
 
 -- rel_id = ...
-M.Entry.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "rel_id",
 	children = {Match.Pattern{
 		vtype = O.Type.identifier,
@@ -445,29 +446,32 @@ M.Entry.t_body:add(Match.Pattern{
 			table.insert(self.rel_id, O.identifier(obj))
 		end,
 	}},
-})
-
+},
 -- rel_id = {...}
-M.Entry.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "rel_id",
 	vtype = O.Type.identifier,
 	acceptor = function(context, self, obj)
 		table.insert(self.rel_id, O.identifier(obj))
 	end,
-})
+},
 
 -- continue_id = identifier
-M.Entry.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "continue_id",
 	vtype = O.Type.identifier,
 	acceptor = function(context, self, obj)
 		self.continue_id = O.identifier(obj)
 		self.continue_scope = context.user.tracker.date
 	end,
-})
-
+},
+-- continue_id = null
+Match.Pattern{
+	name = "continue_id",
+	vtype = O.Type.null,
+},
 -- continue_id = date{identifier}
-M.Entry.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "continue_id",
 	vtype = O.Type.time,
 	children = 1,
@@ -479,10 +483,9 @@ M.Entry.t_body:add(Match.Pattern{
 		self.continue_id = O.identifier(O.child_at(obj, 1))
 		self.continue_scope = T(O.time_resolved(obj, context.user.tracker.date))
 	end,
-})
-
+},
 -- actions = {...}
-M.Entry.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "actions",
 	children = {M.Action.p_accum},
 	acceptor = function(context, self, obj)
@@ -490,6 +493,7 @@ M.Entry.t_body:add(Match.Pattern{
 			return Match.Error("entry actions must be non-empty when specified")
 		end
 	end,
+},
 })
 
 M.t_head = Match.Tree()

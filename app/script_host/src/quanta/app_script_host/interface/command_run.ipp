@@ -11,12 +11,6 @@
 namespace quanta {
 namespace app_script_host {
 
-static signed pcall_message_handler(lua_State* L) {
-	if (lua_isstring(L, 1)) {
-		luaL_traceback(L, L, lua_tostring(L, 1), 1);
-	}
-	return 1;
-}
 
 /// Run 'run' command.
 ///
@@ -35,7 +29,8 @@ bool interface::command_run(
 	io::register_lua_interface(L);
 	filesystem::register_lua_interface(L);
 	lua::register_quanta_core(L);
-	lua_pushcfunction(L, pcall_message_handler);
+
+	lua::push_value(L, lua::pcall_error_message_handler);
 	if (luaL_loadfile(L, script_path.data)) {
 		auto error = lua::get_string(L, -1);
 		TOGO_LOGF("failed to load script: %.*s\n", error.size, error.data);

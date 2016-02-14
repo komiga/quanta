@@ -40,7 +40,7 @@ bool interface::command_run(
 	if (lua_pcall(L, 0, 0, -2)) {
 		auto error = lua::get_string(L, -1);
 		TOGO_LOGF("script error: %.*s\n", error.size, error.data);
-		lua_pop(L, 1);
+		lua_close(L);
 		return false;
 	}
 	lua_close(L);

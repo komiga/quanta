@@ -161,7 +161,7 @@ function M.Action.remove_internal_tags(obj)
 		end
 	end
 
-	remove_tag(obj, "action_primary")
+	remove_tag("action_primary")
 end
 
 M.Action.t_head = Match.Tree()

@@ -4,12 +4,16 @@ local U = require "togo.utility"
 local FS = require "togo.filesystem"
 local M = U.module(...)
 
+local function check_initialized()
+	U.assertl(1, M.initialized, "Quanta.Vessel has not been initialized")
+end
+
 function M.active_bucket()
 	return M.work_local and "local" or "vessel"
 end
 
 function M.path(...)
-	U.assert(M.initialized, "Quanta.Vessel has not been initialized")
+	check_initialized()
 	return U.join_paths(M.root, ...)
 end
 
@@ -20,6 +24,7 @@ function M.script_path(...) return M.path(M.active_bucket(), "scripts", ...) end
 function M.sublime_path(...) return M.path(M.active_bucket(), "sublime", ...) end
 
 function M.set_work_local(work_local)
+	check_initialized()
 	U.type_assert(work_local, "boolean")
 	M.work_local = work_local
 end

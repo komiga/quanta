@@ -187,14 +187,17 @@ function M.Action.remove_internal_tags(obj)
 	remove_tag("action_primary")
 end
 
-M.Action.t_head = Match.Tree()
-
-M.Action.p_accum = Match.Pattern{
-	any_branch = M.Action.t_head,
+M.Action.p_head = Match.Pattern{
+	vtype = O.Type.identifier,
+	tags = Match.Any,
+	children = Match.Any,
 	acceptor = function(context, entry, obj)
 		local action = M.Action()
+		action.id = O.identifier(obj)
+		action.id_hash = O.identifier_hash(obj)
 		table.insert(entry.actions, action)
-		return action
+
+		context.user.director:read_action(context, entry, action, obj)
 	end,
 	post_branch = function(context, entry, obj)
 		local tag_action_primary = O.find_tag(obj, "action_primary")
@@ -206,20 +209,6 @@ M.Action.p_accum = Match.Pattern{
 		end
 	end,
 }
-
--- action
-M.Action.t_head:add(Match.Pattern{
-	vtype = O.Type.identifier,
-	tags = Match.Any,
-	children = Match.Any,
-	acceptor = function(context, self, obj)
-		self.id = O.identifier(obj)
-		self.id_hash = O.identifier_hash(obj)
-
-		local entry = context:value(1)
-		context.user.director:read_action(context, entry, self, obj)
-	end,
-})
 
 M.PlaceholderAction = U.class(M.PlaceholderAction)
 
@@ -510,7 +499,7 @@ Match.Pattern{
 -- actions = {...}
 Match.Pattern{
 	name = "actions",
-	children = {M.Action.p_accum},
+	children = {M.Action.p_head},
 	acceptor = function(context, self, obj)
 		if not O.has_children(obj) then
 			return Match.Error("entry actions must be non-empty when specified")

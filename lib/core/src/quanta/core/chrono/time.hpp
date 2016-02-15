@@ -18,6 +18,7 @@
 #include <quanta/core/lua/lua.hpp>
 
 #include <togo/core/utility/utility.hpp>
+#include <togo/core/system/system.hpp>
 
 #include <quanta/core/chrono/time.gen_interface>
 
@@ -194,6 +195,28 @@ inline void set_utc(Time& t, signed h, signed m, signed s) {
 inline void set(Time& t, signed h, signed m, signed s) {
 	t.sec += t.zone_offset;
 	time::set_utc(t, h, m, s - t.zone_offset);
+}
+
+/// Set to the current system time (zone kept).
+inline void set_now(Time& t) {
+	t.sec = system::secs_since_epoch() + POSIX_TO_QUANTA;
+	t.sec -= t.zone_offset;
+}
+
+/// Set the clock time to the current system time (zone kept).
+inline void set_clock_now(Time& t) {
+	t.sec = time::date_seconds_utc(t);
+	t.sec += system::secs_since_epoch() % SECS_PER_DAY;
+	t.sec -= t.zone_offset;
+}
+
+/// Set the date to the current system time (zone kept).
+inline void set_date_now(Time& t) {
+	t.sec = time::clock_seconds_utc(t);
+	s64 sec = system::secs_since_epoch() + POSIX_TO_QUANTA;
+	sec -= sec % SECS_PER_DAY;
+	t.sec += sec;
+	t.sec -= t.zone_offset;
 }
 
 /// Clear clock.

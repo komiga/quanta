@@ -206,6 +206,24 @@ TOGO_LI_FUNC_DEF(set) {
 	return 0;
 }
 
+TOGO_LI_FUNC_DEF(set_now) {
+	auto t = lua::get_pointer<Time>(L, 1);
+	time::set_now(*t);
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(set_clock_now) {
+	auto t = lua::get_pointer<Time>(L, 1);
+	time::set_clock_now(*t);
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(set_date_now) {
+	auto t = lua::get_pointer<Time>(L, 1);
+	time::set_date_now(*t);
+	return 0;
+}
+
 TOGO_LI_FUNC_DEF(clear) {
 	auto t = lua::get_pointer<Time>(L, 1);
 	*t = {};
@@ -272,6 +290,9 @@ static LuaModuleFunctionArray const li_funcs{
 
 	TOGO_LI_FUNC_REF(time, set_utc)
 	TOGO_LI_FUNC_REF(time, set)
+	TOGO_LI_FUNC_REF(time, set_now)
+	TOGO_LI_FUNC_REF(time, set_clock_now)
+	TOGO_LI_FUNC_REF(time, set_date_now)
 
 	TOGO_LI_FUNC_REF(time, clear)
 	TOGO_LI_FUNC_REF(time, clear_clock)

@@ -913,7 +913,6 @@ static LuaModuleFunctionArray const li_funcs{
 
 	TOGO_LI_FUNC_REF(object, create)
 	TOGO_LI_FUNC_REF(object, create_mv)
-	// TOGO_LI_FUNC_REF(object, destroy)
 
 	TOGO_LI_FUNC_REF(object, type)
 	TOGO_LI_FUNC_REF(object, set_type)

@@ -162,13 +162,13 @@ make_test(
 }
 
 function do_test(t, implicit_scope, director)
-	local o = O.create(t.text)
-	U.assert(o ~= nil)
-	local text_rewrite = O.write_text_string(o, true)
+	local obj = O.create(t.text)
+	U.assert(obj ~= nil)
+	local text_rewrite = O.write_text_string(obj, true)
 	U.print("%s  =>", text_rewrite)
 
 	local comp = Composition()
-	local success, msg = comp:from_object(o, implicit_scope, director)
+	local success, msg = comp:from_object(obj, implicit_scope, director)
 	if not success then
 		U.print("translation error: %s", msg)
 	end
@@ -176,8 +176,8 @@ function do_test(t, implicit_scope, director)
 	check_composition_equal(comp, t.comp)
 	if t.comp then
 		check_composition_equal(comp, t.comp)
-		comp:to_object(o)
-		U.print("%s", O.write_text_string(o, true))
+		comp:to_object(obj)
+		U.print("%s", O.write_text_string(obj, true))
 	else
 		U.print("(expected)")
 	end

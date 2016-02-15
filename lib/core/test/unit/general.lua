@@ -187,20 +187,20 @@ make_test_fail(
 }
 
 function do_test(t, implicit_scope, director)
-	local o = O.create(t.text)
-	U.assert(o ~= nil)
-	local text_rewrite = O.write_text_string(o, true)
+	local obj = O.create(t.text)
+	U.assert(obj ~= nil)
+	local text_rewrite = O.write_text_string(obj, true)
 	U.print("%s  =>", text_rewrite)
 
 	local unit = Unit()
-	local success, msg = unit:from_object(o, implicit_scope, director)
+	local success, msg = unit:from_object(obj, implicit_scope, director)
 	if not success then
 		U.print("translation error: %s", msg)
 	end
 	U.assert(success == not not t.unit, "unexpected success value: %s", success)
 	if t.unit then
-		unit:to_object(o)
-		U.print("%s", O.write_text_string(o, true))
+		unit:to_object(obj)
+		U.print("%s", O.write_text_string(obj, true))
 		check_unit_equal(unit, t.unit)
 	else
 		U.print("(expected)")

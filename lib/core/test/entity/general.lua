@@ -81,9 +81,9 @@ end, {
 }
 
 function do_search_test(t)
-	local o = O.create_mv(t.text)
+	local obj = O.create_mv(t.text)
 
-	local universe = Entity.Match.read_universe(o)
+	local universe = Entity.Match.read_universe(obj)
 	U.assert(universe)
 
 	local branches = t.branches_func(universe)

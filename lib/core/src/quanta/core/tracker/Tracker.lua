@@ -165,7 +165,7 @@ function M:validate_and_fixup()
 
 	-- fix spilling ranges
 	local prev_entry
-	for i, entry in ipairs(self.entries) do
+	for _, entry in ipairs(self.entries) do
 		fixup_spillover(entry.r_start, entry.r_end)
 		if prev_entry then
 			fixup_spillover(prev_entry.r_start, entry.r_start, entry.r_end)
@@ -262,7 +262,7 @@ Match.Pattern{
 			return Match.Error("placeholder action can only carry a single string")
 		end
 	end,
-}
+},
 })
 
 function M.PlaceholderAction:__init(description)
@@ -357,15 +357,19 @@ function M.EntryTime:to_object(obj, scope)
 	return obj
 end
 
-M.EntryTime.t_head = Match.Tree()
-
 local function entry_time_set_uncertainties(self, obj)
 	self.approximation = O.value_approximation(obj)
 	self.certain = not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
 end
 
+local et_ref_type_by_name = {
+	["EPREV"] = M.EntryTime.Type.ref,
+	["ENEXT"] = M.EntryTime.Type.ref,
+}
+
+M.EntryTime.t_head = Match.Tree({
 -- time
-M.EntryTime.t_head:add(Match.Pattern{
+Match.Pattern{
 	vtype = O.Type.time,
 	acceptor = function(context, self, obj)
 		if O.is_zoned(obj) then
@@ -379,24 +383,17 @@ M.EntryTime.t_head:add(Match.Pattern{
 		T.set(self.time, O.time_resolved(obj, context.user.tracker.date))
 		entry_time_set_uncertainties(self, obj)
 	end,
-})
-
+},
 -- XXX
-M.EntryTime.t_head:add(Match.Pattern{
+Match.Pattern{
 	vtype = O.Type.identifier,
 	value = "XXX",
 	acceptor = function(context, self, obj)
 		self.type = M.EntryTime.Type.placeholder
 	end,
-})
-
-local et_ref_type_by_name = {
-	["EPREV"] = M.EntryTime.Type.ref,
-	["ENEXT"] = M.EntryTime.Type.ref,
-}
-
+},
 -- EPREV, ENEXT
-M.EntryTime.t_head:add(Match.Pattern{
+Match.Pattern{
 	vtype = O.Type.identifier,
 	value = {"EPREV", "ENEXT"},
 	tags = {Match.Pattern{
@@ -427,6 +424,7 @@ M.EntryTime.t_head:add(Match.Pattern{
 		end
 		entry_time_set_uncertainties(self, obj)
 	end,
+},
 })
 
 M.Entry = U.class(M.Entry)
@@ -629,6 +627,7 @@ Match.Pattern{
 		self.continue_scope = T(O.time_resolved(obj, context.user.tracker.date))
 	end,
 },
+
 -- actions = {...}
 Match.Pattern{
 	name = "actions",
@@ -698,18 +697,20 @@ function M.UnknownAttachment:compare_equal(other)
 	return true
 end
 
-M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
+M.t_head = Match.Tree({
 -- Tracker{...}
-M.t_head:add(Match.Pattern{
+Match.Pattern{
 	vtype = O.Type.identifier,
 	value = "Tracker",
 	children = M.t_body,
+},
 })
 
+M.t_body:add({
 -- date = date{:full:zoned}
-M.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "date",
 	vtype = O.Type.time,
 	acceptor = function(context, self, obj)
@@ -723,10 +724,9 @@ M.t_body:add(Match.Pattern{
 
 		T.set(self.date, O.time(obj))
 	end,
-})
-
+},
 -- entries = list{Entry}
-M.t_body:add(Match.Pattern{
+Match.Pattern{
 	name = "entries",
 	children = {
 		M.Entry.p_head,
@@ -738,6 +738,7 @@ M.t_body:add(Match.Pattern{
 			return Match.Error("date must be set before entries")
 		end
 	end,
+},
 })
 
 return M

@@ -29,6 +29,7 @@ function M:from_object(obj, director)
 	local context = Match.Context()
 	context.user = {
 		tracker = self,
+		tracker_prev_entry = nil,
 	}
 	Instance.init_match_context(context, self.date, director)
 	if not context:consume(M.t_head, obj, self) then
@@ -72,7 +73,14 @@ local function obj_error(obj, msg, ...)
 	)
 end
 
--- TODO: build and solve a dependency graph
+local function fixup_spillover(r_start, r_end)
+	if
+		T.value(r_start.time) > T.value(r_end.time) and
+		T.date_seconds_utc(r_start.time) >= T.date_seconds_utc(r_end.time)
+	then
+		T.add(r_end.time, T.SECS_PER_DAY)
+	end
+end
 
 local function find_by_ref(entries, start, n, ool)
 	local direction = n < 0 and -1 or 1
@@ -115,24 +123,14 @@ local function fixup_time_ref(self, i, entry, time, part)
 	return true
 end
 
-local function fixup_spillover(r_start, r_end, r_next)
-	if
-		T.value(r_start.time) > T.value(r_end.time) and
-		T.date_seconds_utc(r_start.time) >= T.date_seconds_utc(r_end.time)
-	then
-		T.add(r_end.time, T.SECS_PER_DAY)
-		if r_next then
-			T.add(r_next.time, T.SECS_PER_DAY)
-		end
-	end
-end
-
 function M:validate_and_fixup()
 	if T.value(self.date) == 0 then
 		return false, "date is unset"
 	end
 	local success, msg
+
 	for i, entry in ipairs(self.entries) do
+		-- TODO: build and solve a dependency graph
 		if
 			entry.r_start.type == M.EntryTime.Type.placeholder and
 			entry.r_end.type == M.EntryTime.Type.placeholder
@@ -145,6 +143,16 @@ function M:validate_and_fixup()
 		if not success then return false, msg end
 		success, msg = fixup_time_ref(self, i, entry, entry.r_end, "end")
 		if not success then return false, msg end
+
+		fixup_spillover(entry.r_start, entry.r_end)
+
+		entry:recalculate()
+		local duration = T.value(entry.duration)
+		if duration < 0 then
+			return obj_error(entry.obj, "entry range is degenerate: duration is negative")
+		elseif duration == 0 then
+			return obj_error(entry.obj, "entry range is degenerate: duration is zero")
+		end
 
 		if entry.continue_id then
 			if T.compare_equal(entry.continue_scope, self.date) then
@@ -161,25 +169,8 @@ function M:validate_and_fixup()
 		elseif #entry.actions == 0 then
 			return obj_error(entry.obj, "entry is empty: carries no actions and doesn't belong to a continue group")
 		end
-	end
 
-	-- fix spilling ranges
-	local prev_entry
-	for _, entry in ipairs(self.entries) do
-		fixup_spillover(entry.r_start, entry.r_end)
-		if prev_entry then
-			fixup_spillover(prev_entry.r_start, entry.r_start, entry.r_end)
-		end
-
-		entry:recalculate()
-		local duration = T.value(entry.duration)
-		if duration < 0 then
-			return obj_error(entry.obj, "entry range is degenerate: duration is negative")
-		elseif duration == 0 then
-			return obj_error(entry.obj, "entry range is degenerate: duration is zero")
-		end
 		entry.obj = nil
-		prev_entry = entry
 	end
 	return true
 end
@@ -537,6 +528,14 @@ M.Entry.p_head = Match.Pattern{
 		table.insert(tracker.entries, entry)
 		entry.obj = obj
 		return entry
+	end,
+	post_branch_pre = function(context, entry, obj)
+		if entry.r_start.type == M.EntryTime.Type.specified then
+			if context.user.tracker_prev_entry then
+				fixup_spillover(context.user.tracker_prev_entry.r_start, entry.r_start)
+			end
+			context.user.tracker_prev_entry = entry
+		end
 	end,
 }
 

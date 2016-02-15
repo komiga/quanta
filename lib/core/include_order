@@ -18,6 +18,7 @@ return {
 	M("vessel", {}),
 	M("match", {}),
 	M("measurement", {}),
+	M("prop", {}),
 	M("entity", {}),
 	M("instance", {}),
 	M("composition", {}),

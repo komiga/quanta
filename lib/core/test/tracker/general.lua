@@ -243,19 +243,19 @@ make_test_fail(
 }
 
 function do_test(t, director)
-	local o = O.create(t.text)
-	U.assert(o ~= nil)
+	local obj = O.create(t.text)
+	U.assert(obj ~= nil)
 
 	local tracker = Tracker()
-	local success, msg = tracker:from_object(o, director)
+	local success, msg = tracker:from_object(obj, director)
 	if not success then
 		U.print("translation error: %s", msg)
 	end
 	U.assert(success == not not t.tracker, "unexpected success value: %s", success)
 	if t.tracker then
+		--tracker:to_object(obj)
+		--U.print("%s", O.write_text_string(obj, true))
 		check_tracker_equal(tracker, t.tracker)
-		--tracker:to_object(o)
-		--U.print("%s", O.write_text_string(o, true))
 	else
 		U.print("(expected)")
 	end

@@ -3,6 +3,7 @@ u8R""__RAW_STRING__(
 local U = require "togo.utility"
 local FS = require "togo.filesystem"
 local T = require "Quanta.Time"
+require "Quanta.Time.Gregorian"
 local M = U.module(...)
 
 local function check_initialized()
@@ -30,8 +31,8 @@ function M.tracker_path(date)
 	check_initialized()
 	if date ~= nil then
 		U.type_assert(date, "userdata")
-		local y, m, d = T.date_utc(date)
-		return M.data_chrono_path(string.format("%d/%d/%d.q", y, m, d))
+		local y, m, d = T.G.date_utc(date)
+		return M.data_chrono_path(string.format("%04d/%02d/%02d.q", y, m, d))
 	else
 		local slug = nil
 		local f = io.open(M.data_chrono_path("active"), "r")

@@ -18,8 +18,9 @@ static void copy_kvs_to_table(
 ) {
 	lua_createtable(L, 1, kvs::size(k_list));
 	lua::table_set_raw(L, "name", kvs::name_ref(k_list));
-	for (unsigned i = start_index; i < kvs::size(k_list); ++i) {
-		auto const& k_value = k_list[i];
+	signed ti = 1;
+	for (unsigned li = start_index; li < kvs::size(k_list); ++li, ++ti) {
+		auto const& k_value = k_list[li];
 		lua_createtable(L, 2, 0);
 		lua::table_set_raw(L, "name", kvs::name_ref(k_value));
 		switch (kvs::type(k_value)) {
@@ -28,7 +29,7 @@ static void copy_kvs_to_table(
 		default:
 			TOGO_ASSERT(false, "missing type handler");
 		}
-		lua_rawseti(L, -2, i + 1);
+		lua_rawseti(L, -2, ti);
 	}
 }
 

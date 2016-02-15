@@ -98,6 +98,18 @@ local function fixup_time_ref(self, i, entry, time, part)
 	return true
 end
 
+local function fixup_spillover(r_start, r_end, r_next)
+	if
+		T.value(r_start.time) > T.value(r_end.time) and
+		T.date_seconds_utc(r_start.time) >= T.date_seconds_utc(r_end.time)
+	then
+		T.add(r_end.time, T.SECS_PER_DAY)
+		if r_next then
+			T.add(r_next.time, T.SECS_PER_DAY)
+		end
+	end
+end
+
 function M:validate_and_fixup()
 	if T.value(self.date) == 0 then
 		return false, "date is unset"
@@ -117,14 +129,6 @@ function M:validate_and_fixup()
 		success, msg = fixup_time_ref(self, i, entry, entry.r_end, "end")
 		if not success then return false, msg end
 
-		entry:recalculate()
-		local duration = T.value(entry.duration)
-		if duration < 0 then
-			return obj_error(entry.obj, "entry range is degenerate: duration is negative")
-		elseif duration == 0 then
-			return obj_error(entry.obj, "entry range is degenerate: duration is zero")
-		end
-
 		if entry.continue_id then
 			if T.compare_equal(entry.continue_scope, self.date) then
 				local group = self.entry_groups[entry.continue_id]
@@ -140,7 +144,25 @@ function M:validate_and_fixup()
 		elseif #entry.actions == 0 then
 			return obj_error(entry.obj, "entry is empty: carries no actions and doesn't belong to a continue group")
 		end
+	end
+
+	-- fix spilling ranges
+	local prev_entry
+	for i, entry in ipairs(self.entries) do
+		fixup_spillover(entry.r_start, entry.r_end)
+		if prev_entry then
+			fixup_spillover(prev_entry.r_start, entry.r_start, entry.r_end)
+		end
+
+		entry:recalculate()
+		local duration = T.value(entry.duration)
+		if duration < 0 then
+			return obj_error(entry.obj, "entry range is degenerate: duration is negative")
+		elseif duration == 0 then
+			return obj_error(entry.obj, "entry range is degenerate: duration is zero")
+		end
 		entry.obj = nil
+		prev_entry = entry
 	end
 	return true
 end

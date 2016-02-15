@@ -185,7 +185,7 @@ function M:from_object(obj)
 	elseif O.is_expression(obj) then
 		local of, best, best_unit, unit
 		for i, sub in O.children(obj) do
-			U.assert(O.op(sub) == O.Operator.div or i == 1)
+			U.assert(i == 1 or O.op(sub) == O.Operator.div)
 			if O.is_numeric(sub) then
 				unit = M.get_unit(O.unit_hash(sub))
 				if unit and (not best or measurement_less(best, best_unit, sub, unit)) then
@@ -283,6 +283,10 @@ end
 
 function M:unit()
 	return M.Quantity[self.qindex].UnitByMagnitude[self.magnitude]
+end
+
+function M:is_exact()
+	return self.approximation == 0 and self.certain
 end
 
 function M:is_empty()

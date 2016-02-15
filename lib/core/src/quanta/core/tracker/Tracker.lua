@@ -344,8 +344,9 @@ function M.EntryTime:to_object(obj, scope)
 			O.set_identifier(obj, "ENEXT")
 		end
 		-- NB: index == 0 is actually an error
-		if self.index ~= 0 then
-			O.set_integer(O.make_quantity(obj), self.index)
+		local abs_index = math.abs(self.index)
+		if abs_index > 1 then
+			O.set_integer(O.make_quantity(obj), abs_index)
 		end
 	end
 

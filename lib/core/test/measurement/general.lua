@@ -37,17 +37,22 @@ local translation_tests = {
 }
 
 function do_translation_test(t)
-	local o = O.create(t.text)
-	U.assert(o ~= nil)
+	local obj = O.create(t.text)
+	U.assert(obj ~= nil)
+	U.print("%s  =>", O.write_text_string(obj, true))
 
 	local value = t.value
 	local unit = Measurement.get_unit(t.unit)
 	U.assert(unit)
 
-	local item = t.item_index > 0 and O.child_at(o, t.item_index) or o
+	local item = t.item_index > 0 and O.child_at(obj, t.item_index) or obj
 	U.assert(Measurement.get_unit(O.unit_hash(item)) == unit)
 
-	local m = Measurement(o)
+	local m = Measurement(obj)
+	O.clear(obj)
+	m:to_object(obj)
+	print(O.write_text_string(obj, true))
+
 	U.assert(m.value == value)
 	U.assert(m.qindex == unit.quantity.index)
 	U.assert(m.magnitude == unit.magnitude)

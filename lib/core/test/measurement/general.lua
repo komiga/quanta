@@ -30,10 +30,10 @@ local translation_tests = {
 
 	make_test("?1/2", 2, 2, ""),
 	make_test("~1/2", 2, 2, ""),
-	make_test("~~1/~2", 2, 2, "", 0, -1, false),
-	make_test("?1/~~2", 2, 2, "", 0, -2, false),
-	make_test("G~1/~~~2", 2, 2, "", 0, -3, false),
-	make_test("G~^1/?2", 2, 2, "", 0),
+	make_test("~~1/~2", 2, 2, "", 0, -1),
+	make_test("?1/~~2", 2, 2, "", 0, -2),
+	make_test("G~1/~~~2", 2, 2, "", 0, -3),
+	make_test("G~^1/?2", 2, 2, "", 0, 0, false),
 }
 
 function do_translation_test(t)

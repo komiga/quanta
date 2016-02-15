@@ -4,6 +4,7 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
+local Instance = require "Quanta.Instance"
 local M = U.module(...)
 
 M.debug = false
@@ -26,8 +27,8 @@ function M:from_object(obj, director)
 	local context = Match.Context()
 	context.user = {
 		tracker = self,
-		director = director,
 	}
+	Instance.init_match_context(context, self.date, director)
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
 	end

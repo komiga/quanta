@@ -178,6 +178,36 @@ Time object::time_resolved(Object const& obj, Time context) {
 	return value;
 }
 
+/// Reduce date and timezone to minimal specificity within a context.
+void object::reduce_time(Object& obj, Time context) {
+	if (obj.value.time.zone_offset == context.zone_offset) {
+		object::set_zoned(obj, false, true);
+	}
+	if (object::has_date(obj)) {
+		Date date = time::gregorian::date_utc(obj.value.time);
+		Date const context_date = time::gregorian::date_utc(context);
+		if (!object::is_year_contextual(obj)) {
+			if (date.year == context_date.year) {
+				object::set_year_contextual(obj, true);
+			} else {
+				return;
+			}
+		}
+		if (!object::is_month_contextual(obj)) {
+			if (date.month == context_date.month) {
+				object::set_month_contextual(obj, true);
+			} else {
+				return;
+			}
+		}
+		if (date.day == context_date.day) {
+			if (object::has_clock(obj)) {
+				object::set_time_type(obj, ObjectTimeType::clock);
+			}
+		}
+	}
+}
+
 IGEN_PRIVATE
 Object const* object::find_impl(
 	Array<Object> const& collection,

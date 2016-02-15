@@ -14,6 +14,7 @@ U.class(M)
 function M:__init()
 	self.modifier_classes = {}
 	self.action_classes = {}
+	self.attachment_classes = {}
 end
 
 local function register(bucket, name, id, class)
@@ -39,6 +40,10 @@ function M:register_action(id, class)
 	register(self.action_classes, "action", id, class)
 end
 
+function M:register_attachment(id, class)
+	register(self.attachment_classes, "attachment", id, class)
+end
+
 local function read(bucket, unknown_class, context, parent, holder, obj)
 	local class
 	local registered = bucket[holder.id_hash]
@@ -61,6 +66,10 @@ end
 
 function M:read_action(context, entry, action, obj)
 	return read(self.action_classes, Tracker.UnknownAction, context, entry, action, obj)
+end
+
+function M:read_attachment(context, tracker, attachment, obj)
+	return read(self.attachment_classes, Tracker.UnknownAttachment, context, entry, attachment, obj)
 end
 
 return M

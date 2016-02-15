@@ -15,6 +15,7 @@ function M:__init()
 	self.date = T()
 	self.entries = {}
 	self.entry_groups = {}
+	self.attachments = {}
 end
 
 function M:from_object(obj, director)
@@ -23,6 +24,7 @@ function M:from_object(obj, director)
 	T.clear(self.date)
 	self.entries = {}
 	self.entry_groups = {}
+	self.attachments = {}
 
 	local context = Match.Context()
 	context.user = {
@@ -508,6 +510,50 @@ Match.Pattern{
 },
 })
 
+M.Attachment = U.class(M.Attachment)
+
+function M.Attachment:__init()
+	self.id = nil
+	self.id_hash = O.NAME_NULL
+	self.data = nil
+end
+
+-- attachment
+M.Attachment.p_head = Match.Pattern{
+	vtype = O.Type.identifier,
+	tags = Match.Any,
+	children = Match.Any,
+	acceptor = function(context, tracker, obj)
+		local attachment = M.Attachment()
+		attachment.id = O.identifier(obj)
+		attachment.id_hash = O.identifier_hash(obj)
+		table.insert(tracker.attachments, attachment)
+
+		context.user.director:read_attachment(context, tracker, attachment, obj)
+	end,
+}
+
+M.UnknownAttachment = U.class(M.UnknownAttachment)
+
+function M.UnknownAttachment:__init()
+	self.obj = O.create()
+end
+
+function M.UnknownAttachment:from_object(context, tracker, attachment, obj)
+	O.copy_children(self.obj, obj)
+	O.copy_tags(self.obj, obj)
+end
+
+function M.UnknownAttachment:to_object(attachment, obj)
+	O.copy_children(obj, self.obj)
+	O.copy_tags(obj, self.obj)
+end
+
+function M.UnknownAttachment:compare_equal(other)
+	-- TODO?
+	return true
+end
+
 M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
@@ -539,8 +585,8 @@ M.t_body:add(Match.Pattern{
 M.t_body:add(Match.Pattern{
 	name = "entries",
 	children = {
-		-- M.SystemData.p_head,
 		M.Entry.p_head,
+		M.Attachment.p_head,
 	},
 	acceptor = function(context, self, obj)
 		if T.value(self.date) == 0 then

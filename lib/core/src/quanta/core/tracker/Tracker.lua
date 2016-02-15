@@ -452,20 +452,20 @@ Match.Pattern{
 -- rel_id = ...
 Match.Pattern{
 	name = "rel_id",
+	vtype = O.Type.identifier,
+	acceptor = function(context, self, obj)
+		table.insert(self.rel_id, O.identifier(obj))
+	end,
+},
+-- rel_id = {...}
+Match.Pattern{
+	name = "rel_id",
 	children = {Match.Pattern{
 		vtype = O.Type.identifier,
 		acceptor = function(context, self, obj)
 			table.insert(self.rel_id, O.identifier(obj))
 		end,
 	}},
-},
--- rel_id = {...}
-Match.Pattern{
-	name = "rel_id",
-	vtype = O.Type.identifier,
-	acceptor = function(context, self, obj)
-		table.insert(self.rel_id, O.identifier(obj))
-	end,
 },
 
 -- continue_id = identifier

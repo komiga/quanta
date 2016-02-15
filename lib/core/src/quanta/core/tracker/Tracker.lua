@@ -90,28 +90,35 @@ local function find_by_ref(entries, start, n, ool)
 		if entry.ool == ool then
 			n = n - direction
 			if n == 0 then
-				return entry
+				return entry, i
 			end
 		end
 	end
 	return nil
 end
 
-local function fixup_time_ref(self, i, entry, time, part)
+local function fixup_time_ref(self, i, entry, time, part, no_branch)
 	if time.type == M.EntryTime.Type.specified then
 		return true
 	elseif time.type == M.EntryTime.Type.placeholder then
 		return obj_error(entry.obj, "entry range %s is unspecified", part)
 	end
 
-	local ref_entry = find_by_ref(self.entries, i, time.index, time.ool)
+	local ref_entry, ref_i = find_by_ref(self.entries, i, time.index, time.ool)
 	if not ref_entry then
 		return obj_error(entry.obj, "entry range %s reference index is out-of-bounds", part)
 	end
 
 	local ref_time = ref_entry.r_start
 	if ref_time.type ~= M.EntryTime.Type.specified then
-		return obj_error(entry.obj, "entry range %s referent has an unresolved start time", part)
+		-- total unreliable kludge! go after that dependency graph solution
+		if not no_branch then
+			local success, msg = fixup_time_ref(self, ref_i, ref_entry, ref_entry.r_start, "start", true)
+			if not success then return false, msg end
+		end
+		if ref_time.type ~= M.EntryTime.Type.specified then
+			return obj_error(entry.obj, "entry range %s referent has an unresolved start time", part)
+		end
 	end
 
 	time.type = M.EntryTime.Type.specified

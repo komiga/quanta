@@ -319,11 +319,27 @@ function check_tracker_entry_equal(x, y)
 	end
 end
 
+function check_tracker_attachment_equal(x, y)
+	U.assert(x.id == y.id)
+	U.assert(x.id_hash == y.id_hash)
+
+	local class = U.type_class(x.data)
+	U.assert(class == U.type_class(y.data))
+	if class.compare_equal then
+		U.assert(x.data:compare_equal(y.data))
+	end
+end
+
 function check_tracker_equal(x, y)
 	U.assert(Time.compare_equal(x.date, y.date))
 
 	U.assert(#x.entries == #y.entries)
 	for i = 1, #x.entries do
 		check_tracker_entry_equal(x.entries[i], y.entries[i])
+	end
+
+	U.assert(#x.attachments == #y.attachments)
+	for i = 1, #x.attachments do
+		check_tracker_attachment_equal(x.attachments[i], y.attachments[i])
 	end
 end

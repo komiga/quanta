@@ -332,7 +332,9 @@ function M.EntryTime:to_object(obj, scope)
 
 	if self.type == M.EntryTime.Type.specified then
 		O.set_time(obj, self.time)
-		O.reduce_time(obj, scope)
+		if scope then
+			O.reduce_time(obj, scope)
+		end
 	elseif self.type == M.EntryTime.Type.placeholder then
 		O.set_identifier(obj, "XXX")
 	elseif self.type == M.EntryTime.Type.ref then
@@ -504,7 +506,9 @@ function M.Entry:to_object(obj, scope)
 		if self.continue_scope and self.continue_scope ~= scope then
 			local scope_obj = O.push_child(continue_id_obj)
 			O.set_time_date(scope_obj, self.continue_scope)
-			O.reduce_time(scope_obj)
+			if scope then
+				O.reduce_time(scope_obj, scope)
+			end
 			O.set_identifier(O.push_child(scope_obj), self.continue_id)
 		else
 			O.set_identifier(continue_id_obj, self.continue_id)

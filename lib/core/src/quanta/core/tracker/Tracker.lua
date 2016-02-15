@@ -37,8 +37,7 @@ function M:from_object(obj, director)
 	return self:validate_and_fixup()
 end
 
--- TODO
---[[function M:to_object(obj)
+function M:to_object(obj)
 	U.type_assert(obj, "userdata", true)
 	if not obj then
 		obj = O.create()
@@ -46,9 +45,24 @@ end
 		O.clear(obj)
 	end
 
-	
+	O.set_identifier(obj, "Tracker")
+
+	local date_obj = O.push_child(obj)
+	O.set_name(date_obj, "date")
+	O.set_time_date(date_obj, self.date)
+
+	local entries_obj = O.push_child(obj)
+	O.set_name(entries_obj, "entries")
+
+	for _, attachment in ipairs(self.attachments) do
+		attachment:to_object(O.push_child(entries_obj))
+	end
+	for _, entry in ipairs(self.entries) do
+		entry:to_object(O.push_child(entries_obj), self.date)
+	end
+
 	return obj
-end--]]
+end
 
 local function obj_error(obj, msg, ...)
 	return false, string.format(
@@ -178,6 +192,24 @@ function M.Action:__init()
 	self.data = nil
 end
 
+function M.Action:to_object(obj, is_primary)
+	U.type_assert(obj, "userdata", true)
+	U.type_assert(is_primary, "boolean", true)
+	if not obj then
+		obj = O.create()
+	else
+		O.clear(obj)
+	end
+
+	O.set_identifier(obj, self.id or "UnknownAction")
+	self.data:to_object(self, obj)
+
+	if is_primary then
+		O.set_name(O.push_tag(obj), "action_primary")
+	end
+	return obj
+end
+
 function M.Action.remove_internal_tags(obj)
 	local function remove_tag(name)
 		local tag = O.find_tag(obj, name)
@@ -291,6 +323,40 @@ function M.EntryTime:__init()
 	self.certain = true
 end
 
+function M.EntryTime:to_object(obj, scope)
+	U.type_assert(obj, "userdata", true)
+	U.type_assert(scope, "userdata", true)
+	if not obj then
+		obj = O.create()
+	else
+		O.clear(obj)
+	end
+
+	if self.type == M.EntryTime.Type.specified then
+		O.set_time(obj, self.time)
+		O.reduce_time(obj, scope)
+	elseif self.type == M.EntryTime.Type.placeholder then
+		O.set_identifier(obj, "XXX")
+	elseif self.type == M.EntryTime.Type.ref then
+		if self.index < 0 then
+			O.set_identifier(obj, "EPREV")
+		else
+			O.set_identifier(obj, "ENEXT")
+		end
+		-- NB: index == 0 is actually an error
+		if self.index ~= 0 then
+			O.set_integer(O.make_quantity(obj), self.index)
+		end
+	end
+
+	if self.ool then
+		O.set_name(O.push_tag(obj), "ool")
+	end
+	O.set_value_certain(obj, self.certain)
+	O.set_value_approximation(obj, self.approximation)
+	return obj
+end
+
 M.EntryTime.t_head = Match.Tree()
 
 local function entry_time_set_uncertainties(self, obj)
@@ -393,6 +459,71 @@ function M.Entry:recalculate()
 	else
 		T.clear(self.duration)
 	end
+end
+
+function M.Entry:to_object(obj, scope)
+	U.type_assert(obj, "userdata", true)
+	U.type_assert(scope, "userdata", true)
+	if not obj then
+		obj = O.create()
+	else
+		O.clear(obj)
+	end
+
+	O.set_identifier(obj, "Entry")
+	if self.ool then
+		O.set_name(O.push_tag(obj), "ool")
+	end
+
+	local range_obj = O.push_child(obj)
+	O.set_name(range_obj, "range")
+	O.set_expression(range_obj)
+
+	local r_start_obj = O.push_child(range_obj)
+	local r_end_obj = O.push_child(range_obj)
+
+	self.r_start:to_object(r_start_obj, scope)
+	O.set_op(r_end_obj, O.Operator.sub)
+	self.r_end:to_object(r_end_obj, scope)
+
+	if #self.tags > 0 then
+		local tags_obj = O.push_child(obj)
+		O.set_name(tags_obj, "tags")
+		for _, tag in ipairs(self.tags) do
+			O.set_identifier(O.push_child(tags_obj), tag)
+		end
+	end
+
+	if #self.rel_id > 0 then
+		local rel_id_obj = O.push_child(obj)
+		O.set_name(rel_id_obj, "rel_id")
+		for _, rel_id in ipairs(self.rel_id) do
+			O.set_identifier(O.push_child(rel_id_obj), rel_id)
+		end
+	end
+
+	if self.continue_id ~= nil then
+		local continue_id_obj = O.push_child(obj)
+		O.set_name(continue_id_obj, "continue_id")
+		if self.continue_scope and self.continue_scope ~= scope then
+			local scope_obj = O.push_child(continue_id_obj)
+			O.set_time_date(scope_obj, self.continue_scope)
+			O.reduce_time(scope_obj)
+			O.set_identifier(O.push_child(scope_obj), self.continue_id)
+		else
+			O.set_identifier(continue_id_obj, self.continue_id)
+		end
+	end
+
+	if #self.actions > 0 then
+		local actions_obj = O.push_child(obj)
+		O.set_name(actions_obj, "tags")
+		for i, action in ipairs(self.actions) do
+			action:to_object(O.push_child(actions_obj), i ~= 1 and self.primary_action == i)
+		end
+	end
+
+	return obj
 end
 
 M.Entry.t_head_tags = Match.Tree()
@@ -516,6 +647,19 @@ function M.Attachment:__init()
 	self.id = nil
 	self.id_hash = O.NAME_NULL
 	self.data = nil
+end
+
+function M.Attachment:to_object(obj)
+	U.type_assert(obj, "userdata", true)
+	if not obj then
+		obj = O.create()
+	else
+		O.clear(obj)
+	end
+
+	O.set_identifier(obj, self.id)
+	self.data:to_object(self, obj)
+	return obj
 end
 
 -- attachment

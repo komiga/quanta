@@ -23,14 +23,6 @@ namespace app_script_host {
 	@{
 */
 
-/// app_script_host information text.
-#define QUANTA_APP_SCRIPT_HOST_INFO_TEXT \
-	"Quanta script_host 0.00"
-
-/// app_script_host usage text.
-#define QUANTA_APP_SCRIPT_HOST_USAGE_TEXT \
-	"usage: script_host [options] <command> [command_arguments]"
-
 /** @} */ // end of doc-group app_script_host_config
 
 } // namespace app_script_host

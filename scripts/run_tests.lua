@@ -16,6 +16,7 @@ group_data["core"] = {
 	excluded = {
 		["common"] = true,
 		["object/lua_interface.lua"] = true,
+		["tracker/read.lua"] = true,
 	},
 	args = {},
 }

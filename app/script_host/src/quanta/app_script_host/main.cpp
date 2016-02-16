@@ -53,7 +53,7 @@ signed main(signed argc, char* argv[]) {
 	} else {
 		lua_createtable(L, 0, argc - 1);
 		for (signed i = 1; i < argc; ++i) {
-			lua::table_set_index_raw(L, i + 1, StringRef{argv[i], cstr_tag{}});
+			lua::table_set_index_raw(L, i, StringRef{argv[i], cstr_tag{}});
 		}
 		if (lua_pcall(L, 1, 1, -3)) {
 			auto error = lua::get_string(L, -1);

@@ -26,33 +26,31 @@ function do_tracker_file(director, path)
 	return success
 end
 
-function main(k_options, k_arguments)
-	Vessel.init(nil, true)
+function main(argv)
+	table.remove(argv, 1)
 
 	local director = Director()
 	director:register_action("ETODO", Tracker.PlaceholderAction)
 
-	if #k_arguments == 0 then
-		if not do_tracker_file(director, Vessel.tracker_path(nil)) then
-			return 1
-		end
+	if #argv == 0 then
+		return do_tracker_file(director, Vessel.tracker_path(nil))
 	else
 		local t_now = T()
 		T.set_date_now(t_now)
 		local obj = O.create()
-		for _, a in ipairs(k_arguments) do
-			if O.read_text_string(obj, a.value, true) and O.is_time(obj) then
+		for _, arg in ipairs(argv) do
+			if O.read_text_string(obj, arg, true) and O.is_time(obj) then
 				O.resolve_time(obj, t_now)
 				if not do_tracker_file(director, Vessel.tracker_path(O.time(obj))) then
-					return 3
+					return false
 				end
 			else
-				U.log("error: failed to parse date: %s", a.value)
-				return 2
+				U.log("error: failed to parse date: %s", arg)
+				return false
 			end
 		end
 	end
-	return 0
+	return true
 end
 
 return main(...)

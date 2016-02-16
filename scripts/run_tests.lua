@@ -52,7 +52,7 @@ function run()
 		for _, test in pairs(group.tests) do
 			local cmd = "./" .. test.path
 			if test.ext == "lua" then
-				cmd = "../../../build/bin/script_host.elf run " .. cmd
+				cmd = "../../../build/bin/script_host.elf " .. cmd
 			end
 			local args = group.data.args[test.name]
 			if args then

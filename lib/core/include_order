@@ -25,5 +25,6 @@ return {
 	M("unit", {}),
 	M("tracker", {}),
 	M("director", {}),
+	M("tool", {}),
 	M("lua", {}),
 }

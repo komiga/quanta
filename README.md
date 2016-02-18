@@ -1,8 +1,8 @@
 
 ## Quanta
 
-**Quanta** is an adaptive toolset for tracking time. Its core is a human-
-readable data format specialized for the messiness of the physical realm.
+**Quanta** is an adaptive toolset for tracking time. Its core is a
+human-readable data format specialized for the messiness of the physical realm.
 
 ## Building
 

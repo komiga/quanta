@@ -18,6 +18,7 @@
 
 #include <quanta/core/tracker/tracker.hpp>
 #include <quanta/core/director/director.hpp>
+#include <quanta/core/tool/tool.hpp>
 
 #include <quanta/core/lua/lua.hpp>
 
@@ -39,6 +40,7 @@ void lua::register_quanta_core(lua_State* L) {
 
 	quanta::tracker::register_lua_interface(L);
 	quanta::director::register_lua_interface(L);
+	quanta::tool::register_lua_interface(L);
 }
 
 } // namespace togo

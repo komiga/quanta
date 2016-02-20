@@ -16,7 +16,8 @@ M.log_level = M.LogLevel.info
 
 local BYTE_LF = string.byte('\n', 1)
 
-local function boundary(text, s, e, step, byte)
+local function boundary(text, s, e, byte)
+	local step = s > e and -1 or 1
 	for i = s, e, step do
 		if string.byte(text, i) ~= byte then
 			return i
@@ -28,8 +29,8 @@ end
 local function trim_text(text)
 	return string.sub(
 		text,
-		boundary(text, 1, #text,  1, BYTE_LF),
-		boundary(text, #text, 1, -1, BYTE_LF)
+		boundary(text, 1, #text, BYTE_LF),
+		boundary(text, #text, 1, BYTE_LF)
 	)
 end
 

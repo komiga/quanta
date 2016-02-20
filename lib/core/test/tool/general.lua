@@ -19,17 +19,45 @@ local tests = {
 	make_test(false, "help", "nonexistent_command"),
 	make_test(true, "help", "subtool"),
 	make_test(true, "subtool"),
+	make_test(true, "subtool", "command"),
+	make_test(true, "subtool", "command", "-x"),
+	make_test(true, "subtool", "help", "command"),
 }
 
-Tool.add_tools({
-Tool("subtool", {}, {}, [=[
-subtool
+local subtool = Tool("subtool", {}, {}, [=[
+subtool [command]
   sub-tool test
 ]=],
-function(self, parent, params)
-	U.print("%s -> %s: TEST", parent.name, self.name)
+function(self, parent, options, params)
+	U.print("%s -> %s: %d", parent.name, self.name, #params)
+	if #params > 0 then
+		return self:run_command(params)
+	end
+end)
+
+local subtool_command = Tool("command", {}, {}, [=[
+command [-x]
+  sub-tool command test
+]=],
+function(self, parent, options, params)
+	U.print("%s -> %s: %d", parent.name, self.name, #params)
+end)
+
+subtool_command:add_options({
+Tool.Option("-x", "boolean", [=[
+-x
+  sub-tool command option test
+]=],
+function(_, value)
+	U.print("-x: %s", value)
 end),
 })
+
+subtool:add_commands({
+	Tool.help_command,
+	subtool_command,
+})
+Tool.add_tools(subtool)
 
 function do_test(t)
 	U.print("argv: %s", table.concat(t.argv, " ", 2))

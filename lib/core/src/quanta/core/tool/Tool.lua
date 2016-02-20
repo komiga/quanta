@@ -35,6 +35,9 @@ local function trim_text(text)
 end
 
 local function indent_text(text, level)
+	if level <= 0 then
+		return text
+	end
 	local indent = string.rep("  ", level)
 	text, _ = string.gsub(text, "\n", "\n" .. indent)
 	return indent .. text
@@ -131,7 +134,7 @@ function M:print_help(level)
 	print(indent_text(self.help_text, level))
 	for _, option in ipairs(self.options) do
 		print()
-		option:print_help(level)
+		option:print_help(level + 1)
 	end
 	for _, command in ipairs(self.commands) do
 		print()
@@ -237,7 +240,7 @@ help [command_name | option_name [...]]
 ]=],
 function(self, parent, options, params)
 	if #params == 0 then
-		parent:print_help(0)
+		parent:print_help(-1)
 		return true
 	end
 

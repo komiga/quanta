@@ -172,7 +172,11 @@ function M:run_command(parent_params)
 	local options = {}
 	local params = {}
 
-	local i = 1
+	if #parent_params == 0 then
+		return M.log_error("%s: expected command", self.name)
+	end
+	local name = parent_params[1].value
+	local i = 2
 	while i <= #parent_params do
 		local p = parent_params[i]
 		if not p.name then
@@ -181,12 +185,6 @@ function M:run_command(parent_params)
 		table.insert(options, p)
 		i = i + 1
 	end
-
-	if i > #parent_params then
-		return M.log_error("%s: expected command", self.name)
-	end
-	local name = parent_params[i].value
-	i = i + 1
 	while i <= #parent_params do
 		table.insert(params, parent_params[i])
 		i = i + 1

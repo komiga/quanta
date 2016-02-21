@@ -15,8 +15,8 @@ local function parent_source_value(name)
 	end
 end
 
-M.universe = Match.Tree()
-M.source = Match.Tree()
+M.t_universe = Match.Tree()
+M.t_source = Match.Tree()
 
 local _, t_source_description = Prop.Description.adapt_struct(
 	"d", "description",
@@ -26,28 +26,6 @@ local _, t_source_label = Prop.Description.adapt_struct(
 	"label", "label",
 	parent_source_value("label")
 )
-
-M.source:add({
-Prop.Note.t_struct_head,
-t_source_description,
-t_source_label,
-Match.Pattern{
-	name = "composition",
-	vtype = {O.Type.identifier, O.Type.string},
-	tags = Match.Any,
-	acceptor = function(_, p, obj)
-		-- TODO: decompose (Quanta.Entity.Instance?)
-	end
-},
-Match.Pattern{
-	name = "composition",
-	vtype = {O.Type.null, O.Type.expression},
-	children = true,
-	acceptor = function(_, p, obj)
-		-- TODO: decompose (Quanta.Entity.Instance?)
-	end
-},
-})
 
 local source_model_tags = {
 Match.Pattern{
@@ -63,37 +41,11 @@ Match.Pattern{
 },
 }
 
-M.source:add({
-Match.Pattern{
-	name = "base_model",
-	vtype = {O.Type.null, O.Type.string},
-	tags = source_model_tags,
-	acceptor = function(_, p, obj)
-		local base_model = Entity.Model()
-		if O.is_string(obj) then
-			base_model.name = O.string(obj)
-		end
-		p:set_base_model(base_model)
-		return base_model
-	end
-},
-Match.Pattern{
-	name = "model",
-	vtype = {O.Type.null, O.Type.string},
-	tags = source_model_tags,
-	acceptor = function(_, p, obj)
-		local model = Entity.Model()
-		if O.is_string(obj) then
-			model.name = O.string(obj)
-		end
-		p:set_model(model)
-		return model
-	end
-},
-})
-
-M.source:add({
+M.t_source:add({
+Prop.Note.t_struct_head,
 Prop.Author.t_struct_head,
+t_source_description,
+t_source_label,
 Match.Pattern{
 	name = "vendor",
 	vtype = {O.Type.null, O.Type.string},
@@ -120,30 +72,47 @@ Match.Pattern{
 		end
 	}},
 },
-})
-
-M.source:add({
 Match.Pattern{
-	name = "composition",
-	vtype = {O.Type.identifier, O.Type.string, O.Type.expression},
-	tags = true,
+	name = "base_model",
+	vtype = {O.Type.null, O.Type.string},
+	tags = source_model_tags,
 	acceptor = function(_, p, obj)
-		-- TODO: decompose (Quanta.Entity.Instance?)
+		local base_model = Entity.Model()
+		if O.is_string(obj) then
+			base_model.name = O.string(obj)
+		end
+		p:set_base_model(base_model)
+		return base_model
 	end
 },
 Match.Pattern{
-	name = "composition",
-	children = true,
+	name = "model",
+	vtype = {O.Type.null, O.Type.string},
+	tags = source_model_tags,
 	acceptor = function(_, p, obj)
-		-- TODO: decompose (Quanta.Entity.Instance?)
+		local model = Entity.Model()
+		if O.is_string(obj) then
+			model.name = O.string(obj)
+		end
+		p:set_model(model)
+		return model
 	end
+},
+
+-- TODO
+Match.Pattern{
+	name = "composition",
+	vtype = {O.Type.identifier, O.Type.string, O.Type.expression},
+	tags = Match.Any,
+},
+Match.Pattern{
+	name = "composition",
+	vtype = {O.Type.null, O.Type.expression},
+	children = true,
 },
 Match.Pattern{
 	name = "nutrition",
 	children = true,
-	acceptor = function(_, p, obj)
-		-- TODO: decompose (Quanta.Entity.Instance?)
-	end
 },
 -- state
 Match.Pattern{
@@ -156,7 +125,7 @@ Match.Pattern{
 		Match.Pattern{vtype = O.Type.string}
 	},
 },
--- TODO: computer compositor
+-- TODO: device specialization
 Match.Pattern{
 	name = "config",
 	children = true,
@@ -166,9 +135,6 @@ Match.Pattern{
 	name = "properties",
 	children = true,
 },
---[[Match.Pattern{
-	any = true,
-},--]]
 })
 
 M.t_shared_body = Match.Tree({
@@ -186,10 +152,10 @@ Match.Pattern{
 },
 Match.Pattern{
 	name = "children",
-	children = M.universe,
+	children = M.t_universe,
 },
 Match.Pattern{
-	any_branch = M.source,
+	any_branch = M.t_source,
 	acceptor = function(_, e, obj)
 		return e.sources[0]
 	end
@@ -202,7 +168,7 @@ M.t_entity_body = Match.Tree({
 Match.Pattern{
 	name = "sources",
 	children = {Match.Pattern{
-		children = M.source,
+		children = M.t_source,
 		acceptor = function(_, e, obj)
 			return e:add_source(Entity.Source())
 		end
@@ -291,7 +257,7 @@ M.t_category_head:add(Match.Pattern{
 	end
 })
 
-M.universe:add({
+M.t_universe:add({
 	M.t_category_head,
 	M.t_entity_head,
 })
@@ -314,7 +280,7 @@ function M.read_universe(rp, name)
 
 	local universe = Entity.Universe(name or "universe")
 	local context = Match.Context()
-	if context:consume_sub(M.universe, root, universe, path) then
+	if context:consume_sub(M.t_universe, root, universe, path) then
 		return universe
 	else
 		U.log("match error:\n%s", context.error:to_string())

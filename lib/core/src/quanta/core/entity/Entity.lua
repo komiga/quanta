@@ -15,17 +15,36 @@ M.Type = {
 
 U.class(M)
 
-function M:__init(name)
+function M:__init(name, id, id_hash, class)
+	U.type_assert(id, "string", true)
+	U.type_assert(id_hash, "number", true)
+
 	self.type = M.Type.generic
 	self.name = nil
 	self.name_hash = O.NAME_NULL
+
+	self.id = id
+	self.id_hash = id_hash or O.NAME_NULL
+	self.data = nil
+
 	self.description = Prop.Description.struct("")
 	self.sources = {}
-	self.sources[0] = M.Source()
 	self.universe = nil
 	self.parent = nil
 	self.children = {}
+
 	self:set_name(name)
+	if class then
+		U.assert(U.class(class) == class)
+		self.data = class(self)
+	else
+		self.data = nil
+	end
+	self.sources[0] = M.Source(self)
+end
+
+function M:is_specialized()
+	return self.id_hash ~= O.NAME_NULL
 end
 
 function M:is_category()
@@ -233,7 +252,7 @@ end
 
 M.Source = U.class(M.Source)
 
-function M.Source:__init()
+function M.Source:__init(entity)
 	self.description = Prop.Description.struct("")
 	self.label = Prop.Description.struct("")
 	self.author = Prop.Author.struct({})
@@ -241,6 +260,11 @@ function M.Source:__init()
 	self.note = Prop.Note.struct({})
 	self.base_model = nil
 	self.model = nil
+	self.data = nil
+
+	if entity.data then
+		entity.data:init_source(entity, self)
+	end
 end
 
 function M.Source:has_author()

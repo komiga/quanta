@@ -162,9 +162,21 @@ Match.Pattern{
 },
 })
 
-M.t_entity_head = Match.Tree()
+M.t_entity_body = Match.Tree()
 
-M.t_entity_body = Match.Tree({
+M.t_entity_head = Match.Tree({
+Match.Pattern{
+	name = true,
+	vtype = O.Type.identifier,
+	value = "Entity",
+	children = M.t_entity_body,
+	acceptor = function(_, parent, obj)
+		return parent:add(Entity(O.name(obj)))
+	end
+},
+})
+
+M.t_entity_body:add({
 Match.Pattern{
 	name = "sources",
 	children = {Match.Pattern{
@@ -182,19 +194,21 @@ Match.Pattern{
 M.t_shared_body,
 })
 
-M.t_entity_head:add(Match.Pattern{
+M.t_category_body = Match.Tree()
+
+M.t_category_head = Match.Tree({
+Match.Pattern{
 	name = true,
 	vtype = O.Type.identifier,
-	value = "Entity",
-	children = M.t_entity_body,
+	value = "Category",
+	children = M.t_category_body,
 	acceptor = function(_, parent, obj)
-		return parent:add(Entity(O.name(obj)))
+		return parent:add(Entity.Category(O.name(obj)))
 	end
+},
 })
 
-M.t_category_head = Match.Tree()
-
-M.t_category_body = Match.Tree({
+M.t_category_body:add({
 Match.Pattern{
 	name = "include",
 	collect = {Match.Pattern{
@@ -221,19 +235,10 @@ Match.Pattern{
 M.t_shared_body,
 })
 
-M.t_category_head:add(Match.Pattern{
-	name = true,
-	vtype = O.Type.identifier,
-	value = "EntityCategory",
-	children = M.t_category_body,
-	acceptor = function(_, parent, obj)
-		return parent:add(Entity.Category(O.name(obj)))
-	end
-})
 
 M.t_universe:add({
-	M.t_category_head,
 	M.t_entity_head,
+	M.t_category_head,
 })
 
 function M.read_universe(rp, name)

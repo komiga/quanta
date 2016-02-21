@@ -168,7 +168,7 @@ M.t_entity_head = Match.Tree({
 Match.Pattern{
 	name = true,
 	vtype = O.Type.identifier,
-	value = "Entity",
+	value = "Generic",
 	children = M.t_entity_body,
 	acceptor = function(_, parent, obj)
 		return parent:add(Entity(O.name(obj)))
@@ -200,7 +200,7 @@ M.t_category_head = Match.Tree({
 Match.Pattern{
 	name = true,
 	vtype = O.Type.identifier,
-	value = "Category",
+	value = "GenericCategory",
 	children = M.t_category_body,
 	acceptor = function(_, parent, obj)
 		return parent:add(Entity.Category(O.name(obj)))

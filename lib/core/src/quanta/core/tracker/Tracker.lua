@@ -229,7 +229,7 @@ M.Action.p_head = Match.Pattern{
 		action.id_hash = O.identifier_hash(obj)
 		table.insert(entry.actions, action)
 
-		context.user.director:read_action(context, entry, action, obj)
+		return context.user.director:read_action(context, entry, action, obj)
 	end,
 	post_branch = function(context, entry, obj)
 		local tag_action_primary = O.find_tag(obj, "action_primary")
@@ -243,25 +243,6 @@ M.Action.p_head = Match.Pattern{
 }
 
 M.PlaceholderAction = U.class(M.PlaceholderAction)
-
-M.PlaceholderAction.t_head = Match.Tree({
-Match.Pattern{
-	vtype = Match.Any,
-	tags = Match.Any,
-	children = {Match.Pattern{
-		name = {"d", ""},
-		vtype = O.Type.string,
-		acceptor = function(context, self, obj)
-			self.description = O.string(obj)
-		end,
-	}},
-	acceptor = function(context, self, obj)
-		if O.num_children(obj) > 1 then
-			return Match.Error("placeholder action can only carry a single string")
-		end
-	end,
-},
-})
 
 function M.PlaceholderAction:__init(description)
 	self.description = description or ""
@@ -281,6 +262,25 @@ end
 function M.PlaceholderAction:compare_equal(other)
 	return self.description == other.description
 end
+
+M.PlaceholderAction.t_head = Match.Tree({
+Match.Pattern{
+	vtype = Match.Any,
+	tags = Match.Any,
+	children = {Match.Pattern{
+		name = {"d", ""},
+		vtype = O.Type.string,
+		acceptor = function(context, self, obj)
+			self.description = O.string(obj)
+		end,
+	}},
+	acceptor = function(context, self, obj)
+		if O.num_children(obj) > 1 then
+			return Match.Error("placeholder action can only carry a single string")
+		end
+	end,
+},
+})
 
 M.UnknownAction = U.class(M.UnknownAction)
 
@@ -683,7 +683,7 @@ M.Attachment.p_head = Match.Pattern{
 		attachment.id_hash = O.identifier_hash(obj)
 		table.insert(tracker.attachments, attachment)
 
-		context.user.director:read_attachment(context, tracker, attachment, obj)
+		return context.user.director:read_attachment(context, tracker, attachment, obj)
 	end,
 }
 

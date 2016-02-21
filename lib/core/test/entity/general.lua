@@ -24,17 +24,17 @@ end
 
 local search_tests = {
 make_search_test([[
-	x = Entity{}
-	a = EntityCategory{children = {
-		y = Entity{}
-		b = EntityCategory{children = {
-			z = Entity{}
+	x = Generic{}
+	a = GenericCategory{children = {
+		y = Generic{}
+		b = GenericCategory{children = {
+			z = Generic{}
 		}}
 	}}
-	c = EntityCategory{children = {
-		u = Entity{}
-		d = EntityCategory{children = {
-			v = Entity{}
+	c = GenericCategory{children = {
+		u = Generic{}
+		d = GenericCategory{children = {
+			v = Generic{}
 		}}
 	}}
 ]],

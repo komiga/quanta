@@ -163,38 +163,28 @@ function M.UnknownModifier:compare_equal(other)
 	return true
 end
 
-M.Modifier.t_head = Match.Tree({
-Match.Pattern{
+M.Modifier.p_head = Match.Pattern{
 	name = true,
 	children = Match.Any,
-	acceptor = function(context, self, obj)
-		self.id = O.name(obj)
-		self.id_hash = O.name_hash(obj)
+	acceptor = function(context, instance, obj)
+		local modifier = M.Modifier()
+		modifier.id = O.name(obj)
+		modifier.id_hash = O.name_hash(obj)
+		table.insert(instance.modifiers, modifier)
 
-		local instance = context:value(1)
-		context.user.director:read_modifier(context, instance, self, obj)
+		return context.user.director:read_modifier(context, instance, modifier, obj)
 	end,
-},
-})
+}
 
 M.t_head = Match.Tree()
 M.t_body = Match.Tree()
-
-M.p_modifier_accum = Match.Pattern{
-	any_branch = M.Modifier.t_head,
-	acceptor = function(context, self, obj)
-		local modifier = M.Modifier()
-		table.insert(self.modifiers, modifier)
-		return modifier
-	end,
-}
 
 M.t_head:add({
 -- x, x:m, x{...}
 Match.Pattern{
 	vtype = O.Type.identifier,
 	children = M.t_body,
-	tags = {M.p_modifier_accum},
+	tags = {M.Modifier.p_head},
 	quantity = Match.Any,
 	acceptor = function(context, self, obj)
 		self:set_name(O.identifier(obj))
@@ -229,7 +219,7 @@ Match.Pattern{
 -- :m
 Match.Pattern{
 	vtype = O.Type.null,
-	tags = {M.p_modifier_accum},
+	tags = {M.Modifier.p_head},
 },
 })
 

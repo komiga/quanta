@@ -180,19 +180,6 @@ Match.Pattern{
 	end
 },
 M.t_shared_body,
-Match.Pattern{
-	func = function(_, e, _, _)
-		return e.compositor ~= nil
-	end,
-	acceptor = function(context, e, obj)
-		if e.compositor then
-			context:consume_sub(e.compositor, obj)
-		end
-	end
-},
---[[Match.Pattern{
-	any = true,
-},--]]
 })
 
 M.t_entity_head:add(Match.Pattern{
@@ -208,19 +195,6 @@ M.t_entity_head:add(Match.Pattern{
 M.t_category_head = Match.Tree()
 
 M.t_category_body = Match.Tree({
-Match.Pattern{
-	name = "compositor",
-	vtype = O.Type.string,
-	acceptor = function(context, cat, obj)
-		local path = Vessel.data_path("entity/" .. O.string(obj))
-		-- TODO: error reporting
-		local chunk, err = loadfile(path)
-		if err then
-			return Match.Error("failed to load compositor from '%s': %s", path, err)
-		end
-		cat:set_compositor(chunk())
-	end
-},
 Match.Pattern{
 	name = "include",
 	collect = {Match.Pattern{

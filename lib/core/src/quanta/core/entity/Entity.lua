@@ -20,7 +20,6 @@ function M:__init(name)
 	self.name = nil
 	self.name_hash = O.NAME_NULL
 	self.description = Prop.Description.struct("")
-	self.compositor = nil
 	self.sources = {}
 	self.sources[0] = M.Source()
 	self.universe = nil
@@ -58,11 +57,6 @@ function M:ref()
 		entity = entity.parent
 	end
 	return table.concat(parts, '.')
-end
-
-function M:set_compositor(compositor)
-	U.type_assert(compositor, Match.Tree)
-	self.compositor = compositor
 end
 
 function M:any_sources()
@@ -103,9 +97,6 @@ function M:add(entity)
 	entity.universe = self.universe
 	entity.parent = self
 	self:add_key(entity)
-	if not entity.compositor and self.compositor then
-		entity.compositor = self.compositor
-	end
 	return entity
 end
 
@@ -250,7 +241,6 @@ function M.Source:__init()
 	self.note = Prop.Note.struct({})
 	self.base_model = nil
 	self.model = nil
-	self.composition = {}
 end
 
 function M.Source:has_author()

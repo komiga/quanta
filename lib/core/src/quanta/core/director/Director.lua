@@ -13,6 +13,7 @@ U.class(M)
 
 function M:__init()
 	self.modifier_classes = {}
+	self.entity_classes = {}
 	self.action_classes = {}
 	self.attachment_classes = {}
 end
@@ -36,6 +37,10 @@ function M:register_modifier(id, class)
 	register(self.modifier_classes, "modifier", id, class)
 end
 
+function M:register_entity(id, class)
+	register(self.entity_classes, "entity", id, class)
+end
+
 function M:register_action(id, class)
 	register(self.action_classes, "action", id, class)
 end
@@ -44,20 +49,26 @@ function M:register_attachment(id, class)
 	register(self.attachment_classes, "attachment", id, class)
 end
 
-local function read(bucket, unknown_class, context, parent, holder, obj)
-	local class
-	local registered = bucket[holder.id_hash]
+local function find_prop_class(bucket, unknown_class, id, id_hash)
+	local registered = bucket[id_hash]
 	if not registered then
-		class = unknown_class
+		return unknown_class
 	else
-		class = registered.class
 		if M.debug then
-			U.assert(holder.id == registered.id)
+			U.assert(id == registered.id)
 		end
+		return registered.class
 	end
+end
 
-	holder.data = class()
-	return holder.data:from_object(context, parent, holder, obj)
+function M:find_entity_class(id, id_hash)
+	return find_prop_class(self.entity_classes, nil, id, id_hash)
+end
+
+local function read(bucket, unknown_class, context, parent, owner, obj)
+	local class = find_prop_class(bucket, unknown_class, owner.id, owner.id_hash)
+	owner.data = class()
+	return owner.data:from_object(context, parent, owner, obj)
 end
 
 function M:read_modifier(context, instance, modifier, obj)

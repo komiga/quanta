@@ -182,7 +182,7 @@ Match.Pattern{
 	children = {Match.Pattern{
 		children = M.t_source,
 		acceptor = function(_, e, obj)
-			return e:add_source(Entity.Source())
+			return e:add_source(Entity.Source(e))
 		end
 	}},
 	acceptor = function(_, e, obj)
@@ -235,10 +235,28 @@ Match.Pattern{
 M.t_shared_body,
 })
 
+M.p_specialization = Match.Pattern{
+	name = true,
+	vtype = O.Type.identifier,
+	tags = Match.Any,
+	children = Match.Any,
+	acceptor = function(context, parent, obj)
+		local id = O.identifier(obj)
+		local id_hash = O.identifier_hash(obj)
+		local class = context.user.director:find_entity_class(id, id_hash)
+		if not class then
+			return Match.Error("entity specialization not found: %s", id)
+		end
+
+		local entity = parent:add(Entity(O.name(obj), id, id_hash, class))
+		return entity.data:from_object(context, parent, entity, obj)
+	end,
+}
 
 M.t_universe:add({
 	M.t_entity_head,
 	M.t_category_head,
+	M.p_specialization,
 })
 
 function M.read_universe(rp, name)

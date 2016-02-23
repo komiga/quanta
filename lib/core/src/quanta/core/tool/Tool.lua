@@ -244,6 +244,7 @@ function(self, parent, options, params)
 	end
 
 	local function do_bucket(kind, list, bucket, get_name)
+		local hitlist = {}
 		for _, p in ipairs(list) do
 			local name = get_name(p)
 			local thing = bucket[name]
@@ -254,7 +255,10 @@ function(self, parent, options, params)
 					kind, name
 				)
 			end
-			thing:print_help(0)
+			if not hitlist[thing] then
+				thing:print_help(0)
+				hitlist[thing] = true
+			end
 		end
 		return true
 	end

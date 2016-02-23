@@ -326,10 +326,10 @@ function M.main(argv)
 	opts.name = nil
 	cmd_opts.name = nil
 
-	concat_params(params, cmd_opts)
 	if cmd_params.name ~= "" then
 		table.insert(params, {value = cmd_params.name})
 	end
+	concat_params(params, cmd_opts)
 	cmd_params.name = nil
 	concat_params(params, cmd_params)
 

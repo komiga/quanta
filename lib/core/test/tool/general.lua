@@ -19,8 +19,11 @@ local tests = {
 	make_test(false, "help", "nonexistent_command"),
 	make_test(true, "help", "subtool"),
 	make_test(true, "subtool"),
+	make_test(true, "subtool", "-x"),
+	make_test(true, "subtool", "help", "-x"),
+
 	make_test(true, "subtool", "command"),
-	make_test(true, "subtool", "command", "-x"),
+	make_test(true, "subtool", "command", "-y"),
 	make_test(true, "subtool", "help", "command"),
 }
 
@@ -35,8 +38,18 @@ function(self, parent, options, params)
 	end
 end)
 
+subtool:add_options({
+Tool.Option("-x", "boolean", [=[
+-x
+  sub-tool option test
+]=],
+function(_, value)
+	U.print("-x: %s", value)
+end),
+})
+
 local subtool_command = Tool("command", {}, {}, [=[
-command [-x]
+command [-y]
   sub-tool command test
 ]=],
 function(self, parent, options, params)
@@ -44,12 +57,12 @@ function(self, parent, options, params)
 end)
 
 subtool_command:add_options({
-Tool.Option("-x", "boolean", [=[
--x
+Tool.Option("-y", "boolean", [=[
+-y
   sub-tool command option test
 ]=],
 function(_, value)
-	U.print("-x: %s", value)
+	U.print("-y: %s", value)
 end),
 })
 

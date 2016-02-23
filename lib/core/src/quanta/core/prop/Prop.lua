@@ -96,6 +96,7 @@ function M.Description.adapt_struct(serialized_name, property_name, parent_acces
 			end,
 		})
 	end
+	t_head:build()
 	return to_object, t_head
 end
 
@@ -149,6 +150,7 @@ Match.Pattern{
 	}},
 },
 })
+M.Author.t_head_tags:build()
 
 function M.Author.adapt_struct(serialized_name, property_name)
 	local function element_pattern(name, prelude)
@@ -194,6 +196,7 @@ function M.Author.adapt_struct(serialized_name, property_name)
 		acceptor = acceptor,
 	},
 	})
+	t_head:build()
 	return to_object, t_head
 end
 
@@ -292,6 +295,7 @@ function M.Note.adapt_struct(serialized_name, property_name)
 		},
 	},
 	})
+	t_head:build()
 	return to_object, t_head
 end
 
@@ -348,6 +352,7 @@ Match.Pattern{
 	}},
 },
 })
+M.Model.t_head_tags:build()
 
 function M.Model.adapt_struct(serialized_name, property_name)
 	local to_object = function(model, obj)
@@ -378,6 +383,7 @@ function M.Model.adapt_struct(serialized_name, property_name)
 		end,
 	},
 	})
+	t_head:build()
 	return to_object, t_head
 end
 

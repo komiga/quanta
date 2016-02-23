@@ -280,6 +280,8 @@ Match.Pattern{
 },
 })
 
+M.PlaceholderAction.t_head:build()
+
 M.UnknownAction = U.class(M.UnknownAction)
 
 function M.UnknownAction:__init()
@@ -425,6 +427,8 @@ Match.Pattern{
 	end,
 },
 })
+
+M.EntryTime.t_head:build()
 
 M.Entry = U.class(M.Entry)
 
@@ -649,6 +653,9 @@ Match.Pattern{
 },
 })
 
+M.Entry.t_body:build()
+M.Entry.t_head_tags:build()
+
 M.Attachment = U.class(M.Attachment)
 
 function M.Attachment:__init()
@@ -749,6 +756,9 @@ Match.Pattern{
 	end,
 },
 })
+
+M.t_body:build()
+M.t_head:build()
 
 return M
 

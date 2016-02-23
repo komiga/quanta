@@ -533,6 +533,11 @@ M.t_root:add({
 	M.p_specialization,
 })
 
+M.t_source:build()
+M.t_entity_body:build()
+M.t_category_body:build()
+M.t_root:build()
+
 function M.read_universe(rp, name)
 	U.type_assert(name, "string", true)
 

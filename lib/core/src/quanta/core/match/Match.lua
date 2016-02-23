@@ -272,9 +272,13 @@ function M.Pattern:__init(...)
 	end
 end
 
-function M.Pattern:matches(context, value, obj)
-	for _, f in pairs(self.filters) do
-		local value = f(context, value, obj, self)
+function M.Pattern:matches(context, value, obj, keyed)
+	local start = 1
+	if keyed and (self.names or self.name) then
+		start = 2
+	end
+	for i = start, #self.filters do
+		local value = self.filters[i](context, value, obj, self)
 		U.type_assert(value, "boolean")
 		if not value then
 			return false
@@ -286,26 +290,83 @@ end
 M.Tree = U.class(M.Tree)
 
 function M.Tree:__init(patterns)
-	self.patterns = {}
+	self.built = false
+	self.nodes = {}
+	self.positional = nil
+	self.keyed = nil
+	if M.debug then
+		self.definition_location = U.get_trace(2)
+	end
 
 	if patterns ~= nil then
 		self:add(patterns)
 	end
 end
 
-function M.Tree:add(p)
-	if U.is_type(p, M.Pattern) then
-		table.insert(self.patterns, p)
-	elseif U.is_type(p, M.Tree) then
-		self:add(p.patterns)
-	elseif U.is_type(p, "table") then
-		for _, pattern in pairs(p) do
+function M.Tree:add(n)
+	if U.is_type_any(n, {M.Pattern, M.Tree}) then
+		table.insert(self.nodes, n)
+	elseif U.is_type(n, "table") then
+		for _, pattern in pairs(n) do
 			self:add(pattern)
 		end
 	else
-		U.assert(false, "p must be a Match.Tree, a Match.Pattern, or a table containing either")
+		U.assert(false, "n must be a Match.Tree, a Match.Pattern, or a table containing either")
 	end
-	return p
+	return n
+end
+
+function M.Tree:check_built()
+	if not self.built then
+		U.assertl(1, false, self.definition_location)
+	end
+end
+
+function M.Tree:build()
+	U.assert(not self.built)
+
+	self.positional = {}
+	self.keyed = {}
+
+	local function add_keyed(p, name_hash)
+		local key_patterns = self.keyed[name_hash]
+		if not key_patterns then
+			key_patterns = {}
+			self.keyed[name_hash] = key_patterns
+		end
+		table.insert(key_patterns, p)
+	end
+	local function add_positional(p)
+		table.insert(self.positional, p)
+	end
+	for _, node in ipairs(self.nodes) do
+		if U.is_type(node, M.Pattern) then
+			if node.name then
+				add_keyed(node, O.hash_name(node.name))
+			elseif node.names then
+				for name, _ in pairs(node.names) do
+					add_keyed(node, O.hash_name(name))
+				end
+			else
+				add_positional(node)
+			end
+		elseif U.is_type(node, M.Tree) then
+			if not node.built then
+				node:build()
+			end
+			for name_hash, key_patterns in pairs(node.keyed) do
+				for _, p in ipairs(key_patterns) do
+					add_keyed(p, name_hash)
+				end
+			end
+			for _, p in ipairs(node.positional) do
+				table.insert(self.positional, p)
+			end
+		else
+			U.assert(false)
+		end
+	end
+	self.built = true
 end
 
 local function object_debug_info(obj)
@@ -337,102 +398,134 @@ local function object_debug_info(obj)
 	return s
 end
 
-local do_object, do_sub
+local function into_tree(tree, keyed, patterns)
+	if U.is_type(patterns, M.Tree) then
+		tree = patterns
+		return tree, tree.keyed, tree.positional
+	else
+		return tree, keyed, patterns
+	end
+end
 
-do_object = function(tree, context, patterns, obj, collection)
+local do_pattern, do_object, do_sub
+
+do_pattern = function(context, tree, p, obj, collection, keyed)
+	if M.debug then
+		U.log("pattern: %s%s", keyed and "[keyed] " or "", p.definition_location)
+	end
+	if not p:matches(context, context:value(), obj, keyed) then
+		if M.debug then
+			U.log("  [does not match]")
+		end
+		return
+	end
+	if M.debug then
+		U.log("  [matches]")
+	end
+	local pushed = false
+	if p.acceptor then
+		local value = p.acceptor(context, context:value(), obj)
+		if U.is_type(value, M.Error) then
+			context:set_error(value, obj)
+		end
+		if context.error ~= nil then
+			return false
+		end
+		if value ~= nil then
+			pushed = true
+			context:push(tree, value)
+			if collection then
+				table.insert(collection, value)
+			end
+		end
+	end
+	if p.any_branch then
+		if not do_object(context, p.any_branch, p.any_branch.keyed, p.any_branch.positional, obj, collection) then
+			return false
+		end
+	else
+		if not do_sub(context, tree, nil, p.children, p.collect_post, obj, O.children) then
+			return false
+		end
+		if not do_sub(context, tree, nil, p.tags, p.collect_tags_post, obj, O.tags) then
+			return false
+		end
+		if p.quantity and O.has_quantity(obj) then
+			tree, keyed, patterns = into_tree(tree, nil, p.quantity)
+			if not do_object(context, tree, keyed, patterns, O.quantity(obj), nil) then
+				return false
+			end
+		end
+	end
+
+	local function do_post_branch(f)
+		local err = f(context, context:value(), obj)
+		if U.is_type(err, M.Error) then
+			context:set_error(err, obj)
+		end
+		if context.error ~= nil then
+			return false
+		end
+		return true
+	end
+	if p.post_branch_pre then
+		if not do_post_branch(p.post_branch_pre) then
+			return false
+		end
+	end
+	if pushed then
+		context:pop()
+	end
+	if p.post_branch then
+		if not do_post_branch(p.post_branch) then
+			return false
+		end
+	end
+	return true
+end
+
+do_object = function(context, tree, keyed, patterns, obj, collection)
+	tree:check_built()
 	if M.debug then
 		U.log("stack level: %d", #context.stack)
 		U.log("object: %s", object_debug_info(obj))
 	end
-	for _, p in pairs(patterns) do
-		if M.debug then
-			U.log("pattern: %s", p.definition_location)
+	local r
+	local function do_list(list, keyed)
+		if not list then
+			return
 		end
-		if p:matches(context, context:value(), obj) then
-			if M.debug then
-				U.log("  [matches]")
-			end
-			local pushed = false
-			if p.acceptor then
-				local value = p.acceptor(context, context:value(), obj)
-				if U.is_type(value, M.Error) then
-					context:set_error(value, obj)
-				end
-				if context.error ~= nil then
-					return false
-				end
-				if value ~= nil then
-					pushed = true
-					context:push(tree, value)
-					if collection then
-						table.insert(collection, value)
-					end
-				end
-			end
-			if p.any_branch then
-				if not do_object(p.any_branch, context, p.any_branch.patterns, obj, collection) then
-					return false
-				end
-			else
-				if not do_sub(tree, context, p.children, p.collect_post, obj, O.children) then
-					return false
-				end
-				if not do_sub(tree, context, p.tags, p.collect_tags_post, obj, O.tags) then
-					return false
-				end
-				if p.quantity and O.has_quantity(obj) then
-					if not do_object(tree, context, p.quantity, O.quantity(obj), nil) then
-						return false
-					end
-				end
-			end
-
-			local function do_post_branch(f)
-				local err = f(context, context:value(), obj)
-				if U.is_type(err, M.Error) then
-					context:set_error(err, obj)
-				end
-				if context.error ~= nil then
-					return false
-				end
-				return true
-			end
-			if p.post_branch_pre then
-				if not do_post_branch(p.post_branch_pre) then
-					return false
-				end
-			end
-			if pushed then
-				context:pop()
-			end
-			if p.post_branch then
-				if not do_post_branch(p.post_branch) then
-					return false
-				end
-			end
-
-			return true
-		else
-			if M.debug then
-				U.log("  [does not match]")
+		for _, p in ipairs(list) do
+			r = do_pattern(context, tree, p, obj, collection, keyed)
+			if r ~= nil then
+				return
 			end
 		end
+	end
+
+	local key_patterns = keyed and keyed[O.name_hash(obj)] or nil
+	do_list(key_patterns, true)
+	if r ~= nil then
+		return r
+	end
+	do_list(patterns, false)
+	if r ~= nil then
+		return r
 	end
 	context:set_error(M.Error("no matching pattern for object: %s", object_debug_info(obj)), obj)
 	return false
 end
 
-do_sub = function(tree, context, patterns, post, obj, iter_func)
-	if patterns == nil then
+do_sub = function(context, tree, keyed, patterns, post, obj, iter_func)
+	if keyed == nil and patterns == nil then
 		-- filter rule was not a pattern list/tree
 		return true
-	elseif U.is_type(patterns, M.Tree) then
-		tree = patterns
-		patterns = tree.patterns
+	else
+		tree, keyed, patterns = into_tree(tree, keyed, patterns)
 	end
 	local collection = post and {} or nil
 	for _, sub in iter_func(obj) do
-		if not do_object(tree, context, patterns, sub, collection) then
+		if not do_object(context, tree, keyed, patterns, sub, collection) then
 			return false
 		end
 	end
@@ -513,7 +606,7 @@ function M.Context:consume(tree, obj, root, path)
 	if root ~= nil then
 		self:push(tree, root, path)
 	end
-	local r = do_object(tree, self, tree.patterns, obj, nil)
+	local r = do_object(self, tree, tree.keyed, tree.positional, obj, nil)
 	if root ~= nil then
 		self:pop()
 	end
@@ -524,7 +617,7 @@ function M.Context:consume_sub(tree, obj, root, path)
 	if root ~= nil then
 		self:push(tree, root, path)
 	end
-	local r = do_sub(tree, self, tree.patterns, nil, obj, O.children)
+	local r = do_sub(self, tree, tree.keyed, tree.positional, nil, obj, O.children)
 	if root ~= nil then
 		self:pop()
 	end

@@ -4,6 +4,7 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
+local Vessel = require "Quanta.Vessel"
 local Prop = require "Quanta.Prop"
 local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
@@ -59,11 +60,10 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, implicit_scope, director)
+function M:from_object(obj, implicit_scope)
 	U.type_assert(obj, "userdata")
 
-	local context = Match.Context()
-	Instance.init_match_context(context, implicit_scope, director)
+	local context = Vessel.new_match_context(implicit_scope)
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
 	end

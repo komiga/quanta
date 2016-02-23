@@ -4,6 +4,7 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
+local Vessel = require "Quanta.Vessel"
 local Instance = require "Quanta.Instance"
 local M = U.module(...)
 
@@ -18,7 +19,7 @@ function M:__init()
 	self.attachments = {}
 end
 
-function M:from_object(obj, director)
+function M:from_object(obj)
 	U.type_assert(obj, "userdata")
 
 	T.clear(self.date)
@@ -26,12 +27,9 @@ function M:from_object(obj, director)
 	self.entry_groups = {}
 	self.attachments = {}
 
-	local context = Match.Context()
-	context.user = {
-		tracker = self,
-		tracker_prev_entry = nil,
-	}
-	Instance.init_match_context(context, self.date, director)
+	local context = Vessel.new_match_context(self.date)
+	context.user.tracker = self
+	context.user.tracker_prev_entry = nil
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
 	end

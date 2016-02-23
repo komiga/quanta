@@ -4,6 +4,7 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
+local Vessel = require "Quanta.Vessel"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local M = U.module(...)
@@ -16,14 +17,13 @@ function M:__init()
 	self.measurement = Measurement()
 end
 
-function M:from_object(obj, implicit_scope, director)
+function M:from_object(obj, implicit_scope)
 	U.type_assert(obj, "userdata")
 
 	self.items = {}
 	self.measurement:__init()
 
-	local context = Match.Context()
-	Instance.init_match_context(context, implicit_scope, director)
+	local context = Vessel.new_match_context(implicit_scope)
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
 	end

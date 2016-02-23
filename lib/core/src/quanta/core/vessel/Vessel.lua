@@ -2,8 +2,10 @@ u8R""__RAW_STRING__(
 
 local U = require "togo.utility"
 local FS = require "togo.filesystem"
+local IO = require "togo.io"
 local T = require "Quanta.Time"
 require "Quanta.Time.Gregorian"
+local Match = require "Quanta.Match"
 local M = U.module(...)
 
 local function check_initialized()
@@ -58,7 +60,50 @@ function M.init(root_path, work_local)
 	M.initialized = true
 	M.root = root
 	M.set_work_local(U.optional(work_local, true))
+
 	U.assert(FS.is_directory(M.root))
+	U.assert(FS.is_file(M.sys_path("config.lua")))
+	M.reload_config()
+end
+
+function M.setup_config(f)
+	check_initialized()
+
+	setfenv(f, M.config)
+	return f()
+end
+
+function M.reload_config()
+	check_initialized()
+	M.config = nil
+
+	local path = M.sys_path("config.lua")
+	local source = IO.read_file(path)
+	if source == nil then
+		error("failed to read config: %s", path)
+	end
+	local chunk, err = load(source, "@" .. path, "t")
+	if chunk == nil then
+		error("failed to parse config: %s:", path)
+	end
+
+	M.config = {}
+	chunk()
+	U.type_assert(M.config, "table")
+	U.type_assert(M.config.director, require("Quanta.Director"))
+end
+
+function M.new_match_context(implicit_scope)
+	U.type_assert(implicit_scope, "userdata", true)
+	check_initialized()
+
+	local context = Match.Context()
+	context.user = context.user or {}
+	context.user.director = M.config.director
+	context.user.implicit_scope = implicit_scope and T(implicit_scope) or nil
+	context.user.scope_save = {}
+	context.user.scope = {}
+	return context
 end
 
 return M

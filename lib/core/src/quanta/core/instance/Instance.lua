@@ -4,22 +4,12 @@ local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
+local Vessel = require "Quanta.Vessel"
 local Measurement = require "Quanta.Measurement"
 local Prop = require "Quanta.Prop"
 local M = U.module(...)
 
 U.class(M)
-
-function M.init_match_context(context, implicit_scope, director)
-	U.type_assert(context, Match.Context)
-	U.type_assert(implicit_scope, "userdata", true)
-
-	context.user = context.user or {}
-	context.user.implicit_scope = implicit_scope and T(implicit_scope) or nil
-	context.user.scope_save = {}
-	context.user.scope = {}
-	context.user.director = director
-end
 
 function M:__init()
 	self.name = ""
@@ -55,13 +45,12 @@ function M:set_name(name)
 	self.name_hash = O.hash_name(self.name)
 end
 
-function M:from_object(obj, implicit_scope, director)
+function M:from_object(obj, implicit_scope)
 	U.type_assert(obj, "userdata")
 
 	self:__init()
 
-	local context = Match.Context()
-	M.init_match_context(context, implicit_scope, director)
+	local context = Vessel.new_match_context(implicit_scope)
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
 	end

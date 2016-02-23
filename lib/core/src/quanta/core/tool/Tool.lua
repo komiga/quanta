@@ -302,7 +302,7 @@ end),
 M.Option({"-l", "--local"}, "boolean", [=[
 -l --local[=boolean]
   work within the local backup of the vessel
-  default: $QUANTA_ROOT
+  default: false
 ]=],
 function(_, value)
 	M.main_config.vessel_work_local = value

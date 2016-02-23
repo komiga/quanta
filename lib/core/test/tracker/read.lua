@@ -16,10 +16,9 @@ function do_tracker_file(director, path)
 	end
 	local tracker = Tracker()
 	local success, msg = tracker:from_object(obj, director)
-	if success then
-		tracker:to_object(obj)
-		print(O.write_text_string(obj, true))
-	else
+	tracker:to_object(obj)
+	print(O.write_text_string(obj, true))
+	if not success then
 		U.log("error: %s", msg)
 		U.log("error: failed to translate file: %s", path)
 	end

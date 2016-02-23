@@ -259,8 +259,6 @@ function M.Source:__init(entity)
 	self.author = Prop.Author.struct({})
 	self.vendor = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})
-	self.base_model = nil
-	self.model = nil
 	self.data = nil
 
 	if entity.data then
@@ -313,13 +311,6 @@ function M.Source:add_vendor(vendor)
 	return vendor
 end
 
-M.Model = U.class(M.Model)
-
-function M.Model:__init()
-	self.name = nil
-	self.id = nil
-end
-
 local function parent_source_value(name)
 	return function(context)
 		local parent_entity = context:value(1).parent
@@ -337,20 +328,6 @@ local _, t_source_label = Prop.Description.adapt_struct(
 	"label", "label",
 	parent_source_value("label")
 )
-
-local source_model_tags = {
-Match.Pattern{
-	name = "id",
-	children = {Match.Pattern{
-		vtype = {O.Type.null, O.Type.string},
-		acceptor = function(_, model, obj)
-			if O.is_string(obj) then
-				model.id = O.string(obj)
-			end
-		end
-	}},
-},
-}
 
 M.t_source:add({
 Prop.Note.t_struct_head,
@@ -383,34 +360,19 @@ Match.Pattern{
 		end
 	}},
 },
+
+-- TODO
 Match.Pattern{
 	name = "base_model",
 	vtype = {O.Type.null, O.Type.string},
-	tags = source_model_tags,
-	acceptor = function(_, p, obj)
-		local base_model = M.Model()
-		if O.is_string(obj) then
-			base_model.name = O.string(obj)
-		end
-		p:set_base_model(base_model)
-		return base_model
-	end
+	tags = Match.Any,
 },
 Match.Pattern{
 	name = "model",
 	vtype = {O.Type.null, O.Type.string},
-	tags = source_model_tags,
-	acceptor = function(_, p, obj)
-		local model = M.Model()
-		if O.is_string(obj) then
-			model.name = O.string(obj)
-		end
-		p:set_model(model)
-		return model
-	end
+	tags = Match.Any,
 },
 
--- TODO
 Match.Pattern{
 	name = "composition",
 	vtype = {O.Type.identifier, O.Type.string, O.Type.expression},
@@ -425,7 +387,6 @@ Match.Pattern{
 	name = "nutrition",
 	children = true,
 },
--- state
 Match.Pattern{
 	name = "state",
 	vtype = O.Type.string,
@@ -436,11 +397,11 @@ Match.Pattern{
 		Match.Pattern{vtype = O.Type.string}
 	},
 },
--- TODO: device specialization
 Match.Pattern{
 	name = "config",
 	children = true,
 },
+
 -- TODO
 Match.Pattern{
 	name = "properties",

@@ -238,7 +238,7 @@ help [command_name | option_name [...]]
   prints help for commands
 ]=],
 function(self, parent, options, params)
-	if #params == 0 then
+	if #options == 0 and #params == 0 then
 		parent:print_help(-1)
 		return true
 	end

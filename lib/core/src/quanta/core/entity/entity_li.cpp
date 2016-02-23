@@ -21,23 +21,11 @@ static LuaModuleRef const li_module{
 	#include <quanta/core/entity/Entity.lua>
 };
 
-namespace match {
-
-static LuaModuleRef const li_module{
-	"Quanta.Entity.Match",
-	"quanta/core/entity/Entity.Match.lua",
-	null_ref_tag{},
-	#include <quanta/core/entity/Entity.Match.lua>
-};
-
-} // namespace match
-
 } // namespace entity
 
 /// Register the Lua interface.
 void entity::register_lua_interface(lua_State* L) {
 	lua::preload_module(L, entity::li_module);
-	lua::preload_module(L, entity::match::li_module);
 }
 
 } // namespace quanta

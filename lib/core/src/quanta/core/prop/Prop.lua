@@ -134,6 +134,8 @@ function M.Author.struct(list)
 end
 
 M.Author.t_head_tags = Match.Tree({
+-- :address(?)
+-- :address("...")
 Match.Pattern{
 	name = {"address", "addr"},
 	children = {Match.Pattern{
@@ -296,6 +298,92 @@ end
 M.Note.struct_to_object,
 M.Note.t_struct_head
 = M.Note.adapt_struct("note", "note")
+
+M.Model = U.class(M.Model)
+
+function M.Model:__init(name, certain, id, id_certain)
+	self.name = U.type_assert(name, "string", true)
+	self.certain = U.optional(U.type_assert(certain, "boolean", true), self.name ~= nil and #self.name > 0)
+	self.id = U.type_assert(id, "string", true)
+	self.id_certain = U.optional(U.type_assert(id_certain, "boolean", true), true)
+end
+
+function M.Model:to_object(obj)
+	O.set_value_certain(obj, self.certain)
+	if self.name ~= nil and self.name ~= "" then
+		O.set_string(obj, self.name)
+	end
+	if not self.id_certain or (self.id ~= nil and self.id ~= "") then
+		local id_obj = O.push_tag(obj)
+		O.set_name(id_obj, "id")
+		local value_obj = O.push_child(id_obj)
+		O.set_value_certain(value_obj, self.id_certain)
+		if self.id ~= nil and self.id ~= "" then
+			O.set_string(value_obj, self.id)
+		end
+	end
+end
+
+function M.Model.struct(model)
+	U.type_assert(model, M.Model)
+	return model
+end
+
+M.Model.t_head_tags = Match.Tree({
+-- :id(?)
+-- :id("...")
+Match.Pattern{
+	name = "id",
+	func = function(_, _, obj, _)
+		return O.num_children(obj) == 1
+	end,
+	children = {Match.Pattern{
+		vtype = {O.Type.null, O.Type.string},
+		acceptor = function(_, model, obj)
+			if O.is_string(obj) then
+				model.id = O.string(obj)
+				model.id_certain = O.value_certain(obj)
+			end
+		end
+	}},
+},
+})
+
+function M.Model.adapt_struct(serialized_name, property_name)
+	local to_object = function(model, obj)
+		if model ~= nil then
+			local model_obj = O.push_child(obj)
+			O.set_name(model_obj, serialized_name)
+			model:to_object(model_obj)
+		end
+	end
+	local t_head = Match.Tree({
+	-- = ?
+	-- = "..."
+	Match.Pattern{
+		name = serialized_name,
+		vtype = {O.Type.null, O.Type.string},
+		tags = M.Model.t_head_tags,
+		acceptor = function(context, thing, obj)
+			if #thing[property_name] > 0 then
+				return Match.Error(serialized_name .. " was already specified")
+			end
+			local model = M.Model(
+				O.is_string(obj) and O.string(obj) or nil,
+				O.value_certain(obj),
+				nil, true
+			)
+			thing[property_name] = model
+			return model
+		end,
+	},
+	})
+	return to_object, t_head
+end
+
+M.Model.struct_to_object,
+M.Model.t_struct_head
+= M.Model.adapt_struct("model", "model")
 
 return M
 

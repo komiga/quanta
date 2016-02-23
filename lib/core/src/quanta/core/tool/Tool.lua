@@ -158,6 +158,14 @@ function M:read_options(options)
 end
 
 function M:run(parent, options, params)
+	--[[U.print("[%s] %d options", self.name, #options)
+	for _, p in pairs(options) do
+		U.print("  %s = %s", p.name, p.value)
+	end
+	U.print("[%s] %d params", self.name, #params)
+	for _, p in pairs(params) do
+		U.print("  %s%s", p.name and (p.name .. " = ") or "", p.value)
+	end--]]
 	if self.auto_read_options then
 		if not self:read_options(options) then
 			return false

@@ -5,7 +5,7 @@ local Prop = require "Quanta.Prop"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local Unit = require "Quanta.Unit"
-local Director = require "Quanta.Director"
+local Vessel = require "Quanta.Vessel"
 
 require "common"
 
@@ -186,14 +186,14 @@ make_test_fail(
 ),
 }
 
-function do_test(t, implicit_scope, director)
+function do_test(t, implicit_scope)
 	local obj = O.create(t.text)
 	U.assert(obj ~= nil)
 	local text_rewrite = O.write_text_string(obj, true)
 	U.print("%s  =>", text_rewrite)
 
 	local unit = Unit()
-	local success, msg = unit:from_object(obj, implicit_scope, director)
+	local success, msg = unit:from_object(obj, implicit_scope)
 	if not success then
 		U.print("translation error: %s", msg)
 	end
@@ -208,12 +208,11 @@ function do_test(t, implicit_scope, director)
 end
 
 function main()
-	Director.debug = true
+	Vessel.init("vessel_data")
 
 	local implicit_scope = make_time("2016-01-01Z")
-	local director = Director()
 	for _, t in pairs(translation_tests) do
-		do_test(t, implicit_scope, director)
+		do_test(t, implicit_scope)
 	end
 
 	return 0

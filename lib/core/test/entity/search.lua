@@ -2,6 +2,7 @@
 local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Entity = require "Quanta.Entity"
+local Vessel = require "Quanta.Vessel"
 
 require "common"
 
@@ -98,6 +99,8 @@ function do_search_test(t)
 end
 
 function main()
+	Vessel.init("vessel_data")
+
 	for _, t in pairs(search_tests) do
 		do_search_test(t)
 	end

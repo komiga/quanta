@@ -2,7 +2,7 @@
 local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Tracker = require "Quanta.Tracker"
-local Director = require "Quanta.Director"
+local Vessel = require "Quanta.Vessel"
 
 require "common"
 
@@ -242,12 +242,12 @@ make_test_fail(
 ),
 }
 
-function do_test(t, director)
+function do_test(t)
 	local obj = O.create(t.text)
 	U.assert(obj ~= nil)
 
 	local tracker = Tracker()
-	local success, msg = tracker:from_object(obj, director)
+	local success, msg = tracker:from_object(obj)
 	if not success then
 		U.print("translation error: %s", msg)
 	end
@@ -262,13 +262,11 @@ function do_test(t, director)
 end
 
 function main()
-	Director.debug = true
-
-	local director = Director()
-	director:register_action("ETODO", Tracker.PlaceholderAction)
+	Vessel.init("vessel_data")
+	Vessel.config.director:register_action("ETODO", Tracker.PlaceholderAction)
 
 	for i, t in ipairs(translation_tests) do
-		do_test(t, director)
+		do_test(t)
 	end
 
 	return 0

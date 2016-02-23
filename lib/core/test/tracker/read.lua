@@ -28,9 +28,8 @@ end
 
 function main(argv)
 	table.remove(argv, 1)
-
-	local director = Director()
-	director:register_action("ETODO", Tracker.PlaceholderAction)
+	Vessel.init(nil, false)
+	Vessel.config.director:register_action("ETODO", Tracker.PlaceholderAction)
 
 	if #argv == 0 then
 		return do_tracker_file(director, Vessel.tracker_path(nil))

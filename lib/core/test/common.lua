@@ -9,6 +9,8 @@ local Composition = require "Quanta.Composition"
 local Unit = require "Quanta.Unit"
 local Tracker = require "Quanta.Tracker"
 
+--Match.debug = true
+
 function make_time(text)
 	local t = Time()
 	local obj = O.create(text)

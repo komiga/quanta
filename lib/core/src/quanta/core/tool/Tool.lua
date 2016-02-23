@@ -3,6 +3,7 @@ u8R""__RAW_STRING__(
 local U = require "togo.utility"
 local T = require "Quanta.Time"
 local O = require "Quanta.Object"
+local Vessel = require "Quanta.Vessel"
 local M = U.module(...)
 
 M.LogLevel = {
@@ -269,6 +270,8 @@ function(self, parent, options, params)
 end)
 M.help_command.auto_read_options = false
 
+M.main_config = nil
+
 local main_options = {
 M.Option("--log", nil, [=[
 --log=error | info | debug
@@ -286,6 +289,24 @@ function(_, value)
 	end
 	return M.log_error("--log is invalid: %s", tostring(given))
 end),
+
+M.Option("--vessel", "string", [=[
+--vessel=PATH
+  set vessel root path
+  default: $QUANTA_ROOT
+]=],
+function(_, value)
+	M.main_config.vessel_root = value
+end),
+
+M.Option({"-l", "--local"}, "boolean", [=[
+-l --local[=boolean]
+  work within the local backup of the vessel
+  default: $QUANTA_ROOT
+]=],
+function(_, value)
+	M.main_config.vessel_work_local = value
+end),
 }
 
 local main_commands = {
@@ -296,6 +317,10 @@ M.main_tool = M("main", main_options, main_commands, [=[
 main [options] command [command_options] [command_params]
 ]=],
 function(self, parent, options, params)
+	Vessel.init(
+		M.main_config.vessel_root,
+		M.main_config.vessel_work_local
+	)
 	return self:run_command(params)
 end)
 
@@ -321,6 +346,13 @@ local function nilify_params(params)
 end
 
 function M.main(argv)
+	if not M.main_config then
+		M.main_config = {
+			vessel_root = nil,
+			vessel_work_local = false,
+		}
+	end
+
 	local _, opts, cmd_opts, cmd_params = U.parse_args(argv)
 	local params = {}
 	opts.name = nil

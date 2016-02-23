@@ -2,14 +2,16 @@
 local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Time = require "Quanta.Time"
+local Match = require "Quanta.Match"
+
+-- Match.debug = true
+
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
 local Unit = require "Quanta.Unit"
 local Tracker = require "Quanta.Tracker"
-
---Match.debug = true
 
 function make_time(text)
 	local t = Time()

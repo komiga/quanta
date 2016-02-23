@@ -99,8 +99,8 @@ function M:add_options(options)
 				self.name, name
 			)
 			self.options[name] = option
-			table.insert(self.options, option)
 		end
+		table.insert(self.options, option)
 	else
 		U.type_assert(options, "table")
 		for _, option in pairs(options) do
@@ -132,6 +132,7 @@ function M:print_help(level)
 	level = U.type_assert(level, "number") or 0
 
 	print(indent_text(self.help_text, level))
+
 	for _, option in ipairs(self.options) do
 		print()
 		option:print_help(level + 1)

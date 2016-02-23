@@ -17,6 +17,7 @@ group_data["core"] = {
 		["common"] = true,
 		["object/lua_interface.lua"] = true,
 		["tracker/read.lua"] = true,
+		["vessel_data/local/sys/config.lua"] = true,
 	},
 	args = {},
 }

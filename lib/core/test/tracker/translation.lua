@@ -1,10 +1,10 @@
 
+require "common"
+
 local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Tracker = require "Quanta.Tracker"
 local Vessel = require "Quanta.Vessel"
-
-require "common"
 
 function make_test(text, date, entries)
 	return {

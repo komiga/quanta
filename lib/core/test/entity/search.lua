@@ -1,10 +1,10 @@
 
+require "common"
+
 local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Entity = require "Quanta.Entity"
 local Vessel = require "Quanta.Vessel"
-
-require "common"
 
 function make_search_test(text, branches_func, items)
 	return {

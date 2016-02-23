@@ -2,7 +2,6 @@
 local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Entity = require "Quanta.Entity"
-require "Quanta.Entity.Match"
 
 require "common"
 
@@ -83,7 +82,7 @@ end, {
 function do_search_test(t)
 	local obj = O.create_mv(t.text)
 
-	local universe = Entity.Match.read_universe(obj)
+	local universe = Entity.read_universe(obj)
 	U.assert(universe)
 
 	local branches = t.branches_func(universe)

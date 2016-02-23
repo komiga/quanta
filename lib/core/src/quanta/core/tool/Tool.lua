@@ -369,8 +369,8 @@ function M.main(argv)
 	if cmd_params.name ~= "" then
 		table.insert(params, {value = cmd_params.name})
 	end
-	concat_params(params, cmd_opts)
 	cmd_params.name = nil
+	concat_params(params, cmd_opts)
 	concat_params(params, cmd_params)
 
 	nilify_params(opts)

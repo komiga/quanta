@@ -88,7 +88,10 @@ function M.reload_config()
 	end
 
 	M.config = {}
-	chunk()
+	FS.working_dir_scope(M.sys_path(), function()
+		chunk()
+	end)
+
 	U.type_assert(M.config, "table")
 	U.type_assert(M.config.director, require("Quanta.Director"))
 end

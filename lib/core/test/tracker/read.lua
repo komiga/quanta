@@ -8,14 +8,14 @@ local Director = require "Quanta.Director"
 
 Director.debug = true
 
-function do_tracker_file(director, path)
+function do_tracker_file(path)
 	local obj = O.create()
 	if not O.read_text_file(obj, path, true) then
 		U.log("error: failed to read file: %s", path)
 		return false
 	end
 	local tracker = Tracker()
-	local success, msg = tracker:from_object(obj, director)
+	local success, msg = tracker:from_object(obj)
 	tracker:to_object(obj)
 	print(O.write_text_string(obj, true))
 	if not success then
@@ -30,7 +30,7 @@ function main(argv)
 	Vessel.init(nil, false)
 
 	if #argv == 0 then
-		return do_tracker_file(director, Vessel.tracker_path(nil))
+		return do_tracker_file(Vessel.tracker_path(nil))
 	else
 		local t_now = T()
 		T.set_date_now(t_now)
@@ -38,7 +38,7 @@ function main(argv)
 		for _, arg in ipairs(argv) do
 			if O.read_text_string(obj, arg, true) and O.is_time(obj) then
 				O.resolve_time(obj, t_now)
-				if not do_tracker_file(director, Vessel.tracker_path(O.time(obj))) then
+				if not do_tracker_file(Vessel.tracker_path(O.time(obj))) then
 					return false
 				end
 			else

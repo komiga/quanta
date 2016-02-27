@@ -13,6 +13,7 @@ signed main() {
 
 	{
 		Object a;
+		TOGO_ASSERTE(source_line(a) == 0);
 		TOGO_ASSERTE(
 			!is_named(a) &&
 			name_hash(a) == OBJECT_NAME_NULL &&
@@ -42,6 +43,8 @@ signed main() {
 
 	{
 		Object a;
+		set_source_line(a, 35876129);
+		TOGO_ASSERTE(source_line(a) == 35876129);
 		set_source(a, 1);
 		set_sub_source(a, 2);
 		TOGO_ASSERTE(

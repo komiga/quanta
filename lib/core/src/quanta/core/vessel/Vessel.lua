@@ -5,6 +5,7 @@ local FS = require "togo.filesystem"
 local IO = require "togo.io"
 local T = require "Quanta.Time"
 require "Quanta.Time.Gregorian"
+local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local M = U.module(...)
 
@@ -29,6 +30,29 @@ function M.sublime_path(...) return M.path(M.active_bucket(), "sublime", ...) en
 
 function M.data_chrono_path(...) return M.data_path("chrono", ...) end
 
+local function first_line(s)
+	local b, _ = string.find(s, "\n")
+	return string.sub(s, 1, (b or 0) - 1)
+end
+
+function M.tracker_active_date()
+	local date = T()
+	local slug = IO.read_file(M.data_chrono_path("active"))
+	if slug then
+		slug = first_line(slug)
+		local obj = O.create(string.gsub(slug, "/", "-"))
+		if obj and O.is_time(obj) and O.has_date(obj) then
+			T.set(date, O.time(obj))
+			T.clear_clock(date)
+		else
+			T.G.set_date_now(date)
+		end
+	else
+		T.G.set_date_now(date)
+	end
+	return date
+end
+
 function M.tracker_path(date)
 	check_initialized()
 	if date ~= nil then
@@ -36,14 +60,9 @@ function M.tracker_path(date)
 		local y, m, d = T.G.date_utc(date)
 		return M.data_chrono_path(string.format("%04d/%02d/%02d.q", y, m, d))
 	else
-		local slug = nil
-		local f = io.open(M.data_chrono_path("active"), "r")
-		if f then
-			slug = f:read("*l")
-			f:close()
-		end
+		local slug = IO.read_file(M.data_chrono_path("active"))
 		U.assert(slug ~= nil, "failed to read active tracker date")
-		return M.data_chrono_path(slug .. ".q")
+		return M.data_chrono_path(first_line(slug) .. ".q")
 	end
 end
 

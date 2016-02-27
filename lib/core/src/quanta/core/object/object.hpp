@@ -680,6 +680,7 @@ inline Object::~Object() {
 /// Construct null.
 inline Object::Object()
 	: properties(unsigned_cast(ObjectValueType::null))
+	, source_line(0)
 	, source(0)
 	, sub_source(0)
 	, name()

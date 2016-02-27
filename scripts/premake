@@ -5,6 +5,9 @@ premake4 $@
 if [[ -f Makefile ]]; then
 	sed -i \
 		-e 's/lib_core:/& | igen/' \
+		-e 's/app_tool_lib:/& | lib_core/' \
+		-e 's/app_tool:/& | app_tool_lib/' \
+		-e 's|\-f app_tool\.make$|& -W src/quanta/app_tool/main.cpp|' \
 		-e 's/app_script_host_lib:/& | lib_core/' \
 		-e 's/app_script_host:/& | app_script_host_lib/' \
 		-e 's|\-f app_script_host\.make$|& -W src/quanta/app_script_host/main.cpp|' \

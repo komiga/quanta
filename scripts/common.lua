@@ -15,5 +15,6 @@ end
 function quanta_apps()
 	return {
 		"script_host",
+		"tool",
 	}
 end

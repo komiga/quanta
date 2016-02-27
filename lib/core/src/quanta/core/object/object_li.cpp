@@ -183,6 +183,18 @@ TOGO_LI_FUNC_DEF(is_expression) {
 	return 1;
 }
 
+TOGO_LI_FUNC_DEF(source_line) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, object::source_line(*obj));
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(set_source_line) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	object::set_source_line(*obj, luaL_checkinteger(L, 2));
+	return 1;
+}
+
 TOGO_LI_FUNC_DEF(name) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	lua::push_value(L, object::name(*obj));
@@ -935,6 +947,9 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(object, is_identifier)
 	TOGO_LI_FUNC_REF(object, is_textual)
 	TOGO_LI_FUNC_REF(object, is_expression)
+
+	TOGO_LI_FUNC_REF(object, source_line)
+	TOGO_LI_FUNC_REF(object, set_source_line)
 
 	TOGO_LI_FUNC_REF(object, name)
 	TOGO_LI_FUNC_REF(object, name_hash)

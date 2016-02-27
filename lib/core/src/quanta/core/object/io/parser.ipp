@@ -1956,6 +1956,9 @@ l_exec:
 	if (!parser_skip_junk(p, stage_part == StagePart::exit)) {
 		return false;
 	}
+	if (object::source_line(*p.branch->obj) == 0) {
+		object::set_source_line(*p.branch->obj, p.line);
+	}
 
 	switch (stage_part) {
 	case StagePart::enter: response = (*p.branch->sequence_pos)->enter(p); break;

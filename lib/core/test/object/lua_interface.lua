@@ -52,6 +52,7 @@ end
 
 do
 	local a = O.create()
+	assert(O.source_line(a) == 0)
 	assert(
 		not O.is_named(a) and
 		O.name_hash(a) == O.NAME_NULL and
@@ -81,6 +82,8 @@ end
 
 do
 	local a = O.create()
+	O.set_source_line(a, 35876129);
+	assert(O.source_line(a) == 35876129);
 	O.set_source(a, 1)
 	O.set_sub_source(a, 2)
 	assert(

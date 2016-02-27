@@ -32,7 +32,7 @@ function M:from_object(obj)
 	local context = Vessel.new_match_context(self.date)
 	context.user.tracker = self
 	if not context:consume(M.t_head, obj, self) then
-		return false, context.error:to_string()
+		return false, context.error:to_string(), context.error.source_line
 	end
 	return self:validate_and_fixup()
 end
@@ -64,12 +64,14 @@ function M:to_object(obj)
 	return obj
 end
 
-local function obj_error(obj, msg, ...)
-	return false, string.format(
-		"%s\nat object: ```\n%s\n```",
+local function entry_error(entry, msg, ...)
+	msg = string.format(
+		"%s\nat object (line %d): ```\n%s\n```",
 		string.format(msg, ...),
-		O.write_text_string(obj, true)
+		entry.source_line,
+		O.write_text_string(entry.obj, true)
 	)
+	return false, msg, entry.source_line
 end
 
 local function fixup_spillover(entry, r_start, r_end)
@@ -78,7 +80,7 @@ local function fixup_spillover(entry, r_start, r_end)
 		T.date_seconds_utc(r_start.time) >= T.date_seconds_utc(r_end.time)
 	then
 		if T.difference(r_start.time, r_end.time) <= (2 * T.SECS_PER_HOUR) then
-			return obj_error(entry.obj, "negative entry range appears to be typoed (end is within 2h before start)")
+			return entry_error(entry, "negative entry range appears to be typoed (end is within 2h before start)")
 		end
 		T.add(r_end.time, T.SECS_PER_DAY)
 	end
@@ -105,23 +107,23 @@ local function fixup_time_ref(self, i, entry, time, part, no_branch)
 	if time.type == M.EntryTime.Type.specified then
 		return true
 	elseif time.type == M.EntryTime.Type.placeholder then
-		return obj_error(entry.obj, "entry range %s is unspecified", part)
+		return entry_error(entry, "entry range %s is unspecified", part)
 	elseif time.type == M.EntryTime.Type.marker then
 		local ref = self.entry_by_marker[time.marker]
 		if not ref then
-			return obj_error(entry.obj, "entry range %s referent '%s' (marker) does not exist", part, time.marker)
+			return entry_error(entry, "entry range %s referent '%s' (marker) does not exist", part, time.marker)
 		end
 		ref_entry = ref.entry
 		ref_i = ref.index
 		if ref_i < i then
-			return obj_error(entry.obj, "entry range %s referent '%s' (marker) precedes its entry", part, time.marker)
+			return entry_error(entry, "entry range %s referent '%s' (marker) precedes its entry", part, time.marker)
 		elseif ref_entry == entry then
-			return obj_error(entry.obj, "entry range %s refers to itself by marker '%s'", part, time.marker)
+			return entry_error(entry, "entry range %s refers to itself by marker '%s'", part, time.marker)
 		end
 	else -- ref
 		ref_entry, ref_i = find_by_ref(self.entries, i, time.index, time.ool)
 		if not ref_entry then
-			return obj_error(entry.obj, "entry range %s reference index is out-of-bounds", part)
+			return entry_error(entry, "entry range %s reference index is out-of-bounds", part)
 		end
 	end
 
@@ -129,11 +131,11 @@ local function fixup_time_ref(self, i, entry, time, part, no_branch)
 	if ref_time.type ~= M.EntryTime.Type.specified then
 		-- total unreliable kludge! go after that dependency graph solution
 		if not no_branch then
-			local success, msg = fixup_time_ref(self, ref_i, ref_entry, ref_entry.r_start, "start", true)
-			if not success then return false, msg end
+			local success, msg, source_line = fixup_time_ref(self, ref_i, ref_entry, ref_entry.r_start, "start", true)
+			if not success then return false, msg, source_line end
 		end
 		if ref_time.type ~= M.EntryTime.Type.specified then
-			return obj_error(entry.obj, "entry range %s referent has an unresolved start time", part)
+			return entry_error(entry, "entry range %s referent has an unresolved start time", part)
 		end
 	end
 
@@ -151,15 +153,15 @@ end
 
 function M:validate_and_fixup()
 	if T.value(self.date) == 0 then
-		return false, "date is unset"
+		return false, "date is unset", 0
 	end
-	local success, msg
+	local success, msg, source_line
 	local prev_entry = nil
 	for i, entry in ipairs(self.entries) do
 		if entry.r_start.type == M.EntryTime.Type.specified then
 			if prev_entry then
-				success, msg = fixup_spillover(prev_entry, prev_entry.r_start, entry.r_start)
-				if not success then return false, msg end
+				success, msg, source_line = fixup_spillover(prev_entry, prev_entry.r_start, entry.r_start)
+				if not success then return false, msg, source_line end
 			end
 			prev_entry = entry
 		end
@@ -171,24 +173,24 @@ function M:validate_and_fixup()
 			entry.r_start.type == M.EntryTime.Type.placeholder and
 			entry.r_end.type == M.EntryTime.Type.placeholder
 		then
-			return obj_error(entry.obj, "entry range is incomplete or unspecified")
+			return entry_error(entry, "entry range is incomplete or unspecified")
 		end
 
 		entry:fixup()
-		success, msg = fixup_time_ref(self, i, entry, entry.r_start, "start")
-		if not success then return false, msg end
-		success, msg = fixup_time_ref(self, i, entry, entry.r_end, "end")
-		if not success then return false, msg end
+		success, msg, source_line = fixup_time_ref(self, i, entry, entry.r_start, "start")
+		if not success then return false, msg, source_line end
+		success, msg, source_line = fixup_time_ref(self, i, entry, entry.r_end, "end")
+		if not success then return false, msg, source_line end
 
-		success, msg = fixup_spillover(entry, entry.r_start, entry.r_end)
-		if not success then return false, msg end
+		success, msg, source_line = fixup_spillover(entry, entry.r_start, entry.r_end)
+		if not success then return false, msg, source_line end
 
 		entry:recalculate()
 		local duration = T.value(entry.duration)
 		if duration < 0 then
-			return obj_error(entry.obj, "entry range is degenerate: duration is negative")
+			return entry_error(entry, "entry range is degenerate: duration is negative")
 		elseif duration == 0 then
-			return obj_error(entry.obj, "entry range is degenerate: duration is zero")
+			return entry_error(entry, "entry range is degenerate: duration is zero")
 		end
 
 		if entry.continue_id then
@@ -196,7 +198,7 @@ function M:validate_and_fixup()
 				local group = self.entry_groups[entry.continue_id]
 				if not group then
 					if #entry.actions == 0 then
-						return obj_error(entry.obj, "local continue group head entry carries no actions")
+						return entry_error(entry, "local continue group head entry carries no actions")
 					end
 					group = {}
 					self.entry_groups[entry.continue_id] = group
@@ -204,7 +206,7 @@ function M:validate_and_fixup()
 				table.insert(group, entry)
 			end
 		elseif #entry.actions == 0 then
-			return obj_error(entry.obj, "entry is empty: carries no actions and doesn't belong to a continue group")
+			return entry_error(entry, "entry is empty: carries no actions and doesn't belong to a continue group")
 		end
 
 		entry.obj = nil
@@ -478,6 +480,7 @@ M.EntryTime.t_head:build()
 M.Entry = U.class(M.Entry)
 
 function M.Entry:__init()
+	self.source_line = 0
 	self.ool = false
 	self.duration = T()
 	self.r_start = M.EntryTime()
@@ -592,6 +595,7 @@ M.Entry.p_head = Match.Pattern{
 		local entry = M.Entry()
 		table.insert(tracker.entries, entry)
 		entry.obj = obj
+		entry.source_line = O.source_line(obj)
 		return entry
 	end,
 }

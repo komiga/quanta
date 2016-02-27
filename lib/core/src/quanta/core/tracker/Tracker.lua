@@ -29,7 +29,6 @@ function M:from_object(obj)
 
 	local context = Vessel.new_match_context(self.date)
 	context.user.tracker = self
-	context.user.tracker_prev_entry = nil
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string()
 	end
@@ -139,6 +138,16 @@ function M:validate_and_fixup()
 		return false, "date is unset"
 	end
 	local success, msg
+	local prev_entry = nil
+	for i, entry in ipairs(self.entries) do
+		if entry.r_start.type == M.EntryTime.Type.specified then
+			if prev_entry then
+				success, msg = fixup_spillover(prev_entry, prev_entry.r_start, entry.r_start)
+				if not success then return false, msg end
+			end
+			prev_entry = entry
+		end
+	end
 
 	for i, entry in ipairs(self.entries) do
 		-- TODO: build and solve a dependency graph
@@ -549,14 +558,6 @@ M.Entry.p_head = Match.Pattern{
 		table.insert(tracker.entries, entry)
 		entry.obj = obj
 		return entry
-	end,
-	post_branch_pre = function(context, entry, obj)
-		if entry.r_start.type == M.EntryTime.Type.specified then
-			if context.user.tracker_prev_entry then
-				fixup_spillover(context.user.tracker_prev_entry.r_start, entry.r_start)
-			end
-			context.user.tracker_prev_entry = entry
-		end
 	end,
 }
 

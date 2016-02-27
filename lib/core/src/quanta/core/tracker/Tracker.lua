@@ -16,6 +16,7 @@ function M:__init()
 	self.date = T()
 	self.entries = {}
 	self.entry_groups = {}
+	self.entry_by_marker = {}
 	self.attachments = {}
 end
 
@@ -25,6 +26,7 @@ function M:from_object(obj)
 	T.clear(self.date)
 	self.entries = {}
 	self.entry_groups = {}
+	self.entry_by_marker = {}
 	self.attachments = {}
 
 	local context = Vessel.new_match_context(self.date)
@@ -99,15 +101,28 @@ local function find_by_ref(entries, start, n, ool)
 end
 
 local function fixup_time_ref(self, i, entry, time, part, no_branch)
+	local ref_entry, ref_i
 	if time.type == M.EntryTime.Type.specified then
 		return true
 	elseif time.type == M.EntryTime.Type.placeholder then
 		return obj_error(entry.obj, "entry range %s is unspecified", part)
-	end
-
-	local ref_entry, ref_i = find_by_ref(self.entries, i, time.index, time.ool)
-	if not ref_entry then
-		return obj_error(entry.obj, "entry range %s reference index is out-of-bounds", part)
+	elseif time.type == M.EntryTime.Type.marker then
+		local ref = self.entry_by_marker[time.marker]
+		if not ref then
+			return obj_error(entry.obj, "entry range %s referent '%s' (marker) does not exist", part, time.marker)
+		end
+		ref_entry = ref.entry
+		ref_i = ref.index
+		if ref_i < i then
+			return obj_error(entry.obj, "entry range %s referent '%s' (marker) precedes its entry", part, time.marker)
+		elseif ref_entry == entry then
+			return obj_error(entry.obj, "entry range %s refers to itself by marker '%s'", part, time.marker)
+		end
+	else -- ref
+		ref_entry, ref_i = find_by_ref(self.entries, i, time.index, time.ool)
+		if not ref_entry then
+			return obj_error(entry.obj, "entry range %s reference index is out-of-bounds", part)
+		end
 	end
 
 	local ref_time = ref_entry.r_start
@@ -126,6 +141,7 @@ local function fixup_time_ref(self, i, entry, time, part, no_branch)
 	T.set(time.time, T.value(ref_time.time))
 	time.ool = false
 	time.index = 0
+	time.marker = nil
 	if time.approximation == 0 and time.certain then
 		time.approximation = ref_time.approximation
 		time.certain = ref_time.certain
@@ -326,6 +342,7 @@ M.EntryTime.Type = {
 	specified		= 1,
 	placeholder		= 2, -- XXX
 	ref				= 3, -- EPREV, ENEXT
+	marker			= 4, -- identifier
 }
 
 function M.EntryTime:__init()
@@ -333,6 +350,7 @@ function M.EntryTime:__init()
 	self.time = T()
 	self.ool = false
 	self.index = 0
+	self.marker = nil
 	self.approximation = 0
 	self.certain = true
 end
@@ -364,6 +382,8 @@ function M.EntryTime:to_object(obj, scope)
 		if abs_index > 1 then
 			O.set_integer(O.make_quantity(obj), abs_index)
 		end
+	elseif self.type == M.EntryTime.Type.marker then
+		O.set_identifier(obj, self.marker)
 	end
 
 	if self.ool then
@@ -442,6 +462,15 @@ Match.Pattern{
 		entry_time_set_uncertainties(self, obj)
 	end,
 },
+-- identifier
+Match.Pattern{
+	vtype = O.Type.identifier,
+	acceptor = function(context, self, obj)
+		self.type = M.EntryTime.Type.marker
+		self.marker = O.identifier(obj)
+		entry_time_set_uncertainties(self, obj)
+	end,
+},
 })
 
 M.EntryTime.t_head:build()
@@ -457,6 +486,7 @@ function M.Entry:__init()
 	self.rel_id = {}
 	self.continue_id = nil
 	self.continue_scope = nil
+	self.marker = nil
 	self.actions = {}
 	self.primary_action = nil
 end
@@ -534,6 +564,12 @@ function M.Entry:to_object(obj, scope)
 		end
 	end
 
+	if self.marker then
+		local marker_obj = O.push_child(obj)
+		O.set_name(marker_obj, "marker")
+		O.set_identifier(marker_obj, self.marker)
+	end
+
 	if #self.actions > 0 then
 		local actions_obj = O.push_child(obj)
 		O.set_name(actions_obj, "tags")
@@ -541,7 +577,6 @@ function M.Entry:to_object(obj, scope)
 			action:to_object(O.push_child(actions_obj), i ~= 1 and self.primary_action == i)
 		end
 	end
-
 	return obj
 end
 
@@ -646,6 +681,22 @@ Match.Pattern{
 
 		self.continue_id = O.identifier(O.child_at(obj, 1))
 		self.continue_scope = T(O.time_resolved(obj, context.user.tracker.date))
+	end,
+},
+
+-- marker = ...
+Match.Pattern{
+	name = "marker",
+	vtype = O.Type.identifier,
+	acceptor = function(context, self, obj)
+		self.marker = O.identifier(obj)
+		if context.user.tracker.entry_by_marker[self.marker] then
+			return Match.Error("marker '%s' is not unique", self.marker)
+		end
+		context.user.tracker.entry_by_marker[self.marker] = {
+			entry = self,
+			index = #context.user.tracker.entries,
+		}
 	end,
 },
 

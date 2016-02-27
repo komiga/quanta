@@ -98,6 +98,18 @@ inline bool is_textual(Object const& obj) { return object::is_type_any(obj, type
 /// Whether type is ObjectValueType::expression.
 inline bool is_expression(Object const& obj) { return object::is_type(obj, ObjectValueType::expression); }
 
+/// Line in source file.
+inline unsigned source_line(Object const& obj) {
+	return obj.source_line;
+}
+
+/// Set line in source file.
+///
+/// A 0 means unknown/unprovided
+inline void set_source_line(Object& obj, unsigned source_line) {
+	obj.source_line = source_line;
+}
+
 /// Name.
 inline StringRef name(Object const& obj) {
 	return obj.name;

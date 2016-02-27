@@ -146,7 +146,8 @@ struct Object {
 		HashedUnmanagedString<ObjectValueHasher> identifier;
 	};
 
-	u64 properties;
+	u32 properties;
+	u32 source_line;
 	u16 source;
 	u16 sub_source;
 	HashedUnmanagedString<ObjectNameHasher> name;

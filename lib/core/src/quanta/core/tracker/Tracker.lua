@@ -127,8 +127,10 @@ local function fixup_time_ref(self, i, entry, time, part, no_branch)
 	T.set(time.time, T.value(ref_time.time))
 	time.ool = false
 	time.index = 0
-	time.approximation = ref_time.approximation
-	time.certain = ref_time.certain
+	if time.approximation == 0 and time.certain then
+		time.approximation = ref_time.approximation
+		time.certain = ref_time.certain
+	end
 	return true
 end
 

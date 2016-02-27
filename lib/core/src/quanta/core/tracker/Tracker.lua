@@ -74,13 +74,17 @@ local function entry_error(entry, msg, ...)
 	return false, msg, entry.source_line
 end
 
-local function fixup_spillover(entry, r_start, r_end)
+local function fixup_spillover(entry_start, r_start, entry_end, r_end)
 	if
 		T.value(r_start.time) > T.value(r_end.time) and
 		T.date_seconds_utc(r_start.time) >= T.date_seconds_utc(r_end.time)
 	then
-		if T.difference(r_start.time, r_end.time) <= (2 * T.SECS_PER_HOUR) then
-			return entry_error(entry, "negative entry range appears to be typoed (end is within 2h before start)")
+		if T.difference(r_start.time, r_end.time) <= (8 * T.SECS_PER_HOUR) then
+			if entry_start == entry_end then
+				return entry_error(entry_start, "negative entry range appears to be typoed (end is within 8h before start)")
+			else
+				return entry_error(entry_start, "subsequent entry is non-chronological (end is within 8h before start)")
+			end
 		end
 		T.add(r_end.time, T.SECS_PER_DAY)
 	end
@@ -160,7 +164,7 @@ function M:validate_and_fixup()
 	for i, entry in ipairs(self.entries) do
 		if entry.r_start.type == M.EntryTime.Type.specified then
 			if prev_entry then
-				success, msg, source_line = fixup_spillover(prev_entry, prev_entry.r_start, entry.r_start)
+				success, msg, source_line = fixup_spillover(prev_entry, prev_entry.r_start, entry, entry.r_start)
 				if not success then return false, msg, source_line end
 			end
 			prev_entry = entry
@@ -182,7 +186,7 @@ function M:validate_and_fixup()
 		success, msg, source_line = fixup_time_ref(self, i, entry, entry.r_end, "end")
 		if not success then return false, msg, source_line end
 
-		success, msg, source_line = fixup_spillover(entry, entry.r_start, entry.r_end)
+		success, msg, source_line = fixup_spillover(entry, entry.r_start, entry, entry.r_end)
 		if not success then return false, msg, source_line end
 
 		entry:recalculate()

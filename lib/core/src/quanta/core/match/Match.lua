@@ -631,12 +631,14 @@ function M.Error:__init(msg, ...)
 	self.msg = string.format(msg, ...)
 	self.location = U.get_trace(3)
 	self.obj = nil
+	self.source_line = 0
 	self.path = nil
 end
 
 function M.Error:set_obj(obj)
 	U.type_assert(obj, "userdata")
 	self.obj = obj
+	self.source_line = O.source_line(self.obj)
 end
 
 function M.Error:set_path(path)
@@ -650,7 +652,10 @@ function M.Error:to_string()
 		str = str .. string.format("\nin file: %s\n", self.path)
 	end
 	if self.obj then
-		str = str .. "\nat object: ```\n" .. O.write_text_string(self.obj, true) .. "\n```"
+		str = str ..
+			string.format("\nat object (line %d): ```\n", self.source_line) ..
+			O.write_text_string(self.obj, true) ..
+			"\n```"
 	end
 	return str
 end

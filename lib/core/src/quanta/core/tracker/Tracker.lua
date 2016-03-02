@@ -5,6 +5,7 @@ local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Vessel = require "Quanta.Vessel"
+local Prop = require "Quanta.Prop"
 local Instance = require "Quanta.Instance"
 local M = U.module(...)
 
@@ -255,16 +256,58 @@ function M.Action.remove_internal_tags(obj)
 	remove_tag("action_primary")
 end
 
+local function add_action(list, obj)
+	local action = M.Action()
+	action.id = O.identifier(obj)
+	action.id_hash = O.identifier_hash(obj)
+	table.insert(list, action)
+
+	return action
+end
+
+function M.Action.struct_list(list)
+	U.type_assert(list, "table")
+	return list
+end
+
+function M.Action.adapt_struct_list(serialized_name, property_name)
+	local function element_pattern(name)
+		return Match.Pattern{
+			name = name,
+			vtype = O.Type.identifier,
+			tags = Match.Any,
+			children = Match.Any,
+			acceptor = function(context, parent, obj)
+				local action = add_action(parent[property_name], obj)
+				return parent:read_action(context, action, obj)
+			end,
+		}
+	end
+
+	local t_head = Match.Tree({
+	-- = ...
+	element_pattern(serialized_name),
+	-- = ... + ...
+	-- = {...}
+	Match.Pattern{
+		name = serialized_name,
+		vtype = {O.Type.null, O.Type.expression},
+		children = {
+			element_pattern(nil),
+		},
+	},
+	})
+	t_head:build()
+
+	return Prop.adapt_list_to_object(M.Action, serialized_name), t_head
+end
+
 M.Action.p_head = Match.Pattern{
 	vtype = O.Type.identifier,
 	tags = Match.Any,
 	children = Match.Any,
 	acceptor = function(context, entry, obj)
-		local action = M.Action()
-		action.id = O.identifier(obj)
-		action.id_hash = O.identifier_hash(obj)
-		table.insert(entry.actions, action)
-
+		local action = add_action(entry.actions, obj)
 		return context.user.director:read_action(context, entry, action, obj)
 	end,
 	post_branch = function(context, entry, obj)

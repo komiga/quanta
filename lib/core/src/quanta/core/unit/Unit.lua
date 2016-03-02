@@ -233,7 +233,8 @@ Match.Pattern{
 },
 -- implicit: P1
 Match.Pattern{
-	any_branch = M.t_element_body,
+	any = true,
+	branch = M.t_element_body,
 	acceptor = function(_, unit, obj)
 		local element = M.Element()
 		element.type = M.Element.Type.primary
@@ -287,7 +288,8 @@ Match.Pattern{
 },
 -- implicit: RS1
 Match.Pattern{
-	any_branch = Composition.t_body,
+	any = true,
+	branch = Composition.t_body,
 	acceptor = function(_, element, obj)
 		local step = M.Step()
 		step.index = 1

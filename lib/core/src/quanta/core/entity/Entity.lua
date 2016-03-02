@@ -429,7 +429,8 @@ Match.Pattern{
 	children = M.t_root,
 },
 Match.Pattern{
-	any_branch = M.t_source,
+	any = true,
+	branch = M.t_source,
 	acceptor = function(_, e, obj)
 		return e.sources[0]
 	end

@@ -141,7 +141,8 @@ M.t_body:add(M.p_instance)
 
 -- sub composition
 M.t_body:add(Match.Pattern{
-	any_branch = M.t_head,
+	any = true,
+	branch = M.t_head,
 	acceptor = function(context, self, obj)
 		local item = M()
 		table.insert(self.items, item)

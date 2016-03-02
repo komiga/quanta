@@ -250,11 +250,13 @@ function M.Pattern:__init(...)
 	local r = ...
 	U.type_assert(r, "table")
 	self.filters = {}
+
+	U.assert(r.any_branch == nil)
+	if r.branch then
+		U.type_assert(r.branch, M.Tree)
+		self.branch = r.branch
+	end
 	if r.any then
-		table.insert(self.filters, M.filters.func.yes)
-	elseif r.any_branch then
-		U.type_assert(r.any_branch, M.Tree)
-		self.any_branch = r.any_branch
 		table.insert(self.filters, M.filters.func.yes)
 	else
 		for _, filter in ipairs(M.filters_ordered) do
@@ -439,22 +441,21 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 			end
 		end
 	end
-	if p.any_branch then
-		if not do_object(context, p.any_branch, p.any_branch.keyed, p.any_branch.positional, obj, collection) then
+	if not do_sub(context, tree, nil, p.children, p.collect_post, obj, O.children) then
+		return false
+	end
+	if not do_sub(context, tree, nil, p.tags, p.collect_tags_post, obj, O.tags) then
+		return false
+	end
+	if p.quantity and O.has_quantity(obj) then
+		tree, keyed, patterns = into_tree(tree, nil, p.quantity)
+		if not do_object(context, tree, keyed, patterns, O.quantity(obj), nil) then
 			return false
 		end
-	else
-		if not do_sub(context, tree, nil, p.children, p.collect_post, obj, O.children) then
+	end
+	if p.branch then
+		if not do_object(context, p.branch, p.branch.keyed, p.branch.positional, obj, collection) then
 			return false
-		end
-		if not do_sub(context, tree, nil, p.tags, p.collect_tags_post, obj, O.tags) then
-			return false
-		end
-		if p.quantity and O.has_quantity(obj) then
-			tree, keyed, patterns = into_tree(tree, nil, p.quantity)
-			if not do_object(context, tree, keyed, patterns, O.quantity(obj), nil) then
-				return false
-			end
 		end
 	end
 

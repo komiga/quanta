@@ -215,7 +215,8 @@ Match.Pattern{
 M.t_body:add({
 Prop.Description.t_struct_head,
 Match.Pattern{
-	any_branch = M.t_head,
+	any = true,
+	branch = M.t_head,
 	acceptor = function(context, self, obj)
 		table.insert(context.user.scope_save, context.user.scope)
 		context.user.scope = {}

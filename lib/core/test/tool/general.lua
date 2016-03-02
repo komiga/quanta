@@ -79,6 +79,11 @@ function do_test(t)
 end
 
 function main(_)
+	Tool.main_config = {
+		vessel_root = "vessel_data",
+		vessel_work_local = true,
+	}
+
 	for _, t in pairs(tests) do
 		do_test(t)
 	end

@@ -14,6 +14,8 @@ local Unit = require "Quanta.Unit"
 local Tracker = require "Quanta.Tracker"
 
 function make_time(text)
+	U.type_assert(text, "string")
+
 	local t = Time()
 	local obj = O.create(text)
 	U.assert(obj)
@@ -22,6 +24,9 @@ function make_time(text)
 end
 
 function make_modifier(id, data)
+	U.type_assert(id, "string")
+	U.assert(U.is_type(data, "table") or U.is_instance(data))
+
 	local m = Instance.Modifier()
 	m.id = id
 	m.id_hash = O.hash_name(id)
@@ -34,8 +39,20 @@ function make_instance(
 	source, sub_source,
 	source_certain, sub_source_certain,
 	variant_certain, presence_certain,
-	measurements, selection, modifiers
+	measurements, modifiers, selection
 )
+	U.type_assert(name, "string")
+	U.type_assert(scope, "string", true)
+	U.type_assert(source, "number")
+	U.type_assert(sub_source, "number")
+	U.type_assert(source_certain, "boolean")
+	U.type_assert(sub_source_certain, "boolean")
+	U.type_assert(variant_certain, "boolean")
+	U.type_assert(presence_certain, "boolean")
+	U.type_assert(measurements, "table")
+	U.type_assert(modifiers, "table")
+	U.type_assert(selection, "table")
+
 	local i = Instance()
 	i.name = name
 	i.name_hash = O.hash_name(name)
@@ -47,27 +64,41 @@ function make_instance(
 	i.sub_source_certain = sub_source_certain
 	i.variant_certain = variant_certain
 	i.presence_certain = presence_certain
-	i.measurements = measurements
 	i.selection = selection
+	i.measurements = measurements
 	i.modifiers = modifiers
 	return i
 end
 
-function make_composition(measurement, items)
+function make_composition(measurements, modifiers, items)
+	U.type_assert(measurements, "table")
+	U.type_assert(modifiers, "table")
+	U.type_assert(items, "table")
+
 	local c = Composition()
 	c.items = items
-	c.measurement = measurement
+	c.modifiers = modifiers
+	c.measurements = measurements
 	return c
 end
 
-function make_step(index, measurement, items)
+function make_step(index, measurements, modifiers, items)
+	U.type_assert(index, "number")
+
 	local s = Unit.Step()
 	s.index = index
-	s.composition = make_composition(measurement, items)
+	s.composition = make_composition(measurements, modifiers, items)
 	return s
 end
 
 function make_element(type, index, description, author, note, steps)
+	U.type_assert(type, "number")
+	U.type_assert(index, "number")
+	U.type_assert(description, "string")
+	U.type_assert(author, "table")
+	U.type_assert(note, "table")
+	U.type_assert(steps, "table")
+
 	local e = Unit.Element()
 	e.type = type
 	e.index = index
@@ -86,13 +117,25 @@ function make_element_primary(index, description, author, note, steps)
 	return make_element(Unit.Element.Type.primary, index, description, author, note, steps)
 end
 
-function make_unit(type, name, description, author, note, elements_generic, elements_primary)
+function make_unit(type, name, description, author, note, measurements, modifiers, elements_generic, elements_primary)
+	U.type_assert(type, "number")
+	U.type_assert(name, "string")
+	U.type_assert(description, "string")
+	U.type_assert(author, "table")
+	U.type_assert(note, "table")
+	U.type_assert(measurements, "table")
+	U.type_assert(modifiers, "table")
+	U.type_assert(elements_generic, "table")
+	U.type_assert(elements_primary, "table")
+
 	local u = Unit()
 	u.type = type
 	u:set_name(name)
 	u.description = description
 	u.author = author
 	u.note = note
+	u.modifiers = modifiers
+	u.measurements = measurements
 	u.elements = {
 		elements_generic,
 		elements_primary,
@@ -101,6 +144,9 @@ function make_unit(type, name, description, author, note, elements_generic, elem
 end
 
 function make_tracker_action(id, data)
+	U.type_assert(id, "string")
+	U.assert(U.is_type(data, "table") or U.is_instance(data))
+
 	local a = Tracker.Action()
 	a.id = id
 	a.id_hash = O.hash_name(id)
@@ -118,8 +164,10 @@ function make_tracker_entry_time(time, approximation, certain)
 	local t = Tracker.EntryTime()
 	t.type = entry_time_types[time] or Tracker.EntryTime.Type.specified
 	if t.type == Tracker.EntryTime.Type.specified then
+		U.type_assert(time, "string", true)
 		t.time = make_time(time)
 	else
+		U.assert(time == nil)
 		t.time = T()
 	end
 	t.approximation = approximation
@@ -128,6 +176,17 @@ function make_tracker_entry_time(time, approximation, certain)
 end
 
 function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_scope, continue_id, primary_action, actions)
+	U.type_assert(ool, "boolean")
+	U.type_assert(r_start, Tracker.EntryTime)
+	U.type_assert(r_end, Tracker.EntryTime)
+	U.type_assert(tags, "table")
+	U.type_assert(rel_id, "table")
+	U.type_assert(continue_scope, "string", true)
+	U.type_assert(continue_id, "string", true)
+	U.type_assert(marker, "string", true)
+	U.type_assert(primary_action, "number", true)
+	U.type_assert(actions, "table")
+
 	local e = Tracker.Entry()
 	e.ool = ool
 	e.r_start = r_start
@@ -144,10 +203,20 @@ function make_tracker_entry(ool, r_start, r_end, tags, rel_id, continue_scope, c
 end
 
 function make_tracker(date, entries)
+	U.type_assert(date, "string")
+	U.type_assert(entries, "table")
+
 	local t = Tracker()
 	t.date = make_time(date)
 	t.entries = entries
 	return t
+end
+
+function check_measurement_list_equal(x, y)
+	U.assert(#x == #y)
+	for i = 1, #x do
+		U.assert(x[i] == y[i])
+	end
 end
 
 function check_author_equal(x, y)
@@ -176,6 +245,13 @@ function check_modifier_equal(x, y)
 	end
 end
 
+function check_modifier_list_equal(x, y)
+	U.assert(#x.modifiers == #y.modifiers)
+	for i = 1, #x.modifiers do
+		check_modifier_equal(x.modifiers[i], y.modifiers[i])
+	end
+end
+
 function check_instance_equal(x, y)
 	U.assert(x.name == y.name)
 	U.assert(x.name_hash == y.name_hash)
@@ -191,20 +267,13 @@ function check_instance_equal(x, y)
 	U.assert(x.variant_certain == y.variant_certain)
 	U.assert(x.presence_certain == y.presence_certain)
 
-	U.assert(#x.measurements == #y.measurements)
-	for mi = 1, #x.measurements do
-		U.assert(x.measurements[mi] == y.measurements[mi])
-	end
-
 	U.assert(#x.selection == #y.selection)
 	for si = 1, #x.selection do
 		check_instance_equal(x.selection[si], y.selection[si])
 	end
 
-	U.assert(#x.modifiers == #y.modifiers)
-	for mi = 1, #x.modifiers do
-		check_modifier_equal(x.modifiers[mi], y.modifiers[mi])
-	end
+	check_modifier_list_equal(x, y)
+	check_measurement_list_equal(x, y)
 end
 
 function check_composition_equal(x, y)
@@ -224,7 +293,9 @@ function check_composition_equal(x, y)
 			U.assert(false, "invalid composition item type: %s", type(xi))
 		end
 	end
-	U.assert(x.measurement == y.measurement)
+
+	check_modifier_list_equal(x, y)
+	check_measurement_list_equal(x, y)
 end
 
 function check_step_equal(x, y)
@@ -279,6 +350,9 @@ function check_unit_equal(x, y)
 	for i = 1, #a do
 		check_element_equal(a[i], b[i])
 	end
+
+	check_modifier_list_equal(x, y)
+	check_measurement_list_equal(x, y)
 end
 
 function check_tracker_action_equal(x, y)

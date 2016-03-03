@@ -14,14 +14,16 @@ U.class(M)
 function M:__init()
 	-- Instance, Composition, Unit
 	self.items = {}
-	self.measurement = Measurement()
+	self.modifiers = Instance.Modifier.struct_list({})
+	self.measurements = Measurement.struct_list({})
 end
 
 function M:from_object(obj, implicit_scope)
 	U.type_assert(obj, "userdata")
 
 	self.items = {}
-	self.measurement:__init()
+	self.measurements = {}
+	self.modifiers = {}
 
 	local context = Vessel.new_match_context(implicit_scope)
 	if not context:consume(M.t_head, obj, self) then
@@ -41,12 +43,9 @@ function M:to_object(obj, keep)
 	for _, item in pairs(self.items) do
 		item:to_object(O.push_child(obj))
 	end
+	Instance.Modifier.struct_list_to_tags(self.modifiers, obj)
+	Measurement.struct_list_to_quantity(self.measurements, obj)
 
-	if self.measurement:is_empty() then
-		O.release_quantity(obj)
-	else
-		self.measurement:to_object(O.make_quantity(obj))
-	end
 	return obj
 end
 
@@ -130,21 +129,10 @@ Match.Pattern{
 Match.Pattern{
 	vtype = {O.Type.null, O.Type.expression},
 	children = M.t_body,
-	quantity = Match.Any,
-	acceptor = function(context, self, obj)
-		-- [XXX, 1g], [1g]
-		if O.has_quantity(obj) then
-			local quantity = O.quantity(obj)
-			if O.is_null(quantity) and O.has_children(quantity) then
-				for _, sub in O.children(quantity) do
-					if self.measurement:from_object(sub) then
-						break
-					end
-				end
-			elseif not O.is_null(quantity) then
-				self.measurement:from_object(quantity)
-			end
-		end
+	tags = Instance.Modifier.t_struct_list_head,
+	quantity = Measurement.t_struct_list_head,
+	func = function(_, _, obj)
+		return O.has_children(obj)
 	end,
 },
 })

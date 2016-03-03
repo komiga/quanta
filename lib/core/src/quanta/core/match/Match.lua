@@ -279,13 +279,17 @@ function M.Pattern:__init(...)
 			)
 		end
 
-		self.branch = M.Tree(self.branch)
-		self.branch:build()
+		self.branch = {self.branch}
 	else
 		self.filters = {}
 		if r.branch then
-			U.type_assert(r.branch, M.Tree)
-			self.branch = r.branch
+			if U.is_type(r.branch, M.Pattern) then
+				self.branch = {r.branch}
+			elseif U.is_type_any(r.branch, {M.Tree, "table"}) then
+				self.branch = r.branch
+			else
+				U.assert(false, "branch rule must be a Match.Tree, a Match.Pattern, or a table containing either")
+			end
 		end
 		if not r.any then
 			for _, filter in ipairs(M.filters_ordered) do
@@ -480,13 +484,14 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 		return false
 	end
 	if p.quantity and O.has_quantity(obj) then
-		tree, keyed, patterns = into_tree(tree, nil, p.quantity)
-		if not do_object(context, tree, keyed, patterns, O.quantity(obj), nil) then
+		local b_tree, b_keyed, b_positional = into_tree(tree, nil, p.quantity)
+		if not do_object(context, b_tree, b_keyed, b_positional, O.quantity(obj), nil) then
 			return false
 		end
 	end
 	if p.branch then
-		if not do_object(context, p.branch, p.branch.keyed, p.branch.positional, obj, collection) then
+		local b_tree, b_keyed, b_positional = into_tree(tree, nil, p.branch)
+		if not do_object(context, b_tree, b_keyed, b_positional, obj, collection) then
 			return false
 		end
 	end

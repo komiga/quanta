@@ -25,7 +25,7 @@ end
 
 local translation_tests = {
 make_test(
-	[[{}]],
+	[[U{}]],
 	Unit.Type.none,
 	"",
 	"", {}, {},
@@ -40,7 +40,7 @@ make_test(
 ),
 
 make_test(
-	[[name = {}]],
+	[[name = U{}]],
 	Unit.Type.none,
 	"name",
 	"", {}, {},
@@ -48,7 +48,7 @@ make_test(
 ),
 
 make_test(
-	[[{d = "x"}]],
+	[[U{d = "x"}]],
 	Unit.Type.none,
 	"",
 	"x", {}, {},
@@ -56,21 +56,21 @@ make_test(
 ),
 
 make_test(
-	[[{author = "X%Y"}]],
+	[[U{author = "X%Y"}]],
 	Unit.Type.none,
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {}
 ),
 make_test(
-	[[{author = {"X%Y"}}]],
+	[[U{author = {"X%Y"}}]],
 	Unit.Type.none,
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {}
 ),
 make_test(
-	[[{author = {"X%Y", "Z%W"}}]],
+	[[U{author = {"X%Y", "Z%W"}}]],
 	Unit.Type.none,
 	"",
 	"", {
@@ -81,21 +81,21 @@ make_test(
 ),
 
 make_test(
-	[[{note = "x"}]],
+	[[U{note = "x"}]],
 	Unit.Type.none,
 	"",
 	"", {}, {Prop.Note("x")},
 	{}, {}
 ),
 make_test(
-	[[{note = {01:23, "x"}}]],
+	[[U{note = {01:23, "x"}}]],
 	Unit.Type.none,
 	"",
 	"", {}, {Prop.Note("x", make_time("2016-01-01T01:23Z"))},
 	{}, {}
 ),
 make_test(
-	[[{note = {{02T01:23, "x"}, "y"}}]],
+	[[U{note = {{02T01:23, "x"}, "y"}}]],
 	Unit.Type.none,
 	"",
 	"", {}, {
@@ -106,7 +106,7 @@ make_test(
 ),
 
 make_test(
-	[[{
+	[[U{
 		P1 = {
 			d = "blah"
 			x
@@ -125,7 +125,7 @@ make_test(
 ),
 
 make_test(
-	[[{
+	[[U{
 		x
 	}]],
 	Unit.Type.none,
@@ -141,7 +141,7 @@ make_test(
 ),
 
 make_test(
-	[[{
+	[[U{
 		P1 = {x}
 	}]],
 	Unit.Type.none,
@@ -156,7 +156,7 @@ make_test(
 	}
 ),
 make_test(
-	[[{
+	[[U{
 		P1 = {
 			RS1{x}
 		}
@@ -173,12 +173,12 @@ make_test(
 	}
 ),
 make_test_fail(
-	[[{
+	[[U{
 		P1 = {}
 	}]]
 ),
 make_test_fail(
-	[[{
+	[[U{
 		P1 = {
 			RS1{}
 		}

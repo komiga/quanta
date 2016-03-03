@@ -5,6 +5,7 @@ local T = require "Quanta.Time"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Vessel = require "Quanta.Vessel"
+local Measurement = require "Quanta.Measurement"
 local Prop = require "Quanta.Prop"
 local Instance = require "Quanta.Instance"
 local M = U.module(...)
@@ -39,6 +40,9 @@ function M:__init()
 		{}, -- M.Element.Type.generic
 		{}, -- M.Element.Type.primary
 	}
+
+	self.modifiers = Instance.Modifier.struct_list({})
+	self.measurements = Measurement.struct_list({})
 end
 
 function M:element_generic(index)
@@ -92,6 +96,8 @@ function M:to_object(obj)
 			e:to_object(O.push_child(obj))
 		end
 	end
+	Instance.Modifier.struct_list_to_tags(self.modifiers, obj)
+	Measurement.struct_list_to_quantity(self.measurements, obj)
 
 	return obj
 end
@@ -166,6 +172,8 @@ M.p_head = Match.Pattern{
 		return nil ~= M.TypeByNotation[O.identifier(obj)]
 	end,
 	children = M.t_body,
+	tags = Instance.Modifier.t_struct_list_head,
+	quantity = Measurement.t_struct_list_head,
 	acceptor = function(_, unit, obj)
 		unit.type = M.TypeByNotation[O.identifier(obj)]
 		unit:set_name(O.name(obj))

@@ -172,6 +172,37 @@ make_test(
 		}),
 	}
 ),
+make_test(
+	[[U{
+		P1 = {
+			RS1{
+				FH{d = "stuff", author = "X%Y", x}
+			}
+		}
+	}]],
+	Unit.Type.none,
+	"",
+	"", {}, {},
+	{}, {
+		make_element_primary(1, "", {}, {}, {
+			make_step(1, Measurement(), {
+				make_unit(
+					Unit.Type.familiar,
+					"",
+					"stuff", {Prop.Author("X%Y", true, nil, true)}, {},
+					{}, {
+						make_element_primary(1, "", {}, {}, {
+							make_step(1, Measurement(), {
+								make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+							}),
+						}),
+					}
+				),
+			}),
+		}),
+	}
+),
+
 make_test_fail(
 	[[U{
 		P1 = {}

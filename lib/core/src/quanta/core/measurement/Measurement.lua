@@ -2,6 +2,7 @@ u8R""__RAW_STRING__(
 
 local U = require "togo.utility"
 local O = require "Quanta.Object"
+local Match = require "Quanta.Match"
 local M = U.module(...)
 
 U.class(M)
@@ -303,6 +304,58 @@ function M:__eq(y)
 		self.certain == y.certain
 	)
 end
+
+function M.struct_list(list)
+	U.type_assert(list, "table")
+	return list
+end
+
+function M.struct_list_to_quantity(list, obj)
+	if #list == 0 or list[1]:is_empty() then
+		O.release_quantity(obj)
+	elseif #list == 1 then
+		list[1]:to_object(O.make_quantity(obj))
+	elseif #list > 1 then
+		local quantity = O.make_quantity(obj)
+		for _, m in pairs(list) do
+			if not m:is_empty() then
+				m:to_object(O.push_child(quantity))
+			end
+		end
+		if not O.has_children(quantity) then
+			O.release_quantity(quantity)
+		end
+	end
+end
+
+-- TODO: use a pattern instead of passively ignoring non-matching whole quantities
+function M.adapt_struct_list(property_name)
+	local p_element = Match.Pattern{
+		any = true,
+		acceptor = function(context, thing, obj)
+			local m = M(obj)
+			if not m:is_empty() then
+				table.insert(thing[property_name], m)
+			end
+		end,
+	}
+
+	local t_head = Match.Tree({
+	-- [..., ...]
+	Match.Pattern{
+		children = {
+			p_element,
+		},
+	},
+	-- [...]
+	p_element,
+	})
+	t_head:build()
+
+	return M.struct_list_to_quantity, t_head
+end
+
+_, M.t_struct_list_head = M.adapt_struct_list("measurements")
 
 return M
 

@@ -3,9 +3,11 @@ require "common"
 
 local U = require "togo.utility"
 local O = require "Quanta.Object"
+local Prop = require "Quanta.Prop"
 local Measurement = require "Quanta.Measurement"
 local Instance = require "Quanta.Instance"
 local Composition = require "Quanta.Composition"
+local Unit = require "Quanta.Unit"
 local Vessel = require "Quanta.Vessel"
 
 function make_test(text, measurement, items)
@@ -158,6 +160,52 @@ make_test(
 	Measurement(), {
 	make_instance("x", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
 	make_instance("y", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+}),
+
+make_test(
+	[[U{}]],
+	Measurement(), {
+	make_unit(
+		Unit.Type.none,
+		"",
+		"", {}, {},
+		{}, {}
+	),
+}),
+make_test(
+	[[{x, U{}}]],
+	Measurement(), {
+	make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	make_unit(
+		Unit.Type.none,
+		"",
+		"", {}, {},
+		{}, {}
+	),
+}),
+
+make_test(
+	[[U{
+		d = "root"
+		author = "X%Y",
+		P1 = {
+			d = "P1"
+			RS1{x}
+		}
+	}]],
+	Measurement(), {
+	make_unit(
+		Unit.Type.none,
+		"",
+		"root", {Prop.Author("X%Y", true, nil, true)}, {},
+		{}, {
+			make_element_primary(1, "P1", {}, {}, {
+				make_step(1, Measurement(), {
+					make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				}),
+			}),
+		}
+	),
 }),
 }
 

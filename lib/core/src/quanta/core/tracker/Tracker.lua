@@ -256,6 +256,10 @@ function M.Action.remove_internal_tags(obj)
 	remove_tag("action_primary")
 end
 
+M.Action.t_ignore_internal_tags = Match.Tree({
+Match.Pattern{name = "action_primary"},
+})
+
 local function add_action(list, obj)
 	local action = M.Action()
 	action.id = O.identifier(obj)

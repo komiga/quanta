@@ -210,7 +210,19 @@ end
 function check_composition_equal(x, y)
 	U.assert(#x.items == #y.items)
 	for i = 1, #x.items do
-		check_instance_equal(x.items[i], y.items[i])
+		local xi = x.items[i]
+		local yi = y.items[i]
+		local class = U.type_class(xi)
+		U.assert(class == U.type_class(yi))
+		if class == Instance then
+			check_instance_equal(xi, yi)
+		elseif class == Composition then
+			check_composition_equal(xi, yi)
+		elseif class == Unit then
+			check_unit_equal(xi, yi)
+		else
+			U.assert(false, "invalid composition item type: %s", type(xi))
+		end
 	end
 	U.assert(x.measurement == y.measurement)
 end

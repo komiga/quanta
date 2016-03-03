@@ -7,7 +7,6 @@ local Match = require "Quanta.Match"
 local Vessel = require "Quanta.Vessel"
 local Prop = require "Quanta.Prop"
 local Instance = require "Quanta.Instance"
-local Composition = require "Quanta.Composition"
 local M = U.module(...)
 
 M.Type = {
@@ -102,7 +101,7 @@ M.Step = U.class(M.Step)
 
 function M.Step:__init()
 	self.index = 1
-	self.composition = Composition()
+	self.composition = Quanta.Composition()
 end
 
 function M.Step:to_object(obj)
@@ -148,6 +147,11 @@ M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 M.t_element_body = Match.Tree()
 
+-- FIXME: cyclic dependency
+if not Quanta.Composition then
+	require "Quanta.Composition"
+end
+
 local shared_props = {
 	Prop.Description.t_struct_head,
 	Prop.Author.t_struct_head,
@@ -156,7 +160,7 @@ local shared_props = {
 
 -- type{...}
 -- UNIT = type{...}
-M.t_head:add(Match.Pattern{
+M.p_head = Match.Pattern{
 	name = Match.Any,
 	vtype = O.Type.identifier,
 	value = function(_, unit, obj, _)
@@ -177,7 +181,8 @@ M.t_head:add(Match.Pattern{
 			return Match.Error("no primary elements specified for unit")
 		end
 	end,--]]
-})
+}
+M.t_head:add(M.p_head)
 
 M.t_body:add(shared_props)
 
@@ -268,7 +273,7 @@ Match.Pattern{
 	value = function(_, _, obj, _)
 		return string.find(O.identifier(obj), "^RS[0-9]+$") ~= nil
 	end,
-	children = Composition.t_body,
+	children = Quanta.Composition.t_body,
 	acceptor = function(_, element, obj)
 		local step = M.Step()
 		step.index = tonumber(string.sub(O.identifier(obj), 3))
@@ -287,7 +292,7 @@ Match.Pattern{
 -- implicit: RS1
 Match.Pattern{
 	any = true,
-	branch = Composition.t_body,
+	branch = Quanta.Composition.t_body,
 	acceptor = function(_, element, obj)
 		local step = M.Step()
 		step.index = 1

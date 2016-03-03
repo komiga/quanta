@@ -12,7 +12,7 @@ local M = U.module(...)
 U.class(M)
 
 function M:__init()
-	-- Instance, Composition
+	-- Instance, Composition, Unit
 	self.items = {}
 	self.measurement = Measurement()
 end
@@ -53,13 +53,27 @@ end
 M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
+-- FIXME: cyclic dependency
+if not Quanta.Unit then
+	require "Quanta.Unit"
+end
+
 local function instance_acceptor(context, self, obj)
 	local item = Instance()
 	table.insert(self.items, item)
 	return context:consume(Instance.t_head, obj, item)
 end
 
-M.p_instance = {
+M.p_item = {
+-- sub unit
+Match.Pattern{
+	layer = Quanta.Unit.p_head,
+	acceptor = function(context, self, obj)
+		local item = Quanta.Unit()
+		table.insert(self.items, item)
+		return item
+	end,
+},
 -- x, x:m, x{...}
 Match.Pattern{
 	vtype = O.Type.identifier,
@@ -136,11 +150,12 @@ Match.Pattern{
 })
 
 -- instance
-M.t_head:add(M.p_instance)
-M.t_body:add(M.p_instance)
+M.t_head:add(M.p_item)
+M.t_body:add(M.p_item)
 
+M.t_body:add({
 -- sub composition
-M.t_body:add(Match.Pattern{
+Match.Pattern{
 	any = true,
 	branch = M.t_head,
 	acceptor = function(context, self, obj)
@@ -148,6 +163,7 @@ M.t_body:add(Match.Pattern{
 		table.insert(self.items, item)
 		return item
 	end,
+},
 })
 
 M.t_body:build()

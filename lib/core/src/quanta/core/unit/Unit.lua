@@ -132,6 +132,7 @@ end
 function M.Element:__init()
 	self.type = M.Element.Type.generic
 	self.index = 1
+	self.implicit = false
 	self.description = Prop.Description.struct("")
 	self.author = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})
@@ -216,21 +217,29 @@ Match.Pattern{
 		element.index = tonumber(string.sub(name, 2))
 
 		local bucket = unit.elements[element.type]
+		local current = bucket[element.index]
 		if element.index <= 0 then
 			return Match.Error(
-				"element '%s' (%s, %d) index must be greater than 0",
-				name, M.Element.Type[element.type].notation, element.index
+				"element %s%d index must be greater than 0",
+				M.Element.Type[element.type].notation, element.index
 			)
 		elseif element.index ~= #bucket + 1 then
 			return Match.Error(
-				"element '%s' (%s, %d) is not sequentially ordered",
-				name, M.Element.Type[element.type].notation, element.index
+				"element %s%d is not sequentially ordered",
+				M.Element.Type[element.type].notation, element.index
 			)
-		elseif bucket[element.index] then
-			return Match.Error(
-				"element '%s' (%s, %d) already exists",
-				name, M.Element.Type[element.type].notation, element.index
-			)
+		elseif current then
+			if current.implicit then
+				return Match.Error(
+					"cannot mix implicit and explicit elements (at explicit element %s%d)",
+					M.Element.Type[element.type].notation, element.index
+				)
+			else
+				return Match.Error(
+					"element %s%d already exists",
+					M.Element.Type[element.type].notation, element.index
+				)
+			end
 		end
 		bucket[element.index] = element
 		return element
@@ -242,18 +251,17 @@ Match.Pattern{
 	any = true,
 	branch = M.t_element_body,
 	acceptor = function(_, unit, obj)
-		local element = M.Element()
-		element.type = M.Element.Type.primary
-		element.index = 1
-
-		local bucket = unit.elements[element.type]
-		if bucket[element.index] then
-			return Match.Error(
-				"implicit element '%s%d' already exists",
-				M.Element.Type[element.type].notation, element.index
-			)
+		local bucket = unit.elements[M.Element.Type.primary]
+		local element = bucket[1]
+		if not element then
+			element = M.Element()
+			element.type = M.Element.Type.primary
+			element.index = 1
+			element.implicit = true
+			bucket[element.index] = element
+		elseif not element.implicit or #bucket > 1 then
+			return Match.Error("sub-property defined in unit root after explicit element")
 		end
-		bucket[element.index] = element
 		return element
 	end,
 	post_branch_pre = element_post_branch,
@@ -280,12 +288,18 @@ Match.Pattern{
 	acceptor = function(_, element, obj)
 		local step = M.Step()
 		step.index = tonumber(string.sub(O.identifier(obj), 3))
+
+		local current = element.steps[step.index]
 		if step.index <= 0 then
-			return Match.Error("step 'RS%d' index must be greater than 0", step.index)
+			return Match.Error("step RS%d index must be greater than 0", step.index)
 		elseif step.index ~= #element.steps + 1 then
-			return Match.Error("step 'RS%d' is not sequentially ordered", step.index)
-		elseif element.steps[step.index] then
-			return Match.Error("step 'RS%d' was already specified", step.index)
+			return Match.Error("step RS%d is not sequentially ordered", step.index)
+		elseif current then
+			if element.steps[1].implicit then
+				return Match.Error("cannot mix implicit and explicit steps (at explicit step RS%d)", step.index)
+			else
+				return Match.Error("step RS%d was already specified", step.index)
+			end
 		end
 		element.steps[step.index] = step
 		return step.composition
@@ -297,12 +311,15 @@ Match.Pattern{
 	any = true,
 	branch = Quanta.Composition.t_body,
 	acceptor = function(_, element, obj)
-		local step = M.Step()
-		step.index = 1
-		if element.steps[step.index] then
-			return Match.Error("implicit step 'RS%d' was already specified", step.index)
+		local step = element.steps[1]
+		if not step then
+			step = M.Step()
+			step.index = 1
+			step.implicit = true
+			element.steps[step.index] = step
+		elseif not step.implicit or #element.steps > 1 then
+			return Match.Error("sub-property defined in element root after explicit step")
 		end
-		element.steps[step.index] = step
 		return step.composition
 	end,
 	post_branch_pre = step_post_branch,

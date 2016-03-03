@@ -21,7 +21,6 @@ M.TypeByNotation = {}
 
 for i, t in ipairs(M.Type) do
 	t.index = i
-	-- table.insert(M.Type, t)
 	M.Type[t.name] = i
 	M.Type[t.notation] = i
 	M.TypeByNotation[t.notation] = i
@@ -163,16 +162,12 @@ local shared_props = {
 M.p_head = Match.Pattern{
 	name = Match.Any,
 	vtype = O.Type.identifier,
-	value = function(_, unit, obj, _)
-		local t = M.TypeByNotation[O.identifier(obj)]
-		if t then
-			unit.type = t
-			return true
-		end
-		return false
+	value = function(context, unit, obj, _)
+		return nil ~= M.TypeByNotation[O.identifier(obj)]
 	end,
 	children = M.t_body,
 	acceptor = function(_, unit, obj)
+		unit.type = M.TypeByNotation[O.identifier(obj)]
 		unit:set_name(O.name(obj))
 	end,
 	--[[post_branch = function(_, unit, _)

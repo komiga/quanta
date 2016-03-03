@@ -61,6 +61,51 @@ end
 	return M.prefix_certainty(obj, "")
 end--]]
 
+M.Specializer = U.class(M)
+
+function M.Specializer:__init()
+	self.classes = {}
+end
+
+function M.Specializer:register(id, class)
+	U.type_assert(id, "string")
+	U.assert(U.is_functable(class))
+
+	local id_hash = O.hash_name(id)
+	U.assert(id_hash ~= O.NAME_NULL, "class ID must be non-empty")
+	U.assert(not self.classes[id_hash], "class '%s' is already registered", id)
+
+	self.classes[id_hash] = {
+		id = id,
+		id_hash = id_hash,
+		class = class,
+	}
+end
+
+function M.Specializer:find(id, id_hash, fallback)
+	U.type_assert(id, "string")
+	U.type_assert(id_hash, "number")
+
+	local registered = self.classes[id_hash]
+	if not registered then
+		return fallback
+	else
+		if M.debug then
+			U.assert(id == registered.id)
+		end
+		return registered.class
+	end
+end
+
+function M.Specializer:read(context, parent, instance, obj, fallback)
+	local class = self:find(instance.id, instance.id_hash, fallback)
+	if not class then
+		return Match.Error("failed to find specialization '%s'", id)
+	end
+	instance.data = class()
+	return instance.data:from_object(context, parent, instance, obj)
+end
+
 M.Description = {}
 
 function M.Description.struct(description)

@@ -11,7 +11,7 @@ local Composition = require "Quanta.Composition"
 local M = U.module(...)
 
 M.Type = {
-	{name = "none", notation = ""},
+	{name = "none", notation = "U"},
 	{name = "self", notation = "S"},
 	{name = "meal", notation = "M"},
 	{name = "familiar", notation = "FH"},
@@ -86,11 +86,7 @@ function M:to_object(obj)
 	end
 
 	O.set_name(obj, self.name)
-	if self.type == M.Type.none then
-		O.set_null(obj)
-	else
-		O.set_identifier(obj, M.Type[self.type].notation)
-	end
+	O.set_identifier(obj, M.Type[self.type].notation)
 
 	to_object_shared(self, obj)
 	for _, bucket in ipairs(self.elements) do
@@ -158,19 +154,21 @@ local shared_props = {
 	Prop.Note.t_struct_head,
 }
 
--- {...}
--- UNIT = {...}
+-- type{...}
 -- UNIT = type{...}
 M.t_head:add(Match.Pattern{
 	name = Match.Any,
-	vtype = {O.Type.null, O.Type.identifier},
+	vtype = O.Type.identifier,
+	value = function(_, unit, obj, _)
+		local t = M.TypeByNotation[O.identifier(obj)]
+		if t then
+			unit.type = t
+			return true
+		end
+		return false
+	end,
 	children = M.t_body,
 	acceptor = function(_, unit, obj)
-		local type_name = O.is_type(obj, O.Type.identifier) and O.identifier(obj) or ""
-		unit.type = M.TypeByNotation[type_name]
-		if unit.type == nil then
-			return Match.Error("'%s' is not a valid unit type", type_name)
-		end
 		unit:set_name(O.name(obj))
 	end,
 	--[[post_branch = function(_, unit, _)

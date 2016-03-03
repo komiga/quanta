@@ -154,6 +154,29 @@ make_test(
 
 make_test(
 	[[U{
+		x
+		y
+		:z
+	}]],
+	Unit.Type.none,
+	"",
+	"", {}, {},
+	{}, {},
+	{}, {
+		make_element_primary(1, "", {}, {}, {
+			make_step(1, {}, {}, {
+				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance("y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance("", nil, nil, 0, 0, true, true, true, true, {}, {
+					make_modifier("z", Instance.UnknownModifier())
+				}, {}),
+			}),
+		}),
+	}
+),
+
+make_test(
+	[[U{
 		P1 = {x}
 	}]],
 	Unit.Type.none,

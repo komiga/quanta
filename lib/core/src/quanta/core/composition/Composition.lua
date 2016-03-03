@@ -149,11 +149,12 @@ Match.Pattern{
 },
 })
 
--- instance
+-- sub-items
 M.t_head:add(M.p_item)
-M.t_body:add(M.p_item)
 
 M.t_body:add({
+-- sub items
+M.p_item,
 -- sub composition
 Match.Pattern{
 	any = true,

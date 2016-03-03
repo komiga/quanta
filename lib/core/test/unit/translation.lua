@@ -9,10 +9,10 @@ local Instance = require "Quanta.Instance"
 local Unit = require "Quanta.Unit"
 local Vessel = require "Quanta.Vessel"
 
-function make_test(text, type, name, description, author, note, elements_generic, elements_primary)
+function make_test(text, type, name, description, author, note, measurements, modifiers, elements_generic, elements_primary)
 	return {
 		text = text,
-		unit = make_unit(type, name, description, author, note, elements_generic, elements_primary),
+		unit = make_unit(type, name, description, author, note, measurements, modifiers, elements_generic, elements_primary),
 	}
 end
 
@@ -29,6 +29,7 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {},
+	{}, {},
 	{}, {}
 ),
 make_test(
@@ -36,6 +37,7 @@ make_test(
 	Unit.Type.self,
 	"",
 	"", {}, {},
+	{}, {},
 	{}, {}
 ),
 
@@ -44,6 +46,7 @@ make_test(
 	Unit.Type.none,
 	"name",
 	"", {}, {},
+	{}, {},
 	{}, {}
 ),
 
@@ -52,6 +55,7 @@ make_test(
 	Unit.Type.none,
 	"",
 	"x", {}, {},
+	{}, {},
 	{}, {}
 ),
 
@@ -60,6 +64,7 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
+	{}, {},
 	{}, {}
 ),
 make_test(
@@ -67,6 +72,7 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
+	{}, {},
 	{}, {}
 ),
 make_test(
@@ -77,6 +83,7 @@ make_test(
 		Prop.Author("X%Y", true, nil, true),
 		Prop.Author("Z%W", true, nil, true),
 	}, {},
+	{}, {},
 	{}, {}
 ),
 
@@ -85,6 +92,7 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {Prop.Note("x")},
+	{}, {},
 	{}, {}
 ),
 make_test(
@@ -92,6 +100,7 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {Prop.Note("x", make_time("2016-01-01T01:23Z"))},
+	{}, {},
 	{}, {}
 ),
 make_test(
@@ -102,6 +111,7 @@ make_test(
 		Prop.Note("x", make_time("2016-01-02T01:23Z")),
 		Prop.Note("y"),
 	},
+	{}, {},
 	{}, {}
 ),
 
@@ -115,9 +125,10 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {},
+	{}, {},
 	{}, {
 		make_element_primary(1, "blah", {}, {}, {
-			make_step(1, Measurement(), {
+			make_step(1, {}, {}, {
 				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -131,9 +142,10 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {},
+	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, Measurement(), {
+			make_step(1, {}, {}, {
 				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -147,9 +159,10 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {},
+	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, Measurement(), {
+			make_step(1, {}, {}, {
 				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -164,9 +177,10 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {},
+	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, Measurement(), {
+			make_step(1, {}, {}, {
 				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -183,16 +197,18 @@ make_test(
 	Unit.Type.none,
 	"",
 	"", {}, {},
+	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, Measurement(), {
+			make_step(1, {}, {}, {
 				make_unit(
 					Unit.Type.familiar,
 					"",
 					"stuff", {Prop.Author("X%Y", true, nil, true)}, {},
+					{}, {},
 					{}, {
 						make_element_primary(1, "", {}, {}, {
-							make_step(1, Measurement(), {
+							make_step(1, {}, {}, {
 								make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 							}),
 						}),

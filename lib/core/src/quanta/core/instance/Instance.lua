@@ -25,9 +25,9 @@ function M:__init()
 	self.sub_source_certain = true
 	self.variant_certain = true
 	self.presence_certain = true
-	self.measurements = {}
 	self.selection = {}
-	self.modifiers = {}
+	self.modifiers = M.Modifier.struct_list({})
+	self.measurements = Measurement.struct_list({})
 end
 
 function M:set_name(name)
@@ -82,31 +82,14 @@ function M:to_object(obj)
 	O.set_sub_source_certain(obj, self.sub_source_certain)
 	O.set_value_certain(obj, self.presence_certain)
 
-	if #self.measurements == 0 or self.measurements[1]:is_empty() then
-		O.release_quantity(obj)
-	elseif #self.measurements == 1 then
-		self.measurements[1]:to_object(O.make_quantity(obj))
-	elseif #self.measurements > 1 then
-		local quantity = O.make_quantity(obj)
-		for _, measurement in pairs(self.measurements) do
-			if not measurement:is_empty() then
-				measurement:to_object(O.push_child(quantity))
-			end
-		end
-		if not O.has_children(quantity) then
-			O.release_quantity(quantity)
-		end
-	end
-
 	O.clear_children(obj)
 	Prop.Description.struct_to_object(self.description, obj)
 	for _, sel in pairs(self.selection) do
 		sel:to_object(O.push_child(obj))
 	end
 	O.clear_tags(obj)
-	for _, modifier in pairs(self.modifiers) do
-		modifier:to_object(O.push_tag(obj))
-	end
+	M.Modifier.struct_list_to_tags(self.modifiers, obj)
+	Measurement.struct_list_to_quantity(self.measurements, obj)
 
 	return obj
 end
@@ -131,6 +114,49 @@ function M.Modifier:to_object(obj)
 	end
 end
 
+function M.Modifier.struct_list(list)
+	U.type_assert(list, "table")
+	return list
+end
+
+function M.Modifier.struct_list_to_tags(list, obj)
+	for _, m in pairs(list) do
+		m:to_object(O.push_tag(obj))
+	end
+end
+
+-- TODO: use a pattern instead of passively ignoring non-matching whole quantities
+function M.Modifier.adapt_struct_list(property_name)
+	local p_element = Match.Pattern{
+		name = true,
+		children = Match.Any,
+		acceptor = function(context, parent, obj)
+			local modifier = M.Modifier()
+			modifier.id = O.name(obj)
+			modifier.id_hash = O.name_hash(obj)
+			table.insert(parent.modifiers, modifier)
+
+			return context.user.director:read_modifier(context, parent, modifier, obj)
+		end,
+	}
+
+	local t_head = Match.Tree({
+	-- [..., ...]
+	Match.Pattern{
+		children = {
+			p_element,
+		},
+	},
+	-- [...]
+	p_element,
+	})
+	t_head:build()
+
+	return M.Modifier.struct_list_to_tags, t_head
+end
+
+_, M.Modifier.t_struct_list_head = M.Modifier.adapt_struct_list("measurements")
+
 M.UnknownModifier = U.class(M.UnknownModifier)
 
 function M.UnknownModifier:__init(obj)
@@ -152,19 +178,6 @@ function M.UnknownModifier:compare_equal(other)
 	return true
 end
 
-M.Modifier.p_head = Match.Pattern{
-	name = true,
-	children = Match.Any,
-	acceptor = function(context, instance, obj)
-		local modifier = M.Modifier()
-		modifier.id = O.name(obj)
-		modifier.id_hash = O.name_hash(obj)
-		table.insert(instance.modifiers, modifier)
-
-		return context.user.director:read_modifier(context, instance, modifier, obj)
-	end,
-}
-
 M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
@@ -173,8 +186,8 @@ M.t_head:add({
 Match.Pattern{
 	vtype = O.Type.identifier,
 	children = M.t_body,
-	tags = {M.Modifier.p_head},
-	quantity = Match.Any,
+	tags = M.Modifier.t_struct_list_head,
+	quantity = Measurement.t_struct_list_head,
 	acceptor = function(context, self, obj)
 		self:set_name(O.identifier(obj))
 		if #context.user.scope > 0 then
@@ -186,29 +199,12 @@ Match.Pattern{
 		self.source_certain = not O.marker_source_uncertain(obj)
 		self.sub_source_certain = not O.marker_sub_source_uncertain(obj)
 		self.presence_certain = not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
-
-		if O.has_quantity(obj) then
-			local quantity = O.quantity(obj)
-			if O.is_null(quantity) and O.has_children(quantity) then
-				for _, sub in O.children(quantity) do
-					local m = Measurement(sub)
-					if not m:is_empty() then
-						table.insert(self.measurements, m)
-					end
-				end
-			elseif not O.is_null(quantity) then
-				local m = Measurement(quantity)
-				if not m:is_empty() then
-					table.insert(self.measurements, m)
-				end
-			end
-		end
 	end,
 },
 -- :m
 Match.Pattern{
 	vtype = O.Type.null,
-	tags = {M.Modifier.p_head},
+	tags = M.Modifier.t_struct_list_head,
 },
 })
 

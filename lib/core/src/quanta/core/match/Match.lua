@@ -246,64 +246,48 @@ local function filter_wrapper(name, f)
 	return f
 end
 
-local function layer_function(first, last, push)
-	if first and not last then
-		return first
-	elseif not first and last then
-		return last
-	elseif first and last and not push then
-		return function(context, value, obj)
-			local rv = first(context, value, obj)
-			if U.is_type(rv, M.Error) then
-				return rv
-			end
-			return last(context, context:value(), obj)
-		end
-	elseif first and last and push then
-		return function(context, value, obj)
-			local rv = first(context, value, obj)
-			if U.is_type(rv, M.Error) then
-				return rv
-			end
-			if rv ~= nil then
-				context:push(context:control(), rv)
-			end
-			return last(context, context:value(), obj)
-		end
-	end
-	return nil
-end
-
 function M.Pattern:__init(...)
 	local r = ...
 	U.type_assert(r, "table")
 	if r.layer then
 		U.type_assert(r.layer, M.Pattern)
-		self.layer = r.layer
-		for k, v in pairs(self.layer) do
+		self.filters = r.layer.filters
+		for k, v in pairs(r.layer) do
 			self[k] = v
 		end
+		self.children = nil
+		self.children_post = nil
+		self.tags = nil
+		self.tags_post = nil
+		self.quantity = nil
+		self.quantity_post = nil
 
-		self.acceptor = layer_function(r.acceptor, self.layer.acceptor, true)
-		self.post_branch = layer_function(self.layer.post_branch, r.post_branch)
-		self.post_branch_pre = layer_function(self.layer.post_branch_pre, r.post_branch_pre)
+		self.branch = M.Pattern{any = true}
+		for k, v in pairs(r.layer) do
+			self.branch[k] = v
+		end
+		self.branch.filters = {}
+		self.branch.name = nil
+		self.branch.names = nil
 
 		if M.debug then
+			self.branch.definition_location = string.format("[layer] %s", self.branch.definition_location)
 			self.definition_location = string.format(
 				"%s ==> %s",
 				U.get_trace(2),
-				self.layer.definition_location
+				r.layer.definition_location
 			)
 		end
+
+		self.branch = M.Tree(self.branch)
+		self.branch:build()
 	else
 		self.filters = {}
 		if r.branch then
 			U.type_assert(r.branch, M.Tree)
 			self.branch = r.branch
 		end
-		if r.any then
-			table.insert(self.filters, M.filters.func.yes)
-		else
+		if not r.any then
 			for _, filter in ipairs(M.filters_ordered) do
 				local f = filter.group.init(self, r)
 				if f then
@@ -311,14 +295,14 @@ function M.Pattern:__init(...)
 				end
 			end
 		end
-		self.acceptor = U.type_assert(r.acceptor, "function", true)
-		self.post_branch = U.type_assert(r.post_branch, "function", true)
-		self.post_branch_pre = U.type_assert(r.post_branch_pre, "function", true)
-
 		if M.debug then
 			self.definition_location = U.get_trace(2)
 		end
 	end
+
+	self.acceptor = U.type_assert(r.acceptor, "function", true)
+	self.post_branch = U.type_assert(r.post_branch, "function", true)
+	self.post_branch_pre = U.type_assert(r.post_branch_pre, "function", true)
 end
 
 function M.Pattern:matches(context, value, obj, keyed)

@@ -18,7 +18,7 @@ function M:__init()
 	self.scope = nil
 	-- Entity or Unit
 	self.item = nil
-	self.description = ""
+	self.description = Prop.Description.struct("")
 	self.source = 0
 	self.sub_source = 0
 	self.source_certain = true

@@ -58,7 +58,7 @@ end
 
 M.filters.name[false] 		= function(_, _, obj, p) return not O.is_named(obj) end
 M.filters.name[true] 		= function(_, _, obj, p) return O.is_named(obj) end
-M.filters.name["table"] 	= function(_, _, obj, p) return p.names[O.name(obj)] == true end
+M.filters.name["table"] 	= function(_, _, obj, p) return p.names[O.name(obj)] ~= nil end
 M.filters.name["string"] 	= function(_, _, obj, p) return p.name == O.name(obj) end
 
 M.filters.value = {}

@@ -175,10 +175,12 @@ function M:from_object(obj)
 	U.type_assert(obj, "userdata")
 
 	if O.is_numeric(obj) then
+		local unit = M.get_unit(O.unit_hash(obj))
+		if not unit then
+			return false
+		end
 		self:set(
-			O.numeric(obj),
-			O.unit_hash(obj),
-			0,
+			O.numeric(obj), unit, 0,
 			O.value_approximation(obj),
 			not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
 		)

@@ -12,10 +12,25 @@ local M = U.module(...)
 U.class(M)
 
 function M:__init()
+	self.name = nil
+	self.name_hash = O.NAME_NULL
+
 	-- Instance, Composition, Unit
 	self.items = {}
 	self.modifiers = Instance.Modifier.struct_list({})
 	self.measurements = Measurement.struct_list({})
+end
+
+function M:set_name(name)
+	U.type_assert(name, "string", true)
+
+	if name and name ~= "" then
+		self.name = name
+		self.name_hash = O.hash_name(self.name)
+	else
+		self.name = nil
+		self.name_hash = O.NAME_NULL
+	end
 end
 
 function M:from_object(obj, implicit_scope)
@@ -38,6 +53,12 @@ function M:to_object(obj, keep)
 		obj = O.create()
 	elseif not keep then
 		O.clear(obj)
+	end
+
+	if self.name_hash ~= O.NAME_NULL then
+		O.set_name(obj, self.name)
+	else
+		O.clear_name(obj)
 	end
 
 	for _, item in pairs(self.items) do
@@ -116,12 +137,16 @@ Match.Pattern{
 },
 -- {...}, (x + y ...)
 Match.Pattern{
+	name = Match.Any,
 	vtype = {O.Type.null, O.Type.expression},
 	children = M.t_body,
 	tags = Instance.Modifier.t_struct_list_head,
 	quantity = Measurement.t_struct_list_head,
 	func = function(_, _, obj)
 		return O.has_children(obj)
+	end,
+	acceptor = function(context, self, obj)
+		self:set_name(O.name(obj))
 	end,
 },
 })

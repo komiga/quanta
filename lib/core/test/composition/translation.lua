@@ -10,157 +10,157 @@ local Composition = require "Quanta.Composition"
 local Unit = require "Quanta.Unit"
 local Vessel = require "Quanta.Vessel"
 
-function make_test(text, measurements, modifiers, items)
+function make_test(text, name, measurements, modifiers, items)
 	return {
 		text = text,
-		comp = make_composition(measurements, modifiers, items),
+		comp = make_composition(name, measurements, modifiers, items),
 	}
 end
 
 local translation_tests = {
 make_test(
 	"x",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"x$1",
-	{}, {}, {
-	make_instance("x", nil, nil, 1, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 1, 0, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"x$1$2",
-	{}, {}, {
-	make_instance("x", nil, nil, 1, 2, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 1, 2, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"{x, y}",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
-	make_instance("y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	make_instance(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"x + y",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
-	make_instance("y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	make_instance(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"{x[1], y[2]}[3]",
-	{Measurement(3)}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
-	make_instance("y", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {}),
+	nil, {Measurement(3)}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
+	make_instance(nil, "y", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {}),
 }),
 
 make_test(
 	"x{P1[1], P2[1]}[2]",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {
-		make_instance("P1", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
-		make_instance("P2", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {
+		make_instance(nil, "P1", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
+		make_instance(nil, "P2", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
 	}),
 }),
 
 make_test(
 	"{x[2], x[2ml], x[2kg]}",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {}),
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "ml")}, {}, {}),
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "kg")}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {}),
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "ml")}, {}, {}),
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "kg")}, {}, {}),
 }),
 make_test(
 	"{x[?1], x[G~1]}",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
 }),
 make_test(
 	"{x[~~1], x[^^1]}",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, -2)}, {}, {}),
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0,  2)}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, -2)}, {}, {}),
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0,  2)}, {}, {}),
 }),
 make_test(
 	"x[1, 2]",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(1), Measurement(2)}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1), Measurement(2)}, {}, {}),
 }),
 make_test(
 	"x[1/2g]",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "g", 1)}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "g", 1)}, {}, {}),
 }),
 
 make_test(
 	"{x$?, x$?$?, x$?1, x$?1$?2}",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, false, true, true, true, {}, {}, {}),
-	make_instance("x", nil, nil, 0, 0, false, false, true, true, {}, {}, {}),
-	make_instance("x", nil, nil, 1, 0, false, true, true, true, {}, {}, {}),
-	make_instance("x", nil, nil, 1, 2, false, false, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, false, true, true, true, {}, {}, {}),
+	make_instance(nil, "x", nil, nil, 0, 0, false, false, true, true, {}, {}, {}),
+	make_instance(nil, "x", nil, nil, 1, 0, false, true, true, true, {}, {}, {}),
+	make_instance(nil, "x", nil, nil, 1, 2, false, false, true, true, {}, {}, {}),
 }),
 make_test(
 	"{x_¿, x¿}",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, false, true, {}, {}, {}),
-	make_instance("x", nil, nil, 0, 0, true, true, false, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, false, true, {}, {}, {}),
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, false, true, {}, {}, {}),
 }),
 make_test(
 	"?x",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, false, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, false, {}, {}, {}),
 }),
 
 make_test(
 	"x:m",
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {make_modifier("m", Instance.UnknownModifier())}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {make_modifier("m", Instance.UnknownModifier())}, {}),
 }),
 make_test(
 	":m",
-	{}, {}, {
-	make_instance("", nil, nil, 0, 0, true, true, true, true, {}, {make_modifier("m", Instance.UnknownModifier())}, {}),
+	nil, {}, {}, {
+	make_instance(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {make_modifier("m", Instance.UnknownModifier())}, {}),
 }),
 
 make_test(
 	"03T{x}",
-	{}, {}, {
-	make_instance("x", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"03T{x, y}",
-	{}, {}, {
-	make_instance("x", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
-	make_instance("y", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	make_instance(nil, "y", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
 }),
 
 make_test(
 	"02-03T{x}",
-	{}, {}, {
-	make_instance("x", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"02-03T{x, y}",
-	{}, {}, {
-	make_instance("x", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
-	make_instance("y", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	make_instance(nil, "y", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
 }),
 
 make_test(
 	"2015-02-03{x}",
-	{}, {}, {
-	make_instance("x", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
 }),
 make_test(
 	"2015-02-03{x, y}",
-	{}, {}, {
-	make_instance("x", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
-	make_instance("y", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	make_instance(nil, "y", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
 }),
 
 make_test(
 	[[U{}]],
-	{}, {}, {
+	nil, {}, {}, {
 	make_unit(
 		Unit.Type.none,
 		"",
@@ -171,8 +171,8 @@ make_test(
 }),
 make_test(
 	[[{x, U{}}]],
-	{}, {}, {
-	make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	nil, {}, {}, {
+	make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 	make_unit(
 		Unit.Type.none,
 		"",
@@ -191,7 +191,7 @@ make_test(
 			RS1{x}
 		}
 	}]],
-	{}, {}, {
+	nil, {}, {}, {
 	make_unit(
 		Unit.Type.none,
 		"",
@@ -199,8 +199,8 @@ make_test(
 		{}, {},
 		{}, {
 			make_element_primary(1, "P1", {}, {}, {
-				make_step(1, {}, {}, {
-					make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_step(1, nil, {}, {}, {
+					make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 				}),
 			}),
 		}

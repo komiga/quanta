@@ -128,8 +128,8 @@ make_test(
 	{}, {},
 	{}, {
 		make_element_primary(1, "blah", {}, {}, {
-			make_step(1, {}, {}, {
-				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+			make_step(1, nil, {}, {}, {
+				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
@@ -145,8 +145,8 @@ make_test(
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, {}, {}, {
-				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+			make_step(1, nil, {}, {}, {
+				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
@@ -164,10 +164,10 @@ make_test(
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, {}, {}, {
-				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
-				make_instance("y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
-				make_instance("", nil, nil, 0, 0, true, true, true, true, {}, {
+			make_step(1, nil, {}, {}, {
+				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_instance(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
 					make_modifier("z", Instance.UnknownModifier())
 				}, {}),
 			}),
@@ -185,12 +185,13 @@ make_test(
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, {}, {}, {
-				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+			make_step(1, nil, {}, {}, {
+				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
 ),
+
 make_test(
 	[[U{
 		P1 = {
@@ -203,8 +204,8 @@ make_test(
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, {}, {}, {
-				make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+			make_step(1, nil, {}, {}, {
+				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
@@ -223,7 +224,7 @@ make_test(
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, {}, {}, {
+			make_step(1, nil, {}, {}, {
 				make_unit(
 					Unit.Type.familiar,
 					"",
@@ -231,8 +232,8 @@ make_test(
 					{}, {},
 					{}, {
 						make_element_primary(1, "", {}, {}, {
-							make_step(1, {}, {}, {
-								make_instance("x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+							make_step(1, nil, {}, {}, {
+								make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 							}),
 						}),
 					}

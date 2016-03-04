@@ -35,13 +35,14 @@ function make_modifier(id, data)
 end
 
 function make_instance(
-	name, item, scope,
+	name, id, item, scope,
 	source, sub_source,
 	source_certain, sub_source_certain,
 	variant_certain, presence_certain,
 	measurements, modifiers, selection
 )
-	U.type_assert(name, "string")
+	U.type_assert(name, "string", true)
+	U.type_assert(id, "string", true)
 	U.type_assert(scope, "string", true)
 	U.type_assert(source, "number")
 	U.type_assert(sub_source, "number")
@@ -54,8 +55,8 @@ function make_instance(
 	U.type_assert(selection, "table")
 
 	local i = Instance()
-	i.name = name
-	i.name_hash = O.hash_name(name)
+	i:set_name(name)
+	i:set_id(id)
 	i.scope = scope and make_time(scope) or nil
 	i.item = item
 	i.source = source
@@ -70,24 +71,26 @@ function make_instance(
 	return i
 end
 
-function make_composition(measurements, modifiers, items)
+function make_composition(name, measurements, modifiers, items)
+	U.type_assert(name, "string", true)
 	U.type_assert(measurements, "table")
 	U.type_assert(modifiers, "table")
 	U.type_assert(items, "table")
 
 	local c = Composition()
+	c:set_name(name)
 	c.items = items
 	c.modifiers = modifiers
 	c.measurements = measurements
 	return c
 end
 
-function make_step(index, measurements, modifiers, items)
+function make_step(index, name, measurements, modifiers, items)
 	U.type_assert(index, "number")
 
 	local s = Unit.Step()
 	s.index = index
-	s.composition = make_composition(measurements, modifiers, items)
+	s.composition = make_composition(name, measurements, modifiers, items)
 	return s
 end
 
@@ -253,8 +256,8 @@ function check_modifier_list_equal(x, y)
 end
 
 function check_instance_equal(x, y)
-	U.assert(x.name == y.name)
-	U.assert(x.name_hash == y.name_hash)
+	U.assert(x.id == y.id)
+	U.assert(x.id_hash == y.id_hash)
 	U.assert((x.scope == nil) == (y.scope == nil))
 	if x.scope then
 		U.assert(Time.compare_equal(x.scope, y.scope))

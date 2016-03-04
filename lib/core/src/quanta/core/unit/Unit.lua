@@ -206,55 +206,86 @@ local function element_post_branch(_, element, _)
 	end
 end
 
+local function element_name_filter(_, _, obj, _)
+	return (
+		O.is_named(obj) and
+		string.find(O.name(obj), "^[EP][0-9]+$") ~= nil
+	)
+end
+
+local function element_acceptor(element, _, unit, obj)
+	local name = O.name(obj)
+	element.type = M.Element.Type[string.sub(name, 1, 1)]
+	U.assert(element.type ~= nil)
+	element.index = tonumber(string.sub(name, 2))
+
+	local bucket = unit.elements[element.type]
+	local current = bucket[element.index]
+	if element.index <= 0 then
+		return Match.Error(
+			"element %s%d index must be greater than 0",
+			M.Element.Type[element.type].notation, element.index
+		)
+	elseif element.index ~= #bucket + 1 then
+		return Match.Error(
+			"element %s%d is not sequentially ordered",
+			M.Element.Type[element.type].notation, element.index
+		)
+	elseif current then
+		if current.implicit then
+			return Match.Error(
+				"cannot mix implicit and explicit elements (at explicit element %s%d)",
+				M.Element.Type[element.type].notation, element.index
+			)
+		else
+			return Match.Error(
+				"element %s%d already exists",
+				M.Element.Type[element.type].notation, element.index
+			)
+		end
+	end
+	bucket[element.index] = element
+end
+
 -- Element
 M.t_body:add({
--- P# = {...}
--- E# = {...}
+-- = {...}
 Match.Pattern{
-	name = function(_, _, obj, _)
-		return (
-			O.is_named(obj) and
-			string.find(O.name(obj), "^[EP][0-9]+$") ~= nil
-		)
-	end,
+	name = element_name_filter,
 	vtype = O.Type.null,
 	children = M.t_element_body,
-	acceptor = function(_, unit, obj)
+	acceptor = function(context, unit, obj)
 		local element = M.Element()
-		local name = O.name(obj)
-		element.type = M.Element.Type[string.sub(name, 1, 1)]
-		U.assert(element.type ~= nil)
-		element.index = tonumber(string.sub(name, 2))
-
-		local bucket = unit.elements[element.type]
-		local current = bucket[element.index]
-		if element.index <= 0 then
-			return Match.Error(
-				"element %s%d index must be greater than 0",
-				M.Element.Type[element.type].notation, element.index
-			)
-		elseif element.index ~= #bucket + 1 then
-			return Match.Error(
-				"element %s%d is not sequentially ordered",
-				M.Element.Type[element.type].notation, element.index
-			)
-		elseif current then
-			if current.implicit then
-				return Match.Error(
-					"cannot mix implicit and explicit elements (at explicit element %s%d)",
-					M.Element.Type[element.type].notation, element.index
-				)
-			else
-				return Match.Error(
-					"element %s%d already exists",
-					M.Element.Type[element.type].notation, element.index
-				)
-			end
-		end
-		bucket[element.index] = element
-		return element
+		return element_acceptor(element, context, unit, obj) or element
 	end,
 	post_branch_pre = element_post_branch,
+},
+-- = ... (prototype shorthand)
+Match.Pattern{
+	name = element_name_filter,
+	vtype = {O.Type.identifier, O.Type.string},
+	children = Match.Any,
+	tags = Match.Any,
+	branch = Instance.t_head,
+	acceptor = function(context, unit, obj)
+		local element = M.Element()
+		local err = element_acceptor(element, context, unit, obj)
+		if err then
+			return err
+		end
+		local step = M.Step()
+		step.index = 1
+		step.implicit = true
+		table.insert(element.steps, step)
+
+		local instance = Instance()
+		table.insert(step.composition.items, instance)
+		return instance
+	end,
+	post_branch_pre = function(_, instance, _)
+		instance:set_name("prototype")
+	end,
+	-- post_branch_pre = element_post_branch,
 },
 -- implicit: P1
 Match.Pattern{

@@ -793,6 +793,7 @@ end
 
 -- attachment
 M.Attachment.p_head = Match.Pattern{
+	name = Match.Any,
 	vtype = O.Type.identifier,
 	tags = Match.Any,
 	children = Match.Any,

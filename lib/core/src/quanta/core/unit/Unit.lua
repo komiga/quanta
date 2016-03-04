@@ -163,11 +163,6 @@ M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 M.t_element_body = Match.Tree()
 
--- FIXME: cyclic dependency
-if not Quanta.Composition then
-	require "Quanta.Composition"
-end
-
 local shared_props = {
 	Prop.Description.t_struct_head,
 	Prop.Author.t_struct_head,
@@ -315,6 +310,11 @@ local function step_post_branch(_, composition, _)
 	if #composition.items == 0 then
 		return Match.Error("no items specified for step")
 	end
+end
+
+-- FIXME: cyclic dependency
+if not Quanta.Composition then
+	require "Quanta.Composition"
 end
 
 -- Step

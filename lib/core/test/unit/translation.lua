@@ -216,6 +216,7 @@ make_test(
 			RS1{
 				FH{d = "stuff", author = "X%Y", x}
 			}
+			RS2{:cook}
 		}
 	}]],
 	Unit.Type.none,
@@ -238,6 +239,11 @@ make_test(
 						}),
 					}
 				),
+			}),
+			make_step(2, nil, {}, {}, {
+				make_instance(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
+					make_modifier("cook", Instance.UnknownModifier()),
+				}, {}),
 			}),
 		}),
 	}

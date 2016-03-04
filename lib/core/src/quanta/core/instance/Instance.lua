@@ -12,8 +12,11 @@ local M = U.module(...)
 U.class(M)
 
 function M:__init()
-	self.name = ""
+	self.name = nil
 	self.name_hash = O.NAME_NULL
+	self.id = nil
+	self.id_hash = O.NAME_NULL
+
 	-- NB: can be shared!
 	self.scope = nil
 	-- Entity or Unit
@@ -31,18 +34,37 @@ function M:__init()
 end
 
 function M:set_name(name)
-	self.name = name
-	-- utf8(¿) => C2 BF
-	if string.sub(self.name, -2) == "¿" then
-		self.name = string.sub(
-			self.name, 1,
-			string.sub(self.name, -3, -3) == "_" and -4 or -3
-		)
-		self.variant_certain = false
+	U.type_assert(name, "string", true)
+
+	if name and name ~= "" then
+		self.name = name
+		self.name_hash = O.hash_name(self.name)
 	else
-		self.variant_certain = true
+		self.name = nil
+		self.name_hash = O.NAME_NULL
 	end
-	self.name_hash = O.hash_name(self.name)
+end
+
+function M:set_id(id)
+	U.type_assert(id, "string", true)
+
+	if id and id ~= "" then
+		-- utf8(¿) => C2 BF
+		if string.sub(id, -2) == "¿" then
+			id = string.sub(
+				id, 1,
+				string.sub(id, -3, -3) == "_" and -4 or -3
+			)
+			self.variant_certain = false
+		else
+			self.variant_certain = true
+		end
+		self.id = id
+		self.id_hash = O.hash_name(self.id)
+	else
+		self.id = nil
+		self.id_hash = O.NAME_NULL
+	end
 end
 
 function M:from_object(obj, implicit_scope)
@@ -71,7 +93,12 @@ function M:to_object(obj)
 	end
 
 	if self.name_hash ~= O.NAME_NULL then
-		O.set_identifier(obj, self.name .. (self.variant_certain and "" or "¿"))
+		O.set_name(obj, self.name)
+	else
+		O.clear_name(obj)
+	end
+	if self.id_hash ~= O.NAME_NULL then
+		O.set_identifier(obj, self.id .. (self.variant_certain and "" or "¿"))
 	else
 		O.set_null(obj)
 	end
@@ -181,31 +208,50 @@ end
 M.t_head = Match.Tree()
 M.t_body = Match.Tree()
 
-M.t_head:add({
+local function translate_basic(self, obj)
+	self:set_name(O.name(obj))
+	self.source = O.source(obj)
+	self.sub_source = O.sub_source(obj)
+	self.source_certain = not O.marker_source_uncertain(obj)
+	self.sub_source_certain = not O.marker_sub_source_uncertain(obj)
+	self.presence_certain = not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
+end
+
 -- x, x:m, x{...}
-Match.Pattern{
-	vtype = O.Type.identifier,
+M.p_head_id = Match.Pattern{
+	name = Match.Any,
+	vtype = {O.Type.identifier, O.Type.string},
 	children = M.t_body,
 	tags = M.Modifier.t_struct_list_head,
 	quantity = Measurement.t_struct_list_head,
 	acceptor = function(context, self, obj)
-		self:set_name(O.identifier(obj))
+		translate_basic(self, obj)
+		if O.is_identifier(obj) then
+			self:set_id(O.identifier(obj))
+		else
+			self:set_id(O.string(obj))
+		end
 		if #context.user.scope > 0 then
 			self.scope = U.table_last(context.user.scope)
 		end
-
-		self.source = O.source(obj)
-		self.sub_source = O.sub_source(obj)
-		self.source_certain = not O.marker_source_uncertain(obj)
-		self.sub_source_certain = not O.marker_sub_source_uncertain(obj)
-		self.presence_certain = not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
 	end,
-},
--- :m
-Match.Pattern{
+}
+
+-- ?, :m
+M.p_head_empty = Match.Pattern{
+	name = Match.Any,
 	vtype = O.Type.null,
 	tags = M.Modifier.t_struct_list_head,
-},
+	quantity = Measurement.t_struct_list_head,
+	acceptor = function(context, self, obj)
+		self:set_name(O.name(obj))
+		translate_basic(self, obj)
+	end,
+}
+
+M.t_head:add({
+M.p_head_id,
+M.p_head_empty,
 })
 
 M.t_body:add({

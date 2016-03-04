@@ -60,7 +60,7 @@ end
 local function instance_acceptor(context, self, obj)
 	local item = Instance()
 	table.insert(self.items, item)
-	return context:consume(Instance.t_head, obj, item)
+	return item
 end
 
 M.p_item = {
@@ -73,24 +73,13 @@ Match.Pattern{
 		return item
 	end,
 },
--- x, x:m, x{...}
+-- sub instance
 Match.Pattern{
-	vtype = O.Type.identifier,
-	children = Match.Any,
-	tags = Match.Any,
-	quantity = Match.Any,
-	func = function(_, _, obj, _)
-		return O.op(obj) == O.Operator.add
-	end,
+	layer = Instance.p_head_id,
 	acceptor = instance_acceptor,
 },
--- :m
 Match.Pattern{
-	vtype = O.Type.null,
-	tags = true,
-	func = function(_, _, obj, _)
-		return O.op(obj) == O.Operator.add
-	end,
+	layer = Instance.p_head_empty,
 	acceptor = instance_acceptor,
 },
 }

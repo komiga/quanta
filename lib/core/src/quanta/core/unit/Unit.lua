@@ -31,7 +31,7 @@ U.class(M)
 
 function M:__init()
 	self.type = M.Type.none
-	self.name = ""
+	self.name = nil
 	self.name_hash = O.NAME_NULL
 	self.description = Prop.Description.struct("")
 	self.author = Prop.Author.struct({})
@@ -56,10 +56,15 @@ function M:element_primary(index)
 end
 
 function M:set_name(name)
-	U.type_assert(name, "string")
+	U.type_assert(name, "string", true)
 
-	self.name = name
-	self.name_hash = O.hash_name(self.name)
+	if name and name ~= "" then
+		self.name = name
+		self.name_hash = O.hash_name(self.name)
+	else
+		self.name = nil
+		self.name_hash = O.NAME_NULL
+	end
 end
 
 function M:from_object(obj, implicit_scope)
@@ -87,7 +92,11 @@ function M:to_object(obj)
 		O.release_quantity(obj)
 	end
 
-	O.set_name(obj, self.name)
+	if self.name_hash ~= O.NAME_NULL then
+		O.set_name(obj, self.name)
+	else
+		O.clear_name(obj)
+	end
 	O.set_identifier(obj, M.Type[self.type].notation)
 
 	to_object_shared(self, obj)
@@ -106,6 +115,7 @@ M.Step = U.class(M.Step)
 
 function M.Step:__init()
 	self.index = 1
+	self.implicit = false
 	self.composition = Quanta.Composition()
 end
 

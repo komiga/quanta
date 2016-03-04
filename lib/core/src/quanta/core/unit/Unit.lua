@@ -174,7 +174,7 @@ local shared_props = {
 M.p_head = Match.Pattern{
 	name = Match.Any,
 	vtype = O.Type.identifier,
-	value = function(context, unit, obj, _)
+	value = function(_, _, obj, _)
 		return nil ~= M.TypeByNotation[O.identifier(obj)]
 	end,
 	children = M.t_body,
@@ -326,6 +326,7 @@ Match.Pattern{
 		return string.find(O.identifier(obj), "^RS[0-9]+$") ~= nil
 	end,
 	children = Quanta.Composition.t_body,
+	quantity = Match.Any,
 	acceptor = function(_, element, obj)
 		local step = M.Step()
 		step.index = tonumber(string.sub(O.identifier(obj), 3))

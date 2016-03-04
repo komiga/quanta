@@ -191,6 +191,22 @@ make_test(
 		}),
 	}
 ),
+make_test(
+	[[U{
+		P1 = x
+	}]],
+	Unit.Type.none,
+	"",
+	"", {}, {},
+	{}, {},
+	{}, {
+		make_element_primary(1, "", {}, {}, {
+			make_step(1, nil, {}, {}, {
+				make_instance("prototype", "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+			}),
+		}),
+	}
+),
 
 make_test(
 	[[U{

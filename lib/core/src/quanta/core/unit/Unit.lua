@@ -221,11 +221,6 @@ local function element_acceptor(element, _, unit, obj)
 			"element %s%d index must be greater than 0",
 			M.Element.Type[element.type].notation, element.index
 		)
-	elseif element.index ~= #bucket + 1 then
-		return Match.Error(
-			"element %s%d is not sequentially ordered",
-			M.Element.Type[element.type].notation, element.index
-		)
 	elseif current then
 		if current.implicit then
 			return Match.Error(
@@ -238,6 +233,11 @@ local function element_acceptor(element, _, unit, obj)
 				M.Element.Type[element.type].notation, element.index
 			)
 		end
+	elseif element.index ~= #bucket + 1 then
+		return Match.Error(
+			"element %s%d is not sequentially ordered",
+			M.Element.Type[element.type].notation, element.index
+		)
 	end
 	bucket[element.index] = element
 end
@@ -333,14 +333,14 @@ Match.Pattern{
 		local current = element.steps[step.index]
 		if step.index <= 0 then
 			return Match.Error("step RS%d index must be greater than 0", step.index)
-		elseif step.index ~= #element.steps + 1 then
-			return Match.Error("step RS%d is not sequentially ordered", step.index)
 		elseif current then
 			if element.steps[1].implicit then
 				return Match.Error("cannot mix implicit and explicit steps (at explicit step RS%d)", step.index)
 			else
 				return Match.Error("step RS%d was already specified", step.index)
 			end
+		elseif step.index ~= #element.steps + 1 then
+			return Match.Error("step RS%d is not sequentially ordered", step.index)
 		end
 		element.steps[step.index] = step
 		return step.composition

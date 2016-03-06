@@ -28,7 +28,6 @@ function M:__init(name, id, id_hash, class)
 	self.id_hash = id_hash or O.NAME_NULL
 	self.data = nil
 
-	self.description = Prop.Description.struct("")
 	self.sources = {}
 	self.universe = nil
 	self.parent = nil

@@ -79,7 +79,7 @@ function do_test(t)
 end
 
 function main(_)
-	Tool.main_config = {
+	Tool.main_tool.default_data = {
 		vessel_root = "vessel_data",
 		vessel_work_local = true,
 	}

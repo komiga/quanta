@@ -36,7 +36,6 @@ function M:__init(name, id, id_hash, class)
 
 	self:set_name(name)
 	if class then
-		U.assert(U.class(class) == class)
 		self.data = class(self)
 	else
 		self.data = nil
@@ -262,7 +261,7 @@ function M.Source:__init(entity)
 	self.data = nil
 
 	if entity.data then
-		entity.data:init_source(entity, self)
+		self.data = entity.data.Source(self)
 	end
 end
 
@@ -318,7 +317,34 @@ local function parent_source_value(name)
 	end
 end
 
-M.t_source = Match.Tree()
+M.Source.t_body = Match.Tree()
+
+function M.specialize_source_fallthrough(body)
+	return Match.Pattern{
+		any = true,
+		branch = body,
+		acceptor = function(_, e, obj)
+			return e.sources[0]
+		end,
+	}
+end
+
+function M.specialize_sources(body)
+	return Match.Pattern{
+		name = "sources",
+		children = {Match.Pattern{
+			children = body,
+			acceptor = function(_, e, obj)
+				return e:add_source(M.Source(e))
+			end
+		}},
+		acceptor = function(_, e, obj)
+			if e:any_sources() then
+				return Match.Error("entity source(s) already defined")
+			end
+		end
+	}
+end
 
 local _, t_source_description = Prop.Description.adapt_struct(
 	"d", "description",
@@ -329,7 +355,7 @@ local _, t_source_label = Prop.Description.adapt_struct(
 	parent_source_value("label")
 )
 
-M.t_source:add({
+M.Source.t_body:add({
 Prop.Note.t_struct_head,
 Prop.Author.t_struct_head,
 t_source_description,
@@ -428,23 +454,17 @@ Match.Pattern{
 	name = "children",
 	children = M.t_root,
 },
-Match.Pattern{
-	any = true,
-	branch = M.t_source,
-	acceptor = function(_, e, obj)
-		return e.sources[0]
-	end
-},
 })
 
 M.t_entity_body = Match.Tree()
+M.t_entity_body_generic = Match.Tree()
 
 M.t_entity_head = Match.Tree({
 Match.Pattern{
 	name = true,
 	vtype = O.Type.identifier,
 	value = "Generic",
-	children = M.t_entity_body,
+	children = M.t_entity_body_generic,
 	acceptor = function(_, parent, obj)
 		return parent:add(M(O.name(obj)))
 	end
@@ -452,31 +472,24 @@ Match.Pattern{
 })
 
 M.t_entity_body:add({
-Match.Pattern{
-	name = "sources",
-	children = {Match.Pattern{
-		children = M.t_source,
-		acceptor = function(_, e, obj)
-			return e:add_source(M.Source(e))
-		end
-	}},
-	acceptor = function(_, e, obj)
-		if e:any_sources() then
-			return Match.Error("entity source(s) already defined")
-		end
-	end
-},
 M.t_shared_body,
 })
 
+M.t_entity_body_generic:add({
+M.t_entity_body,
+M.specialize_sources(M.Source.t_body),
+M.specialize_source_fallthrough(M.Source.t_body),
+})
+
 M.t_category_body = Match.Tree()
+M.t_category_body_generic = Match.Tree()
 
 M.t_category_head = Match.Tree({
 Match.Pattern{
 	name = true,
 	vtype = O.Type.identifier,
 	value = "GenericCategory",
-	children = M.t_category_body,
+	children = M.t_category_body_generic,
 	acceptor = function(_, parent, obj)
 		return parent:add(M.Category(O.name(obj)))
 	end
@@ -484,6 +497,7 @@ Match.Pattern{
 })
 
 M.t_category_body:add({
+M.t_shared_body,
 Match.Pattern{
 	name = "include",
 	collect = {Match.Pattern{
@@ -507,7 +521,11 @@ Match.Pattern{
 		return true
 	end
 },
-M.t_shared_body,
+})
+
+M.t_category_body_generic:add({
+M.t_category_body,
+M.specialize_source_fallthrough(M.Source.t_body),
 })
 
 M.p_specialization = Match.Pattern{
@@ -534,9 +552,9 @@ M.t_root:add({
 	M.p_specialization,
 })
 
-M.t_source:build()
-M.t_entity_body:build()
-M.t_category_body:build()
+M.Source.t_body:build()
+M.t_entity_body_generic:build()
+M.t_category_body_generic:build()
 M.t_root:build()
 
 function M.read_universe(rp, name)

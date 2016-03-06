@@ -10,7 +10,7 @@ local Composition = require "Quanta.Composition"
 local M = U.module(...)
 
 M.Type = {
-	generic = 1,
+	thing = 1,
 	category = 2,
 	universe = 3,
 }
@@ -21,7 +21,7 @@ function M:__init(name, id, id_hash, class)
 	U.type_assert(id, "string", true)
 	U.type_assert(id_hash, "number", true)
 
-	self.type = M.Type.generic
+	self.type = M.Type.thing
 	self.name = nil
 	self.name_hash = O.NAME_NULL
 
@@ -43,8 +43,8 @@ function M:__init(name, id, id_hash, class)
 	self.sources[0] = M.Source(self)
 end
 
-function M:is_specialized()
-	return self.id_hash ~= O.NAME_NULL
+function M:is_thing()
+	return self.type == M.Type.thing
 end
 
 function M:is_category()
@@ -53,6 +53,10 @@ end
 
 function M:is_universe()
 	return self.type == M.Type.universe
+end
+
+function M:is_specialized()
+	return self.id_hash ~= O.NAME_NULL
 end
 
 function M:set_name(name)

@@ -6,6 +6,7 @@ local Vessel = require "Quanta.Vessel"
 local Match = require "Quanta.Match"
 local Measurement = require "Quanta.Measurement"
 local Prop = require "Quanta.Prop"
+local Composition = require "Quanta.Composition"
 local M = U.module(...)
 
 M.Type = {
@@ -257,6 +258,7 @@ function M.Source:__init(entity)
 	self.author = Prop.Author.struct({})
 	self.vendor = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})
+	self.composition = Composition()
 	self.data = nil
 
 	if entity.data then
@@ -363,8 +365,8 @@ Match.Pattern{
 	name = "vendor",
 	vtype = {O.Type.null, O.Type.string},
 	tags = Prop.Author.t_head_tags,
-	acceptor = function(_, p, obj)
-		return p:set_vendor(0, Prop.Author(
+	acceptor = function(_, self, obj)
+		return self:set_vendor(0, Prop.Author(
 			O.is_string(obj) and O.string(obj) or nil,
 			O.value_certain(obj),
 			nil, true
@@ -376,14 +378,26 @@ Match.Pattern{
 	children = {Match.Pattern{
 		vtype = {O.Type.null, O.Type.string},
 		tags = Prop.Author.t_head_tags,
-		acceptor = function(_, p, obj)
-			return p:add_vendor(Prop.Author(
+		acceptor = function(_, self, obj)
+			return self:add_vendor(Prop.Author(
 				O.is_string(obj) and O.string(obj) or nil,
 				O.value_certain(obj),
 				nil, true
 			))
 		end
 	}},
+},
+
+Match.Pattern{
+	name = "composition",
+	vtype = Match.Any,
+	children = Match.Any,
+	tags = Match.Any,
+	quantity = Match.Any,
+	branch = Composition.t_body,
+	acceptor = function(context, self, obj)
+		return self.composition
+	end,
 },
 
 -- TODO
@@ -398,20 +412,6 @@ Match.Pattern{
 	tags = Match.Any,
 },
 
-Match.Pattern{
-	name = "composition",
-	vtype = {O.Type.identifier, O.Type.string, O.Type.expression},
-	tags = Match.Any,
-},
-Match.Pattern{
-	name = "composition",
-	vtype = {O.Type.null, O.Type.expression},
-	children = true,
-},
-Match.Pattern{
-	name = "nutrition",
-	children = true,
-},
 Match.Pattern{
 	name = "state",
 	vtype = O.Type.string,

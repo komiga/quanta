@@ -83,6 +83,8 @@ function M:__init(name, options, commands, help_text, func)
 	self.func = func
 	self.options = {}
 	self.commands = {}
+	self.default_data = {}
+	self.data = nil
 
 	self.auto_read_options = true
 
@@ -166,12 +168,31 @@ function M:run(parent, options, params)
 	for _, p in pairs(params) do
 		U.print("  %s%s", p.name and (p.name .. " = ") or "", p.value)
 	end--]]
+
+	local function copy_table(a, b)
+		for k, v in pairs(b) do
+			if U.type_class(v) == "table" then
+				v = copy_table({}, v)
+			end
+			a[k] = v
+		end
+		return a
+	end
+
+	U.type_assert(self.default_data, "table")
+	U.assert(self.data == nil, "nested tool execution is unimplemented")
+	self.data = copy_table({}, self.default_data)
+
 	if self.auto_read_options then
 		if not self:read_options(options) then
+			self.data = nil
 			return false
 		end
 	end
+
 	local rv = self.func(self, parent, options, params)
+	self.data = nil
+
 	if rv == nil then
 		return true
 	end
@@ -278,8 +299,6 @@ function(self, parent, options, params)
 end)
 M.help_command.auto_read_options = false
 
-M.main_config = nil
-
 local main_options = {
 M.Option("--log", nil, [=[
 --log=error | info | debug
@@ -304,7 +323,7 @@ M.Option("--vessel", "string", [=[
   default: $QUANTA_ROOT
 ]=],
 function(_, value)
-	M.main_config.vessel_root = value
+	M.main_tool.data.vessel_root = value
 end),
 
 M.Option({"-l", "--local"}, "boolean", [=[
@@ -313,7 +332,7 @@ M.Option({"-l", "--local"}, "boolean", [=[
   default: false
 ]=],
 function(_, value)
-	M.main_config.vessel_work_local = value
+	M.main_tool.data.vessel_work_local = value
 end),
 }
 
@@ -326,8 +345,8 @@ main [options] command [command_options] [command_params]
 ]=],
 function(self, parent, options, params)
 	Vessel.init(
-		M.main_config.vessel_root,
-		M.main_config.vessel_work_local
+		M.main_tool.data.vessel_root,
+		M.main_tool.data.vessel_work_local
 	)
 	return self:run_command(params)
 end)
@@ -353,14 +372,12 @@ local function nilify_params(params)
 	end
 end
 
-function M.main(argv)
-	if not M.main_config then
-		M.main_config = {
-			vessel_root = nil,
-			vessel_work_local = false,
-		}
-	end
+M.main_tool.default_data = {
+	vessel_root = nil,
+	vessel_work_local = false,
+}
 
+function M.main(argv)
 	local _, opts, cmd_opts, cmd_params = U.parse_args(argv)
 	local params = {}
 	opts.name = nil

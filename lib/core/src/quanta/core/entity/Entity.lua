@@ -195,29 +195,36 @@ local function ref_parts(ref)
 	return parts, root_ref
 end
 
-local function find_part(entity, search_depth, parts, index, hash)
+local function find_part(handler, entity, search_depth, parts, index, hash)
 	if index > #parts then
-		return entity
+		if handler then
+			return handler(entity) and entity or nil
+		else
+			return entity
+		end
 	end
 	local next_index = index + 1
 	local next_hash = parts[next_index]
 	local child = entity.children[hash]
 	if child then
-		local f = find_part(child, 0, parts, next_index, next_hash)
+		local f = find_part(handler, child, 0, parts, next_index, next_hash)
 		if f then
 			return f
 		end
 	end
 
-	if search_depth > 0 then
+	if search_depth > 0 and next(entity.children) ~= nil then
 		-- BFS
-		local search_list = {{entity, 0}}
+		local search_list = {}
+		for _, child in pairs(entity.children) do
+			table.insert(search_list, {child, 1})
+		end
 		repeat
 			local node = table.remove(search_list)
 			local above_depth = node[2] <= search_depth
 			for child_hash, child in pairs(node[1].children) do
 				if child_hash == hash then
-					local f = find_part(child, 0, parts, next_index, next_hash)
+					local f = find_part(handler, child, 0, parts, next_index, next_hash)
 					if f then
 						return f
 					end
@@ -231,9 +238,10 @@ local function find_part(entity, search_depth, parts, index, hash)
 	return nil
 end
 
-function M:search(branches, ref)
+function M:search(branches, ref, handler)
 	U.type_assert(branches, "table", true)
 	U.type_assert(ref, "string")
+	U.type_assert(handler, "function", true)
 
 	local parts, root_ref = ref_parts(ref)
 	if #parts == 0 then
@@ -243,10 +251,10 @@ function M:search(branches, ref)
 	local index = 1
 	local hash = parts[index]
 	if root_ref or not branches or #branches == 0 then
-		return find_part(self, 0, parts, index, hash)
+		return find_part(handler, self, 0, parts, index, hash)
 	end
 	for _, branch in ipairs(branches) do
-		local f = find_part(branch[1], branch[2], parts, index, hash)
+		local f = find_part(handler, branch[1], branch[2], parts, index, hash)
 		if f then
 			return f
 		end

@@ -574,7 +574,7 @@ function M.read_universe(rp, name)
 	end
 
 	local universe = M.Universe(name or "universe")
-	local context = Match.Context()
+	local context = Vessel.new_match_context(nil)
 	if context:consume_sub(M.t_root, root, universe, path) then
 		return universe
 	else

@@ -576,10 +576,8 @@ function M.read_universe(rp, name)
 	local context = Vessel.new_match_context(nil)
 	if context:consume_sub(M.t_root, root, universe, path) then
 		return universe
-	else
-		U.log("match error:\n%s", context.error:to_string())
 	end
-	return nil
+	return nil, context.error:to_string()
 end
 
 return M

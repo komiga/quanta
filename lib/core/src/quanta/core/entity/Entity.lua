@@ -346,9 +346,16 @@ function M.specialize_sources(body)
 	return Match.Pattern{
 		name = "sources",
 		children = {Match.Pattern{
+			vtype = O.Type.integer,
 			children = body,
 			acceptor = function(_, e, obj)
-				return e:add_source(M.Source(e))
+				local i = O.integer(obj)
+				if i < 1 then
+					return Match.Error("source %2d index must greater than 0", i)
+				elseif e.sources[i] then
+					return Match.Error("source %2d is not unique")
+				end
+				return e:set_source(i, M.Source(e))
 			end
 		}},
 		acceptor = function(_, e, obj)

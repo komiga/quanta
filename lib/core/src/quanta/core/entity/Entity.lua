@@ -262,6 +262,67 @@ function M:search(branches, ref, handler)
 	return nil
 end
 
+local generic_id_by_type = {
+	"Generic",
+	"GenericCategory",
+}
+
+function M:to_object(obj)
+	U.type_assert(obj, "userdata", true)
+	if not obj then
+		obj = O.create()
+	end
+
+	if self.type == M.Type.universe then
+		for _, entity in pairs(self.children) do
+			entity:to_object(O.push_child(obj))
+		end
+		return obj
+	end
+
+	if self.name_hash ~= O.NAME_NULL then
+		O.set_name(obj, self.name)
+	else
+		O.set_name(obj, "NO_NAME")
+	end
+
+	if self.id_hash ~= O.NAME_NULL then
+		O.set_identifier(obj, self.id)
+	else
+		O.set_identifier(obj, generic_id_by_type[self.type])
+	end
+
+	self.sources[0]:to_object(obj)
+
+	if self.data then
+		self.data:to_object(obj)
+	end
+
+	-- NB: not actually valid in a category, but this will help detect errors
+	-- during reload
+	if #self.sources > 0 then
+		local sources_obj = O.push_child(obj)
+		O.set_name(sources_obj, "sources")
+		for i, source in pairs(self.sources) do
+			if i > 0 then
+				local source_obj = O.push_child(sources_obj)
+				O.set_integer(source_obj, i)
+				source:to_object(source_obj)
+			end
+		end
+	end
+
+	if next(self.children) ~= nil then
+		local children_obj = O.push_child(obj)
+		O.set_name(children_obj, "children")
+		for _, entity in pairs(self.children) do
+			entity:to_object(O.push_child(children_obj))
+		end
+	end
+
+	return obj
+end
+
 M.Source = U.class(M.Source)
 
 function M.Source:__init(entity)
@@ -330,6 +391,51 @@ local function parent_source_value(name)
 	end
 end
 
+local source_description_to_object, t_source_description = Prop.Description.adapt_struct(
+	"d", "description",
+	parent_source_value("description")
+)
+local source_label_to_object, t_source_label = Prop.Description.adapt_struct(
+	"label", "label",
+	parent_source_value("label")
+)
+
+function M.Source:to_object(obj)
+	U.type_assert(obj, "userdata", true)
+	if not obj then
+		obj = O.create()
+	end
+
+	source_description_to_object(self.description, obj)
+	source_label_to_object(self.label, obj)
+	Prop.Author.struct_to_object(self.author, obj)
+	Prop.Note.struct_to_object(self.note, obj)
+
+	if self.vendor[0] then
+		local vendor_obj = O.push_child(obj)
+		O.set_name(vendor_obj, "vendor")
+		self.vendor[0]:to_object(vendor_obj)
+	elseif #self.vendor > 0 then
+		local vendors_obj = O.push_child(obj)
+		O.set_name(vendors_obj, "vendors")
+		for _, vendor in ipairs(self.vendor) do
+			vendor:to_object(O.push_child(vendors_obj))
+		end
+	end
+
+	if #self.composition.items > 0 then
+		local composition_obj = O.push_child(obj)
+		O.set_name(composition_obj, "composition")
+		self.composition:to_object(composition_obj)
+	end
+
+	if self.data then
+		self.data:to_object(obj)
+	end
+
+	return obj
+end
+
 M.Source.t_body = Match.Tree()
 
 function M.specialize_source_fallthrough(body)
@@ -365,15 +471,6 @@ function M.specialize_sources(body)
 		end
 	}
 end
-
-local _, t_source_description = Prop.Description.adapt_struct(
-	"d", "description",
-	parent_source_value("description")
-)
-local _, t_source_label = Prop.Description.adapt_struct(
-	"label", "label",
-	parent_source_value("label")
-)
 
 M.Source.t_body:add({
 Prop.Note.t_struct_head,

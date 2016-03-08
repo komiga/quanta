@@ -29,7 +29,6 @@ function M:__init(name, id, id_hash, class)
 	self.id_hash = id_hash or O.NAME_NULL
 	self.data = nil
 
-	self.sources = {}
 	self.universe = nil
 	self.parent = nil
 	self.children = {}
@@ -40,7 +39,7 @@ function M:__init(name, id, id_hash, class)
 	else
 		self.data = nil
 	end
-	self.sources[0] = M.Source(self)
+	self.generic = M.Source(self)
 end
 
 function M:is_thing()
@@ -83,29 +82,16 @@ function M:ref()
 end
 
 function M:any_sources()
-	return #self.sources > 0
+	return self.generic:any_sources()
 end
 
-function M:set_source(i, source)
-	U.type_assert(i, "number")
-	U.type_assert(source, M.Source)
-	self.sources[i] = source
-	return source
-end
-
-function M:add_source(source)
-	U.type_assert(source, M.Source)
-	table.insert(self.sources, source)
-	return source
-end
-
-function M:has_variant(source, sub_source)
-	if source == 0 then
+function M:has_variant(lead, sub)
+	if lead == 0 then
 		return true
 	end
-	local s = self.sources[source]
+	local s = self.generic.sources[lead]
 	if s then
-		return sub_source == 0 or s.vendor[sub_source] ~= nil
+		return sub == 0 or s.sources[sub] ~= nil
 	end
 	return false
 end
@@ -292,24 +278,10 @@ function M:to_object(obj)
 		O.set_identifier(obj, generic_id_by_type[self.type])
 	end
 
-	self.sources[0]:to_object(obj)
+	self.generic:to_object(obj)
 
 	if self.data then
 		self.data:to_object(obj)
-	end
-
-	-- NB: not actually valid in a category, but this will help detect errors
-	-- during reload
-	if #self.sources > 0 then
-		local sources_obj = O.push_child(obj)
-		O.set_name(sources_obj, "sources")
-		for i, source in pairs(self.sources) do
-			if i > 0 then
-				local source_obj = O.push_child(sources_obj)
-				O.set_integer(source_obj, i)
-				source:to_object(source_obj)
-			end
-		end
 	end
 
 	if next(self.children) ~= nil then
@@ -325,69 +297,55 @@ end
 
 M.Source = U.class(M.Source)
 
-function M.Source:__init(entity)
+function M.Source:__init(parent)
+	U.assert(not parent or U.is_instance(parent))
+
 	self.description = Prop.Description.struct("")
 	self.label = Prop.Description.struct("")
 	self.author = Prop.Author.struct({})
 	self.vendor = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})
 	self.composition = Composition()
+	self.sources = {}
 	self.data = nil
 
-	if entity.data then
-		self.data = entity.data.Source(self)
+	if parent.data then
+		self.data = parent.data.Source(self)
 	end
+end
+
+function M.Source:any_sources()
+	return #self.sources > 0
 end
 
 function M.Source:has_author()
 	return #self.author > 0
 end
 
-function M.Source:set_author(i, author)
-	U.type_assert(i, "number")
-	U.type_assert(author, Prop.Author)
-	U.assert(i > 0)
-	self.author[i] = author
-	return author
-end
-
-function M.Source:add_author(author)
-	U.type_assert(author, Prop.Author)
-	table.insert(self.author, author)
-	return author
-end
-
-function M.Source:set_base_model(base_model)
-	U.type_assert(base_model, M.Model)
-	self.base_model = base_model
-end
-
-function M.Source:set_model(model)
-	U.type_assert(model, M.Model)
-	self.model = model
-end
-
 function M.Source:has_vendor()
-	return self.vendor[0] ~= nil or #self.vendor > 0
-end
-
-function M.Source:set_vendor(i, vendor)
-	U.type_assert(i, "number")
-	U.type_assert(vendor, Prop.Author)
-	self.vendor[i] = vendor
-	return vendor
-end
-
-function M.Source:add_vendor(vendor)
-	U.type_assert(vendor, Prop.Author)
-	table.insert(self.vendor, vendor)
-	return vendor
+	return #self.vendor > 0
 end
 
 local function parent_source_value(name)
+	local function value(context, n)
+		local p = context:value(n)
+		local v
+		if U.is_instance(M) then
+			v = p.parent.generic[name]
+		elseif U.is_instance(M.Source) then
+			v = p[name]
+		else
+			v = nil
+		end
+
+		if v == "" then
+			v = nil
+		end
+		return v
+	end
+
 	return function(context)
-		local parent_entity = context:value(1).parent
-		return parent_entity and parent_entity.sources[0][name]
+		return value(context, 1) or value(context, 2)
 	end
 end
 
@@ -399,9 +357,15 @@ local source_label_to_object, t_source_label = Prop.Description.adapt_struct(
 	"label", "label",
 	parent_source_value("label")
 )
+local source_vendor_to_object, t_source_vendor = Prop.Author.adapt_struct(
+	"vendor", "vendor",
+	parent_source_value("vendor")
+)
 
-function M.Source:to_object(obj)
+function M.Source:to_object(obj, depth)
 	U.type_assert(obj, "userdata", true)
+	depth = U.optional(U.type_assert(depth, "number", true), 0)
+
 	if not obj then
 		obj = O.create()
 	end
@@ -409,19 +373,8 @@ function M.Source:to_object(obj)
 	source_description_to_object(self.description, obj)
 	source_label_to_object(self.label, obj)
 	Prop.Author.struct_to_object(self.author, obj)
+	source_vendor_to_object(self.vendor, obj)
 	Prop.Note.struct_to_object(self.note, obj)
-
-	if self.vendor[0] then
-		local vendor_obj = O.push_child(obj)
-		O.set_name(vendor_obj, "vendor")
-		self.vendor[0]:to_object(vendor_obj)
-	elseif #self.vendor > 0 then
-		local vendors_obj = O.push_child(obj)
-		O.set_name(vendors_obj, "vendors")
-		for _, vendor in ipairs(self.vendor) do
-			vendor:to_object(O.push_child(vendors_obj))
-		end
-	end
 
 	if #self.composition.items > 0 then
 		local composition_obj = O.push_child(obj)
@@ -433,76 +386,92 @@ function M.Source:to_object(obj)
 		self.data:to_object(obj)
 	end
 
+	if next(self.sources) ~= nil then
+		local sources_obj = O.push_child(obj)
+		O.set_name(sources_obj, depth == 0 and "sources" or "sub_sources")
+		for i, source in pairs(self.sources) do
+			local source_obj = O.push_child(sources_obj)
+			O.set_integer(source_obj, i)
+			source:to_object(source_obj, depth + 1)
+		end
+	end
+
 	return obj
 end
 
-M.Source.t_body = Match.Tree()
-
-function M.specialize_source_fallthrough(body)
+function M.specialize_generic_fallthrough(source_body)
 	return Match.Pattern{
 		any = true,
-		branch = body,
+		branch = source_body,
 		acceptor = function(_, e, obj)
-			return e.sources[0]
+			return e.generic
 		end,
 	}
 end
 
-function M.specialize_sources(body)
+function M.specialize_source_head(source_body, get_lead)
+	U.assert(source_body)
 	return Match.Pattern{
-		name = "sources",
-		children = {Match.Pattern{
-			vtype = O.Type.integer,
-			children = body,
-			acceptor = function(_, e, obj)
-				local i = O.integer(obj)
-				if i < 1 then
-					return Match.Error("source %2d index must greater than 0", i)
-				elseif e.sources[i] then
-					return Match.Error("source %2d is not unique")
-				end
-				return e:set_source(i, M.Source(e))
+		vtype = O.Type.integer,
+		children = source_body,
+		acceptor = function(_, p, obj)
+			local i = O.integer(obj)
+			if i < 1 then
+				return Match.Error("source %2d index must be greater than 0", i)
+			elseif get_lead(p).sources[i] then
+				return Match.Error("source %2d is not unique", i)
 			end
-		}},
-		acceptor = function(_, e, obj)
-			if e:any_sources() then
-				return Match.Error("entity source(s) already defined")
-			end
+			local sub = M.Source(p)
+			get_lead(p).sources[i] = sub
+			return sub
 		end
 	}
 end
 
+function M.specialize_sub_sources(source_body)
+	return Match.Pattern{
+		name = "sub_sources",
+		children = {M.specialize_source_head(
+			source_body,
+			function(lead)
+				return lead
+			end
+		)},
+		acceptor = function(_, lead, obj)
+			if lead:any_sources() then
+				return Match.Error("sub-sources already defined")
+			end
+		end,
+	}
+end
+
+function M.specialize_sources(source_body)
+	return Match.Pattern{
+		name = "sources",
+		children = {M.specialize_source_head(
+			source_body,
+			function(e)
+				return e.generic
+			end
+		)},
+		acceptor = function(_, e, obj)
+			if e:any_sources() then
+				return Match.Error("entity sources already defined")
+			end
+		end,
+	}
+end
+
+M.Source.t_body_generic = Match.Tree()
+M.Source.t_body = Match.Tree()
+
 M.Source.t_body:add({
-Prop.Note.t_struct_head,
-Prop.Author.t_struct_head,
 t_source_description,
 t_source_label,
-Match.Pattern{
-	name = "vendor",
-	vtype = {O.Type.null, O.Type.string},
-	tags = Prop.Author.t_head_tags,
-	acceptor = function(_, self, obj)
-		return self:set_vendor(0, Prop.Author(
-			O.is_string(obj) and O.string(obj) or nil,
-			O.value_certain(obj),
-			nil, true
-		))
-	end
-},
-Match.Pattern{
-	name = "vendors",
-	children = {Match.Pattern{
-		vtype = {O.Type.null, O.Type.string},
-		tags = Prop.Author.t_head_tags,
-		acceptor = function(_, self, obj)
-			return self:add_vendor(Prop.Author(
-				O.is_string(obj) and O.string(obj) or nil,
-				O.value_certain(obj),
-				nil, true
-			))
-		end
-	}},
-},
+
+Prop.Author.t_struct_head,
+t_source_vendor,
+Prop.Note.t_struct_head,
 
 Match.Pattern{
 	name = "composition",
@@ -550,6 +519,14 @@ Match.Pattern{
 },
 })
 
+M.Source.t_body_generic:add({
+	M.Source.t_body,
+	M.specialize_sub_sources(M.Source.t_body),
+})
+
+M.Source.t_body:build()
+M.Source.t_body_generic:build()
+
 M.t_root = Match.Tree()
 
 M.t_shared_body = Match.Tree({
@@ -587,13 +564,13 @@ Match.Pattern{
 })
 
 M.t_entity_body:add({
-M.t_shared_body,
+	M.t_shared_body,
 })
 
 M.t_entity_body_generic:add({
-M.t_entity_body,
-M.specialize_sources(M.Source.t_body),
-M.specialize_source_fallthrough(M.Source.t_body),
+	M.t_entity_body,
+	M.specialize_sources(M.Source.t_body_generic),
+	M.specialize_generic_fallthrough(M.Source.t_body_generic),
 })
 
 M.t_category_body = Match.Tree()
@@ -612,7 +589,7 @@ Match.Pattern{
 })
 
 M.t_category_body:add({
-M.t_shared_body,
+	M.t_shared_body,
 Match.Pattern{
 	name = "include",
 	collect = {Match.Pattern{
@@ -639,8 +616,8 @@ Match.Pattern{
 })
 
 M.t_category_body_generic:add({
-M.t_category_body,
-M.specialize_source_fallthrough(M.Source.t_body),
+	M.t_category_body,
+	M.specialize_generic_fallthrough(M.Source.t_body_generic),
 })
 
 M.p_specialization = Match.Pattern{
@@ -667,7 +644,6 @@ M.t_root:add({
 	M.p_specialization,
 })
 
-M.Source.t_body:build()
 M.t_entity_body_generic:build()
 M.t_category_body_generic:build()
 M.t_root:build()

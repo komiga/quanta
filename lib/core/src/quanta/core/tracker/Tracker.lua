@@ -6,7 +6,6 @@ local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Vessel = require "Quanta.Vessel"
 local Prop = require "Quanta.Prop"
-local Instance = require "Quanta.Instance"
 local M = U.module(...)
 
 M.debug = false

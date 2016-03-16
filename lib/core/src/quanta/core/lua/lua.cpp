@@ -12,8 +12,6 @@
 #include <quanta/core/measurement/measurement.hpp>
 #include <quanta/core/prop/prop.hpp>
 #include <quanta/core/entity/entity.hpp>
-#include <quanta/core/instance/instance.hpp>
-#include <quanta/core/composition/composition.hpp>
 #include <quanta/core/unit/unit.hpp>
 
 #include <quanta/core/tracker/tracker.hpp>
@@ -34,8 +32,6 @@ void lua::register_quanta_core(lua_State* L) {
 	quanta::measurement::register_lua_interface(L);
 	quanta::prop::register_lua_interface(L);
 	quanta::entity::register_lua_interface(L);
-	quanta::instance::register_lua_interface(L);
-	quanta::composition::register_lua_interface(L);
 	quanta::unit::register_lua_interface(L);
 
 	quanta::tracker::register_lua_interface(L);

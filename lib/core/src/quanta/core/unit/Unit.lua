@@ -7,10 +7,15 @@ local Match = require "Quanta.Match"
 local Vessel = require "Quanta.Vessel"
 local Measurement = require "Quanta.Measurement"
 local Prop = require "Quanta.Prop"
-local Instance = require "Quanta.Instance"
 local M = U.module(...)
 
 M.Type = {
+	reference = 1,
+	composition = 2,
+	definition = 3,
+}
+
+M.DefinitionType = {
 	{name = "none", notation = "U"},
 	{name = "self", notation = "S"},
 	{name = "meal", notation = "M"},
@@ -18,41 +23,62 @@ M.Type = {
 	{name = "familiar_joint", notation = "FHJ"}, -- FH + S
 	{name = "foreign", notation = "FF" },
 }
-M.TypeByNotation = {}
+M.DefinitionTypeByNotation = {}
 
-for i, t in ipairs(M.Type) do
+for i, t in ipairs(M.DefinitionType) do
 	t.index = i
-	M.Type[t.name] = i
-	M.Type[t.notation] = i
-	M.TypeByNotation[t.notation] = i
+	M.DefinitionType[t.name] = i
+	M.DefinitionType[t.notation] = i
+	M.DefinitionTypeByNotation[t.notation] = i
 end
 
 U.class(M)
 
 function M:__init()
-	self.type = M.Type.none
+	self.type = M.Type.reference
+	self.def_type = M.DefinitionType.none
 	self.name = nil
 	self.name_hash = O.NAME_NULL
+	self.id = nil
+	self.id_hash = O.NAME_NULL
+
+	-- NB: can be shared!
+	self.scope = nil
+	-- Entity or Unit
+	self.thing = nil
+
 	self.description = Prop.Description.struct("")
 	self.author = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})
-	self.elements = {
-		{}, -- M.Element.Type.generic
-		{}, -- M.Element.Type.primary
-	}
 
-	self.modifiers = Instance.Modifier.struct_list({})
+	self.source = 0
+	self.sub_source = 0
+	self.source_certain = true
+	self.sub_source_certain = true
+	self.variant_certain = true
+	self.presence_certain = true
+
+	self.items = {}
+	self.parts = {}
+
+	self.modifiers = M.Modifier.struct_list({})
 	self.measurements = Measurement.struct_list({})
 end
 
-function M:element_generic(index)
-	U.type_assert(index, "number")
-	return self.elements[M.Element.Type.generic][index]
+function M.Reference()
+	return M()
 end
 
-function M:element_primary(index)
-	U.type_assert(index, "number")
-	return self.elements[M.Element.Type.primary][index]
+function M.Composition()
+	local unit = M()
+	unit.type = M.Type.composition
+	return unit
+end
+
+function M.Definition()
+	local unit = M()
+	unit.type = M.Type.definition
+	return unit
 end
 
 function M:set_name(name)
@@ -67,14 +93,46 @@ function M:set_name(name)
 	end
 end
 
-function M:from_object(obj, implicit_scope)
+function M:set_id(id)
+	U.type_assert(id, "string", true)
+
+	if id and id ~= "" then
+		-- utf8(¿) => C2 BF
+		if string.sub(id, -2) == "¿" then
+			id = string.sub(
+				id, 1,
+				string.sub(id, -3, -3) == "_" and -4 or -3
+			)
+			self.variant_certain = false
+		else
+			self.variant_certain = true
+		end
+		self.id = id
+		self.id_hash = O.hash_name(self.id)
+	else
+		self.id = nil
+		self.id_hash = O.NAME_NULL
+	end
+end
+
+local function unit_from_object(self, obj, implicit_scope, tree)
 	U.type_assert(obj, "userdata")
 
 	local context = Vessel.new_match_context(implicit_scope)
-	if not context:consume(M.t_head, obj, self) then
+	if not context:consume(tree, obj, self) then
 		return false, context.error:to_string()
 	end
 	return true
+end
+
+function M:from_object(obj, implicit_scope)
+	return unit_from_object(self, obj, implicit_scope, M.t_branch_head)
+end
+
+function M:from_object_by_type(obj, implicit_scope)
+	U.type_assert(obj, "userdata")
+
+	return unit_from_object(self, obj, implicit_scope, M.t_head_by_type[self.type])
 end
 
 local function to_object_shared(self, obj)
@@ -92,23 +150,122 @@ function M:to_object(obj)
 		O.release_quantity(obj)
 	end
 
+	if self.scope then
+		O.set_time_date(obj, self.scope)
+		obj = O.push_child(obj)
+	end
+
 	if self.name_hash ~= O.NAME_NULL then
 		O.set_name(obj, self.name)
-	else
-		O.clear_name(obj)
 	end
-	O.set_identifier(obj, M.Type[self.type].notation)
+
+	if self.type == M.Type.definition then
+		O.set_identifier(obj, M.DefinitionType[self.def_type].notation)
+	elseif self.id_hash ~= O.NAME_NULL then
+		O.set_identifier(obj, self.id .. (self.variant_certain and "" or "¿"))
+	end
+
+	O.set_source(obj, self.source)
+	O.set_sub_source(obj, self.sub_source)
+	O.set_source_certain(obj, self.source_certain)
+	O.set_sub_source_certain(obj, self.sub_source_certain)
+	O.set_value_certain(obj, self.presence_certain)
 
 	to_object_shared(self, obj)
-	for _, bucket in ipairs(self.elements) do
-		for _, e in ipairs(bucket) do
-			e:to_object(O.push_child(obj))
-		end
+	for _, item in pairs(self.items) do
+		item:to_object(O.push_child(obj))
 	end
-	Instance.Modifier.struct_list_to_tags(self.modifiers, obj)
+	for _, part in pairs(self.parts) do
+		part:to_object(O.push_child(obj))
+	end
+	M.Modifier.struct_list_to_tags(self.modifiers, obj)
 	Measurement.struct_list_to_quantity(self.measurements, obj)
 
 	return obj
+end
+
+M.Modifier = U.class(M.Modifier)
+
+function M.Modifier:__init()
+	self.id = nil
+	self.id_hash = O.NAME_NULL
+	self.data = nil
+end
+
+function M.Modifier:to_object(obj)
+	U.type_assert(obj, "userdata", true)
+	if not obj then
+		obj = O.create()
+	end
+
+	O.set_name(obj, self.id)
+	if self.data then
+		self.data:to_object(self, obj)
+	end
+end
+
+function M.Modifier.struct_list(list)
+	U.type_assert(list, "table")
+	return list
+end
+
+function M.Modifier.struct_list_to_tags(list, obj)
+	for _, m in pairs(list) do
+		m:to_object(O.push_tag(obj))
+	end
+end
+
+-- TODO: use a pattern instead of passively ignoring non-matching whole quantities
+function M.Modifier.adapt_struct_list()
+	local p_element = Match.Pattern{
+		name = true,
+		children = Match.Any,
+		acceptor = function(context, parent, obj)
+			local modifier = M.Modifier()
+			modifier.id = O.name(obj)
+			modifier.id_hash = O.name_hash(obj)
+			table.insert(parent.modifiers, modifier)
+
+			return context.user.director:read_modifier(context, parent, modifier, obj)
+		end,
+	}
+
+	local t_head = Match.Tree({
+	-- [..., ...]
+	Match.Pattern{
+		children = {
+			p_element,
+		},
+	},
+	-- [...]
+	p_element,
+	})
+	t_head:build()
+
+	return M.Modifier.struct_list_to_tags, t_head
+end
+
+_, M.Modifier.t_struct_list_head = M.Modifier.adapt_struct_list()
+
+M.UnknownModifier = U.class(M.UnknownModifier)
+
+function M.UnknownModifier:__init(obj)
+	U.type_assert(obj, "userdata", true)
+
+	self.obj = obj or O.create()
+end
+
+function M.UnknownModifier:from_object(context, ref, modifier, obj)
+	O.copy_children(self.obj, obj)
+end
+
+function M.UnknownModifier:to_object(modifier, obj)
+	O.copy_children(obj, self.obj)
+end
+
+function M.UnknownModifier:compare_equal(other)
+	-- TODO?
+	return true
 end
 
 M.Step = U.class(M.Step)
@@ -116,7 +273,7 @@ M.Step = U.class(M.Step)
 function M.Step:__init()
 	self.index = 1
 	self.implicit = false
-	self.composition = Quanta.Composition()
+	self.composition = M.Composition()
 end
 
 function M.Step:to_object(obj)
@@ -159,41 +316,219 @@ function M.Element:to_object(obj)
 	end
 end
 
-M.t_head = Match.Tree()
-M.t_body = Match.Tree()
-M.t_element_body = Match.Tree()
-
 local shared_props = {
 	Prop.Description.t_struct_head,
 	Prop.Author.t_struct_head,
 	Prop.Note.t_struct_head,
 }
 
+local function translate_basic(self, obj)
+	self:set_name(O.name(obj))
+	self.source = O.source(obj)
+	self.sub_source = O.sub_source(obj)
+	self.source_certain = not O.marker_source_uncertain(obj)
+	self.sub_source_certain = not O.marker_sub_source_uncertain(obj)
+	self.presence_certain = not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
+end
+
+M.t_reference_head = Match.Tree()
+M.t_reference_body = Match.Tree()
+
+M.t_composition_head = Match.Tree()
+M.t_composition_head_gobble = Match.Tree()
+M.t_composition_body = Match.Tree()
+
+M.t_definition_head = Match.Tree()
+M.t_definition_body = Match.Tree()
+M.t_definition_element_body = Match.Tree()
+
 -- type{...}
 -- UNIT = type{...}
-M.p_head = Match.Pattern{
+M.p_definition_head = Match.Pattern{
 	name = Match.Any,
 	vtype = O.Type.identifier,
 	value = function(_, _, obj, _)
-		return nil ~= M.TypeByNotation[O.identifier(obj)]
+		return nil ~= M.DefinitionTypeByNotation[O.identifier(obj)]
 	end,
-	children = M.t_body,
-	tags = Instance.Modifier.t_struct_list_head,
+	children = M.t_definition_body,
+	tags = M.Modifier.t_struct_list_head,
 	quantity = Measurement.t_struct_list_head,
-	acceptor = function(_, unit, obj)
-		unit.type = M.TypeByNotation[O.identifier(obj)]
-		unit:set_name(O.name(obj))
+	acceptor = function(_, self, obj)
+		self.type = M.Type.definition
+		self.def_type = M.DefinitionTypeByNotation[O.identifier(obj)]
+		translate_basic(self, obj)
 	end,
-	--[[post_branch = function(_, unit, _)
-		local primary_bucket = unit.elements[M.Element.Type.primary]
+	--[[post_branch = function(_, self, _)
+		local primary_bucket = self.items[M.Element.Type.primary]
 		if #primary_bucket == 0 then
 			return Match.Error("no primary elements specified for unit")
 		end
 	end,--]]
 }
-M.t_head:add(M.p_head)
 
-M.t_body:add(shared_props)
+-- x, x:m, x{...}
+M.p_reference_head_id = Match.Pattern{
+	name = Match.Any,
+	vtype = {O.Type.identifier, O.Type.string},
+	children = M.t_reference_body,
+	tags = M.Modifier.t_struct_list_head,
+	quantity = Measurement.t_struct_list_head,
+	acceptor = function(context, self, obj)
+		self.type = M.Type.reference
+		translate_basic(self, obj)
+		if O.is_identifier(obj) then
+			self:set_id(O.identifier(obj))
+		else
+			self:set_id(O.string(obj))
+		end
+		if #context.user.scope > 0 then
+			self.scope = U.table_last(context.user.scope)
+		end
+	end,
+}
+
+-- ?, :m
+M.p_reference_head_empty = Match.Pattern{
+	name = Match.Any,
+	vtype = O.Type.null,
+	tags = M.Modifier.t_struct_list_head,
+	quantity = Measurement.t_struct_list_head,
+	acceptor = function(context, self, obj)
+		self.type = M.Type.reference
+		translate_basic(self, obj)
+	end,
+}
+
+M.t_reference_head:add({
+M.p_reference_head_id,
+M.p_reference_head_empty,
+})
+
+M.t_reference_body:add({
+shared_props,
+Match.Pattern{
+	any = true,
+	branch = M.t_reference_head,
+	acceptor = function(context, self, obj)
+		table.insert(context.user.scope_save, context.user.scope)
+		context.user.scope = {}
+		local ref = M.Reference()
+		table.insert(self.items, ref)
+		return ref
+	end,
+	post_branch = function(context, self, obj)
+		context.user.scope = table.remove(context.user.scope_save)
+	end,
+},
+})
+
+M.t_reference_body:build()
+M.t_reference_head:build()
+
+local function ref_acceptor(context, self, obj)
+	self.type = M.Type.composition
+	local item = M.Reference()
+	table.insert(self.items, item)
+	return item
+end
+
+M.p_composition_items = {
+-- sub def
+Match.Pattern{
+	layer = M.p_definition_head,
+	acceptor = function(context, self, obj)
+		self.type = M.Type.composition
+		local item = M.Definition()
+		table.insert(self.items, item)
+		return item
+	end,
+},
+-- sub ref
+Match.Pattern{
+	layer = M.p_reference_head_id,
+	acceptor = ref_acceptor,
+},
+Match.Pattern{
+	layer = M.p_reference_head_empty,
+	acceptor = ref_acceptor,
+},
+}
+
+-- time context
+M.t_composition_head:add({
+Match.Pattern{
+	vtype = O.Type.time,
+	tags = false,
+	children = M.t_composition_body,
+	quantity = false,
+	acceptor = function(context, self, obj)
+		self.type = M.Type.composition
+		local t
+		if O.has_clock(obj) then
+			return Match.Error("contextual block must not have clock time")
+		elseif O.num_children(obj) == 0 then
+			return Match.Error("contextual block is empty")
+		elseif O.is_date_contextual(obj) then
+			local parent_scope = U.table_last(context.user.scope, true) or context.user.implicit_scope
+			if not parent_scope then
+				return Match.Error("no time context provided; contextual block time cannot be resolved")
+			end
+			t = O.time_resolved(obj, parent_scope)
+		else
+			t = T(O.time(obj))
+		end
+		T.clear_clock(t)
+		T.adjust_zone_utc(t)
+		table.insert(context.user.scope, t)
+	end,
+	post_branch = function(context, self, obj)
+		table.remove(context.user.scope)
+	end,
+},
+-- {...}, (x + y ...)
+Match.Pattern{
+	name = Match.Any,
+	vtype = {O.Type.null, O.Type.expression},
+	children = M.t_composition_body,
+	tags = M.Modifier.t_struct_list_head,
+	quantity = Measurement.t_struct_list_head,
+	func = function(_, _, obj)
+		return O.has_children(obj)
+	end,
+	acceptor = function(context, self, obj)
+		self.type = M.Type.composition
+		translate_basic(self, obj)
+	end,
+},
+})
+
+M.t_composition_head_gobble:add({
+	M.t_composition_head,
+	M.p_composition_items,
+})
+
+M.t_composition_body:add({
+-- sub items
+M.p_composition_items,
+-- sub composition
+Match.Pattern{
+	any = true,
+	branch = M.t_composition_head,
+	acceptor = function(context, self, obj)
+		local item = M.Composition()
+		table.insert(self.items, item)
+		return item
+	end,
+},
+})
+
+M.t_composition_body:build()
+M.t_composition_head:build()
+M.t_composition_head_gobble:build()
+
+M.t_definition_head:add(M.p_definition_head)
+
+M.t_definition_body:add(shared_props)
 
 local function element_post_branch(_, element, _)
 	if #element.steps == 0 then
@@ -214,7 +549,7 @@ local function element_acceptor(element, _, unit, obj)
 	U.assert(element.type ~= nil)
 	element.index = tonumber(string.sub(name, 2))
 
-	local bucket = unit.elements[element.type]
+	local bucket = element.type == M.Element.Type.generic and unit.items or unit.parts
 	local current = bucket[element.index]
 	if element.index <= 0 then
 		return Match.Error(
@@ -243,12 +578,12 @@ local function element_acceptor(element, _, unit, obj)
 end
 
 -- Element
-M.t_body:add({
+M.t_definition_body:add({
 -- = {...}
 Match.Pattern{
 	name = element_name_filter,
 	vtype = O.Type.null,
-	children = M.t_element_body,
+	children = M.t_definition_element_body,
 	acceptor = function(context, unit, obj)
 		local element = M.Element()
 		return element_acceptor(element, context, unit, obj) or element
@@ -261,7 +596,7 @@ Match.Pattern{
 	vtype = {O.Type.identifier, O.Type.string},
 	children = Match.Any,
 	tags = Match.Any,
-	branch = Instance.t_head,
+	branch = M.t_reference_head,
 	acceptor = function(context, unit, obj)
 		local element = M.Element()
 		local err = element_acceptor(element, context, unit, obj)
@@ -273,21 +608,21 @@ Match.Pattern{
 		step.implicit = true
 		table.insert(element.steps, step)
 
-		local instance = Instance()
-		table.insert(step.composition.items, instance)
-		return instance
+		local ref = M.Reference()
+		table.insert(step.composition.items, ref)
+		return ref
 	end,
-	post_branch_pre = function(_, instance, _)
-		instance:set_name("prototype")
+	post_branch_pre = function(_, ref, _)
+		ref:set_name("prototype")
 	end,
 	-- post_branch_pre = element_post_branch,
 },
 -- implicit: P1
 Match.Pattern{
 	any = true,
-	branch = M.t_element_body,
+	branch = M.t_definition_element_body,
 	acceptor = function(_, unit, obj)
-		local bucket = unit.elements[M.Element.Type.primary]
+		local bucket = unit.parts
 		local element = bucket[1]
 		if not element then
 			element = M.Element()
@@ -304,7 +639,7 @@ Match.Pattern{
 },
 })
 
-M.t_element_body:add(shared_props)
+M.t_definition_element_body:add(shared_props)
 
 local function step_post_branch(_, composition, _)
 	if #composition.items == 0 then
@@ -312,20 +647,15 @@ local function step_post_branch(_, composition, _)
 	end
 end
 
--- FIXME: cyclic dependency
-if not Quanta.Composition then
-	require "Quanta.Composition"
-end
-
 -- Step
-M.t_element_body:add({
+M.t_definition_element_body:add({
 -- RS#{...}
 Match.Pattern{
 	vtype = O.Type.identifier,
 	value = function(_, _, obj, _)
 		return string.find(O.identifier(obj), "^RS[0-9]+$") ~= nil
 	end,
-	children = Quanta.Composition.t_body,
+	children = M.t_composition_body,
 	quantity = Match.Any,
 	acceptor = function(_, element, obj)
 		local step = M.Step()
@@ -351,7 +681,7 @@ Match.Pattern{
 -- implicit: RS1
 Match.Pattern{
 	any = true,
-	branch = Quanta.Composition.t_body,
+	branch = M.t_composition_body,
 	acceptor = function(_, element, obj)
 		local step = element.steps[1]
 		if not step then
@@ -368,9 +698,25 @@ Match.Pattern{
 },
 })
 
-M.t_element_body:build()
-M.t_body:build()
-M.t_head:build()
+M.t_definition_element_body:build()
+M.t_definition_body:build()
+M.t_definition_head:build()
+
+M.t_branch_head = Match.Tree()
+
+M.t_branch_head:add({
+	M.t_definition_head,
+	M.t_composition_head,
+	M.t_reference_head,
+})
+
+M.t_branch_head:build()
+
+M.t_head_by_type = {
+	M.t_reference_head,
+	M.t_composition_head_gobble,
+	M.t_definition_head,
+}
 
 return M
 

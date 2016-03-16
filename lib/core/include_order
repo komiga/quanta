@@ -20,8 +20,6 @@ return {
 	M("measurement", {}),
 	M("prop", {}),
 	M("entity", {}),
-	M("instance", {}),
-	M("composition", {}),
 	M("unit", {}),
 	M("tracker", {}),
 	M("director", {}),

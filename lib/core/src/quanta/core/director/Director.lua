@@ -4,7 +4,7 @@ local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Match = require "Quanta.Match"
 local Prop = require "Quanta.Prop"
-local Instance = require "Quanta.Instance"
+local Unit = require "Quanta.Unit"
 local Tracker = require "Quanta.Tracker"
 local M = U.module(...)
 
@@ -40,7 +40,7 @@ function M:find_entity_class(id, id_hash)
 end
 
 function M:read_modifier(context, instance, modifier, obj)
-	return self.modifier_spec:read(context, instance, modifier, obj, Instance.UnknownModifier)
+	return self.modifier_spec:read(context, instance, modifier, obj, Unit.UnknownModifier)
 end
 
 function M:read_action(context, entry, action, obj)

@@ -6,7 +6,7 @@ local Vessel = require "Quanta.Vessel"
 local Match = require "Quanta.Match"
 local Measurement = require "Quanta.Measurement"
 local Prop = require "Quanta.Prop"
-local Composition = require "Quanta.Composition"
+local Unit = require "Quanta.Unit"
 local M = U.module(...)
 
 M.Type = {
@@ -305,7 +305,7 @@ function M.Source:__init(parent)
 	self.author = Prop.Author.struct({})
 	self.vendor = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})
-	self.composition = Composition()
+	self.composition = Unit.Composition()
 	self.sources = {}
 	self.data = nil
 
@@ -479,7 +479,7 @@ Match.Pattern{
 	children = Match.Any,
 	tags = Match.Any,
 	quantity = Match.Any,
-	branch = Composition.t_body,
+	branch = Unit.t_composition_body,
 	acceptor = function(context, self, obj)
 		return self.composition
 	end,

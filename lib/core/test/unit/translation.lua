@@ -5,14 +5,21 @@ local U = require "togo.utility"
 local O = require "Quanta.Object"
 local Prop = require "Quanta.Prop"
 local Measurement = require "Quanta.Measurement"
-local Instance = require "Quanta.Instance"
 local Unit = require "Quanta.Unit"
 local Vessel = require "Quanta.Vessel"
 
-function make_test(text, type, name, description, author, note, measurements, modifiers, elements_generic, elements_primary)
+function make_test(text, unit)
 	return {
 		text = text,
-		unit = make_unit(type, name, description, author, note, measurements, modifiers, elements_generic, elements_primary),
+		unit = unit,
+	}
+end
+
+function make_test_typed(text, unit)
+	return {
+		text = text,
+		unit = unit,
+		typed = true,
 	}
 end
 
@@ -24,60 +31,256 @@ function make_test_fail(text)
 end
 
 local translation_tests = {
+make_test_typed(
+	"x",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"x$1",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 1, 0, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"x$1$2",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 1, 2, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"{x, y}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	make_unit_ref(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"x + y",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	make_unit_ref(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"{x[1], y[2]}[3]",
+make_unit_comp(nil, {Measurement(3)}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
+	make_unit_ref(nil, "y", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {}),
+})),
+
+make_test_typed(
+	"x{P1[1], P2[1]}[2]",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {
+		make_unit_ref(nil, "P1", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
+		make_unit_ref(nil, "P2", nil, nil, 0, 0, true, true, true, true, {Measurement(1)}, {}, {}),
+	}),
+})),
+
+make_test_typed(
+	"{x[2], x[2ml], x[2kg]}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2)}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "ml")}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "kg")}, {}, {}),
+})),
+make_test_typed(
+	"{x[?1], x[G~1]}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, 0, false)}, {}, {}),
+})),
+make_test_typed(
+	"{x[~~1], x[^^1]}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0, -2)}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1, "", 0,  2)}, {}, {}),
+})),
+make_test_typed(
+	"x[1, 2]",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(1), Measurement(2)}, {}, {}),
+})),
+make_test_typed(
+	"x[1/2g]",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {Measurement(2, "g", 1)}, {}, {}),
+})),
+
+make_test_typed(
+	"{x$?, x$?$?, x$?1, x$?1$?2}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, false, true, true, true, {}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 0, 0, false, false, true, true, {}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 1, 0, false, true, true, true, {}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 1, 2, false, false, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"{x_¿, x¿}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, false, true, {}, {}, {}),
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, false, true, {}, {}, {}),
+})),
+make_test_typed(
+	"?x",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, false, {}, {}, {}),
+})),
+
+make_test_typed(
+	"x:m",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {make_modifier("m", Unit.UnknownModifier())}, {}),
+})),
+make_test_typed(
+	":m",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {make_modifier("m", Unit.UnknownModifier())}, {}),
+})),
+
+make_test_typed(
+	"03T{x}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"03T{x, y}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	make_unit_ref(nil, "y", nil, "2016-01-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+})),
+
+make_test_typed(
+	"02-03T{x}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"02-03T{x, y}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	make_unit_ref(nil, "y", nil, "2016-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+})),
+
+make_test_typed(
+	"2015-02-03{x}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+})),
+make_test_typed(
+	"2015-02-03{x, y}",
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+	make_unit_ref(nil, "y", nil, "2015-02-03Z", 0, 0, true, true, true, true, {}, {}, {}),
+})),
+
+make_test_typed(
+	[[U{}]],
+make_unit_comp(nil, {}, {}, {
+	make_unit_def(
+		Unit.DefinitionType.none,
+		"",
+		"", {}, {},
+		{}, {},
+		{}, {}
+	),
+})),
+make_test_typed(
+	[[{x, U{}}]],
+make_unit_comp(nil, {}, {}, {
+	make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+	make_unit_def(
+		Unit.DefinitionType.none,
+		"",
+		"", {}, {},
+		{}, {},
+		{}, {}
+	),
+})),
+
+make_test_typed(
+	[[U{
+		d = "root"
+		author = "X%Y",
+		P1 = {
+			d = "P1"
+			RS1{x}
+		}
+	}]],
+make_unit_comp(nil, {}, {}, {
+	make_unit_def(
+		Unit.DefinitionType.none,
+		"",
+		"root", {Prop.Author("X%Y", true, nil, true)}, {},
+		{}, {},
+		{}, {
+			make_element_primary(1, "P1", {}, {}, {
+				make_step(1, nil, {}, {}, {
+					make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				}),
+			}),
+		}
+	),
+})),
+
 make_test(
 	[[U{}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {}
-),
+)),
 make_test(
 	[[S{}]],
-	Unit.Type.self,
+make_unit_def(
+	Unit.DefinitionType.self,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {}
-),
+)),
 
 make_test(
 	[[name = U{}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"name",
 	"", {}, {},
 	{}, {},
 	{}, {}
-),
+)),
 
 make_test(
 	[[U{d = "x"}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"x", {}, {},
 	{}, {},
 	{}, {}
-),
+)),
 
 make_test(
 	[[U{author = "X%Y"}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {},
 	{}, {}
-),
+)),
 make_test(
 	[[U{author = {"X%Y"}}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {},
 	{}, {}
-),
+)),
 make_test(
 	[[U{author = {"X%Y", "Z%W"}}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {
 		Prop.Author("X%Y", true, nil, true),
@@ -85,27 +288,30 @@ make_test(
 	}, {},
 	{}, {},
 	{}, {}
-),
+)),
 
 make_test(
 	[[U{note = "x"}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {Prop.Note("x")},
 	{}, {},
 	{}, {}
-),
+)),
 make_test(
 	[[U{note = {01:23, "x"}}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {Prop.Note("x", make_time("2016-01-01T01:23Z"))},
 	{}, {},
 	{}, {}
-),
+)),
 make_test(
 	[[U{note = {{02T01:23, "x"}, "y"}}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {
 		Prop.Note("x", make_time("2016-01-02T01:23Z")),
@@ -113,7 +319,7 @@ make_test(
 	},
 	{}, {},
 	{}, {}
-),
+)),
 
 make_test(
 	[[U{
@@ -122,35 +328,37 @@ make_test(
 			x
 		}
 	}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {
 		make_element_primary(1, "blah", {}, {}, {
 			make_step(1, nil, {}, {}, {
-				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
-),
+)),
 
 make_test(
 	[[U{
 		x
 	}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, nil, {}, {}, {
-				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
-),
+)),
 
 make_test(
 	[[U{
@@ -158,55 +366,58 @@ make_test(
 		y
 		:z
 	}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, nil, {}, {}, {
-				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
-				make_instance(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
-				make_instance(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
-					make_modifier("z", Instance.UnknownModifier())
+				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_unit_ref(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_unit_ref(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
+					make_modifier("z", Unit.UnknownModifier())
 				}, {}),
 			}),
 		}),
 	}
-),
+)),
 
 make_test(
 	[[U{
 		P1 = {x}
 	}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, nil, {}, {}, {
-				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
-),
+)),
 make_test(
 	[[U{
 		P1 = x
 	}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, nil, {}, {}, {
-				make_instance("prototype", "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_unit_ref("prototype", "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
-),
+)),
 
 make_test(
 	[[U{
@@ -214,18 +425,19 @@ make_test(
 			RS1{x}
 		}
 	}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, nil, {}, {}, {
-				make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
 	}
-),
+)),
 make_test(
 	[[U{
 		P1 = {
@@ -235,35 +447,36 @@ make_test(
 			RS2{:cook}
 		}
 	}]],
-	Unit.Type.none,
+make_unit_def(
+	Unit.DefinitionType.none,
 	"",
 	"", {}, {},
 	{}, {},
 	{}, {
 		make_element_primary(1, "", {}, {}, {
 			make_step(1, nil, {}, {}, {
-				make_unit(
-					Unit.Type.familiar,
+				make_unit_def(
+					Unit.DefinitionType.familiar,
 					"",
 					"stuff", {Prop.Author("X%Y", true, nil, true)}, {},
 					{}, {},
 					{}, {
 						make_element_primary(1, "", {}, {}, {
 							make_step(1, nil, {}, {}, {
-								make_instance(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
+								make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 							}),
 						}),
 					}
 				),
 			}),
 			make_step(2, nil, {}, {}, {
-				make_instance(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
-					make_modifier("cook", Instance.UnknownModifier()),
+				make_unit_ref(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
+					make_modifier("cook", Unit.UnknownModifier()),
 				}, {}),
 			}),
 		}),
 	}
-),
+)),
 
 make_test_fail(
 	[[U{
@@ -286,7 +499,13 @@ function do_test(t, implicit_scope)
 	U.print("%s  =>", text_rewrite)
 
 	local unit = Unit()
-	local success, msg = unit:from_object(obj, implicit_scope)
+	local translator = Unit.from_object
+	if t.typed then
+		U.assert(t.unit)
+		unit.type = t.unit.type
+		translator = Unit.from_object_by_type
+	end
+	local success, msg = translator(unit, obj, implicit_scope)
 	if not success then
 		U.print("translation error: %s", msg)
 	end

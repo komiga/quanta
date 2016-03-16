@@ -8,8 +8,6 @@ local Match = require "Quanta.Match"
 
 local Entity = require "Quanta.Entity"
 local Measurement = require "Quanta.Measurement"
-local Instance = require "Quanta.Instance"
-local Composition = require "Quanta.Composition"
 local Unit = require "Quanta.Unit"
 local Tracker = require "Quanta.Tracker"
 
@@ -27,62 +25,11 @@ function make_modifier(id, data)
 	U.type_assert(id, "string")
 	U.assert(U.is_type(data, "table") or U.is_instance(data))
 
-	local m = Instance.Modifier()
+	local m = Unit.Modifier()
 	m.id = id
 	m.id_hash = O.hash_name(id)
 	m.data = data
 	return m
-end
-
-function make_instance(
-	name, id, item, scope,
-	source, sub_source,
-	source_certain, sub_source_certain,
-	variant_certain, presence_certain,
-	measurements, modifiers, selection
-)
-	U.type_assert(name, "string", true)
-	U.type_assert(id, "string", true)
-	U.type_assert(scope, "string", true)
-	U.type_assert(source, "number")
-	U.type_assert(sub_source, "number")
-	U.type_assert(source_certain, "boolean")
-	U.type_assert(sub_source_certain, "boolean")
-	U.type_assert(variant_certain, "boolean")
-	U.type_assert(presence_certain, "boolean")
-	U.type_assert(measurements, "table")
-	U.type_assert(modifiers, "table")
-	U.type_assert(selection, "table")
-
-	local i = Instance()
-	i:set_name(name)
-	i:set_id(id)
-	i.scope = scope and make_time(scope) or nil
-	i.item = item
-	i.source = source
-	i.sub_source = sub_source
-	i.source_certain = source_certain
-	i.sub_source_certain = sub_source_certain
-	i.variant_certain = variant_certain
-	i.presence_certain = presence_certain
-	i.selection = selection
-	i.measurements = measurements
-	i.modifiers = modifiers
-	return i
-end
-
-function make_composition(name, measurements, modifiers, items)
-	U.type_assert(name, "string", true)
-	U.type_assert(measurements, "table")
-	U.type_assert(modifiers, "table")
-	U.type_assert(items, "table")
-
-	local c = Composition()
-	c:set_name(name)
-	c.items = items
-	c.modifiers = modifiers
-	c.measurements = measurements
-	return c
 end
 
 function make_step(index, name, measurements, modifiers, items)
@@ -90,7 +37,7 @@ function make_step(index, name, measurements, modifiers, items)
 
 	local s = Unit.Step()
 	s.index = index
-	s.composition = make_composition(name, measurements, modifiers, items)
+	s.composition = make_unit_comp(name, measurements, modifiers, items)
 	return s
 end
 
@@ -120,29 +67,78 @@ function make_element_primary(index, description, author, note, steps)
 	return make_element(Unit.Element.Type.primary, index, description, author, note, steps)
 end
 
-function make_unit(type, name, description, author, note, measurements, modifiers, elements_generic, elements_primary)
-	U.type_assert(type, "number")
+function make_unit_ref(
+	name, id, thing, scope,
+	source, sub_source,
+	source_certain, sub_source_certain,
+	variant_certain, presence_certain,
+	measurements, modifiers, items
+)
+	U.type_assert(name, "string", true)
+	U.type_assert(id, "string", true)
+	U.type_assert(scope, "string", true)
+	U.type_assert(source, "number")
+	U.type_assert(sub_source, "number")
+	U.type_assert(source_certain, "boolean")
+	U.type_assert(sub_source_certain, "boolean")
+	U.type_assert(variant_certain, "boolean")
+	U.type_assert(presence_certain, "boolean")
+	U.type_assert(measurements, "table")
+	U.type_assert(modifiers, "table")
+	U.type_assert(items, "table")
+
+	local u = Unit.Reference()
+	u:set_name(name)
+	u:set_id(id)
+	u.scope = scope and make_time(scope) or nil
+	u.thing = thing
+	u.source = source
+	u.sub_source = sub_source
+	u.source_certain = source_certain
+	u.sub_source_certain = sub_source_certain
+	u.variant_certain = variant_certain
+	u.presence_certain = presence_certain
+	u.items = items
+	u.measurements = measurements
+	u.modifiers = modifiers
+	return u
+end
+
+function make_unit_comp(name, measurements, modifiers, items)
+	U.type_assert(name, "string", true)
+	U.type_assert(measurements, "table")
+	U.type_assert(modifiers, "table")
+	U.type_assert(items, "table")
+
+	local u = Unit.Composition()
+	u:set_name(name)
+	u.items = items
+	u.modifiers = modifiers
+	u.measurements = measurements
+	return u
+end
+
+function make_unit_def(def_type, name, description, author, note, measurements, modifiers, items, parts)
+	U.type_assert(def_type, "number")
 	U.type_assert(name, "string")
 	U.type_assert(description, "string")
 	U.type_assert(author, "table")
 	U.type_assert(note, "table")
 	U.type_assert(measurements, "table")
 	U.type_assert(modifiers, "table")
-	U.type_assert(elements_generic, "table")
-	U.type_assert(elements_primary, "table")
+	U.type_assert(items, "table")
+	U.type_assert(parts, "table")
 
-	local u = Unit()
-	u.type = type
+	local u = Unit.Definition()
+	u.def_type = def_type
 	u:set_name(name)
 	u.description = description
 	u.author = author
 	u.note = note
 	u.modifiers = modifiers
 	u.measurements = measurements
-	u.elements = {
-		elements_generic,
-		elements_primary,
-	}
+	u.items = items
+	u.parts = parts
 	return u
 end
 
@@ -255,65 +251,23 @@ function check_modifier_list_equal(x, y)
 	end
 end
 
-function check_instance_equal(x, y)
-	U.assert(x.id == y.id)
-	U.assert(x.id_hash == y.id_hash)
-	U.assert((x.scope == nil) == (y.scope == nil))
-	if x.scope then
-		U.assert(Time.compare_equal(x.scope, y.scope))
-	end
-	U.assert(x.item == y.item)
-	U.assert(x.source == y.source)
-	U.assert(x.sub_source == y.sub_source)
-	U.assert(x.source_certain == y.source_certain)
-	U.assert(x.sub_source_certain == y.sub_source_certain)
-	U.assert(x.variant_certain == y.variant_certain)
-	U.assert(x.presence_certain == y.presence_certain)
-
-	U.assert(#x.selection == #y.selection)
-	for si = 1, #x.selection do
-		check_instance_equal(x.selection[si], y.selection[si])
-	end
-
-	check_modifier_list_equal(x, y)
-	check_measurement_list_equal(x, y)
-end
-
-function check_composition_equal(x, y)
-	U.assert(#x.items == #y.items)
-	for i = 1, #x.items do
-		local xi = x.items[i]
-		local yi = y.items[i]
-		local class = U.type_class(xi)
-		U.assert(class == U.type_class(yi))
-		if class == Instance then
-			check_instance_equal(xi, yi)
-		elseif class == Composition then
-			check_composition_equal(xi, yi)
-		elseif class == Unit then
-			check_unit_equal(xi, yi)
-		else
-			U.assert(false, "invalid composition item type: %s", type(xi))
-		end
-	end
-
-	check_modifier_list_equal(x, y)
-	check_measurement_list_equal(x, y)
-end
-
 function check_step_equal(x, y)
 	U.assert(x.index == y.index)
-	check_composition_equal(x.composition, y.composition)
+	check_unit_equal(x.composition, y.composition)
 end
 
 function check_element_equal(x, y)
 	U.assert(x.type == y.type)
 	U.assert(x.index == y.index)
-	U.assert(x.description == y.description)
 
+	U.assert(x.description == y.description)
 	U.assert(#x.author == #y.author)
 	for i = 1, #x.author do
 		check_author_equal(x.author[i], y.author[i])
+	end
+	U.assert(#x.note == #y.note)
+	for i = 1, #x.note do
+		check_note_equal(x.note[i], y.note[i])
 	end
 
 	U.assert(#x.steps == #y.steps)
@@ -322,36 +276,60 @@ function check_element_equal(x, y)
 	end
 end
 
+function check_unit_item_equal(x, y)
+	local class = U.type_class(x)
+	U.assert(class == U.type_class(y))
+	if class == Unit then
+		check_unit_equal(x, y)
+	elseif class == Unit.Element then
+		check_element_equal(x, y)
+	else
+		U.assert(false, "invalid composition item type: %s", type(x))
+	end
+end
+
 function check_unit_equal(x, y)
 	U.assert(x.type == y.type)
+	U.assert(x.def_type == y.def_type)
 	U.assert(x.name == y.name)
 	U.assert(x.name_hash == y.name_hash)
-	U.assert(x.description == y.description)
+	U.assert(x.id == y.id)
+	U.assert(x.id_hash == y.id_hash)
 
+	U.assert((x.scope == nil) == (y.scope == nil))
+	if x.scope then
+		U.assert(Time.compare_equal(x.scope, y.scope))
+	end
+	U.assert(x.thing == y.thing)
+
+	U.assert(x.description == y.description)
 	U.assert(#x.author == #y.author)
 	for i = 1, #x.author do
 		check_author_equal(x.author[i], y.author[i])
 	end
-
 	U.assert(#x.note == #y.note)
 	for i = 1, #x.note do
 		check_note_equal(x.note[i], y.note[i])
 	end
 
-	U.assert(#x.elements == #y.elements)
+	U.assert(x.source == y.source)
+	U.assert(x.sub_source == y.sub_source)
+	U.assert(x.source_certain == y.source_certain)
+	U.assert(x.sub_source_certain == y.sub_source_certain)
+	U.assert(x.variant_certain == y.variant_certain)
+	U.assert(x.presence_certain == y.presence_certain)
 
-	local a = x.elements[Unit.Element.Type.generic]
-	local b = y.elements[Unit.Element.Type.generic]
-	U.assert(#a == #b)
-	for i = 1, #a do
-		check_element_equal(a[i], b[i])
+	check_modifier_list_equal(x, y)
+	check_measurement_list_equal(x, y)
+
+	U.assert(#x.items == #y.items)
+	for i = 1, #x.items do
+		check_unit_item_equal(x.items[i], y.items[i])
 	end
 
-	a = x.elements[Unit.Element.Type.primary]
-	b = y.elements[Unit.Element.Type.primary]
-	U.assert(#a == #b)
-	for i = 1, #a do
-		check_element_equal(a[i], b[i])
+	U.assert(#x.parts == #y.parts)
+	for i = 1, #x.parts do
+		check_unit_item_equal(x.parts[i], y.parts[i])
 	end
 
 	check_modifier_list_equal(x, y)

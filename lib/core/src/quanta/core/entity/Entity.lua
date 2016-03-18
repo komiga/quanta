@@ -330,9 +330,9 @@ local function parent_source_value(name)
 	local function value(context, n)
 		local p = context:value(n)
 		local v
-		if U.is_instance(M) then
+		if U.is_instance(p, M) then
 			v = p.parent.generic[name]
-		elseif U.is_instance(M.Source) then
+		elseif U.is_instance(p, M.Source) then
 			v = p[name]
 		else
 			v = nil

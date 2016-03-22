@@ -309,8 +309,9 @@ function M.Source:__init(parent)
 	self.sources = {}
 	self.data = nil
 
-	if parent.data then
-		self.data = parent.data.Source(self)
+	self.parent = parent
+	if self.parent and self.parent.data then
+		self.data = self.parent.data.Source(self)
 	end
 end
 

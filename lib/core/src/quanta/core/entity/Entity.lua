@@ -589,9 +589,7 @@ Match.Pattern{
 },
 })
 
-M.t_category_body:add({
-	M.t_shared_body,
-Match.Pattern{
+M.p_include = Match.Pattern{
 	name = "include",
 	collect = {Match.Pattern{
 		vtype = O.Type.string,
@@ -607,13 +605,17 @@ Match.Pattern{
 			if not O.read_text_file(sub, path) then
 				return Match.Error("failed to load include file: %s", path)
 			end
-			if not context:consume_sub(context:control(), sub, cat, path) then
+			if not context:consume_sub(M.t_root, sub, cat, path) then
 				return false
 			end
 		end
 		return true
 	end
-},
+}
+
+M.t_category_body:add({
+	M.t_shared_body,
+	M.p_include,
 })
 
 M.t_category_body_generic:add({
@@ -643,6 +645,7 @@ M.t_root:add({
 	M.t_entity_head,
 	M.t_category_head,
 	M.p_specialization,
+	M.p_include,
 })
 
 M.t_entity_body_generic:build()

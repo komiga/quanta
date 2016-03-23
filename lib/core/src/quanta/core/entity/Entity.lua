@@ -379,8 +379,8 @@ function M.Source:to_object(obj, depth)
 
 	if #self.composition.items > 0 then
 		local composition_obj = O.push_child(obj)
-		O.set_name(composition_obj, "composition")
 		self.composition:to_object(composition_obj)
+		O.set_name(composition_obj, "composition")
 	end
 
 	if self.data then

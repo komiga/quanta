@@ -480,7 +480,7 @@ Match.Pattern{
 	children = Match.Any,
 	tags = Match.Any,
 	quantity = Match.Any,
-	branch = Unit.t_composition_body,
+	branch = Unit.t_composition_head_gobble,
 	acceptor = function(context, self, obj)
 		return self.composition
 	end,

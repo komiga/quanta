@@ -281,7 +281,7 @@ function M:to_object(obj)
 	self.generic:to_object(obj)
 
 	if self.data then
-		self.data:to_object(obj)
+		self.data:to_object(self, obj)
 	end
 
 	if next(self.children) ~= nil then
@@ -384,7 +384,7 @@ function M.Source:to_object(obj, depth)
 	end
 
 	if self.data then
-		self.data:to_object(obj)
+		self.data:to_object(self, obj)
 	end
 
 	if next(self.sources) ~= nil then

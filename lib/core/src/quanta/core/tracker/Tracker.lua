@@ -235,8 +235,8 @@ function M.Action:to_object(obj, is_primary)
 		O.clear(obj)
 	end
 
-	O.set_identifier(obj, self.id or "UnknownAction")
 	self.data:to_object(self, obj)
+	O.set_identifier(obj, self.id or "UnknownAction")
 
 	if is_primary then
 		O.set_name(O.push_tag(obj), "action_primary")

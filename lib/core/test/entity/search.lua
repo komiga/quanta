@@ -86,6 +86,10 @@ function do_search_test(t)
 	local universe = Entity.read_universe(obj)
 	U.assert(universe)
 
+	O.clear(obj)
+	universe:to_object(obj)
+	U.print("%s", O.write_text_string(obj, false))
+
 	local branches = t.branches_func(universe)
 	for _, item in pairs(t.items) do
 		local entity = universe:search(branches, item.ref)

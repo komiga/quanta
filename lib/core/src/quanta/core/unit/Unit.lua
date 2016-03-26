@@ -41,6 +41,7 @@ function M:__init()
 	self.name_hash = O.NAME_NULL
 	self.id = nil
 	self.id_hash = O.NAME_NULL
+	self.id_arbitrary = false
 
 	-- NB: can be shared!
 	self.scope = nil
@@ -93,8 +94,9 @@ function M:set_name(name)
 	end
 end
 
-function M:set_id(id)
+function M:set_id(id, arbitrary)
 	U.type_assert(id, "string", true)
+	U.type_assert(arbitrary, "boolean", true)
 
 	if id and id ~= "" then
 		-- utf8(¿) => C2 BF
@@ -109,9 +111,11 @@ function M:set_id(id)
 		end
 		self.id = id
 		self.id_hash = O.hash_name(self.id)
+		self.id_arbitrary = arbitrary or false
 	else
 		self.id = nil
 		self.id_hash = O.NAME_NULL
+		self.id_arbitrary = false
 	end
 end
 
@@ -141,13 +145,12 @@ local function to_object_shared(self, obj)
 	Prop.Note.struct_to_object(self.note, obj)
 end
 
-function M:to_object(obj)
+function M:to_object(obj, keep)
 	U.type_assert(obj, "userdata", true)
 	if not obj then
 		obj = O.create()
-	else
+	elseif not keep then
 		O.clear(obj)
-		O.release_quantity(obj)
 	end
 
 	if self.scope then
@@ -161,8 +164,15 @@ function M:to_object(obj)
 
 	if self.type == M.Type.definition then
 		O.set_identifier(obj, M.DefinitionType[self.def_type].notation)
-	elseif self.id_hash ~= O.NAME_NULL then
-		O.set_identifier(obj, self.id .. (self.variant_certain and "" or "¿"))
+	elseif self.type == M.Type.reference and self.id_hash ~= O.NAME_NULL then
+		local id = self.id .. (self.variant_certain and "" or "¿")
+		if self.id_arbitrary then
+			O.set_string(obj, id)
+		else
+			O.set_identifier(obj, id)
+		end
+	else
+		O.set_null(obj)
 	end
 
 	O.set_source(obj, self.source)
@@ -279,8 +289,8 @@ end
 function M.Step:to_object(obj)
 	U.type_assert(obj, "userdata")
 
-	O.set_identifier(obj, "RS" .. tostring(self.index))
 	self.composition:to_object(obj, true)
+	O.set_identifier(obj, "RS" .. tostring(self.index))
 end
 
 M.Element = U.class(M.Element)
@@ -379,7 +389,7 @@ M.p_reference_head_id = Match.Pattern{
 		if O.is_identifier(obj) then
 			self:set_id(O.identifier(obj))
 		else
-			self:set_id(O.string(obj))
+			self:set_id(O.string(obj), true)
 		end
 		if #context.user.scope > 0 then
 			self.scope = U.table_last(context.user.scope)

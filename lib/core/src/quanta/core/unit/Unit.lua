@@ -182,10 +182,10 @@ function M:to_object(obj, keep)
 	O.set_value_certain(obj, self.presence_certain)
 
 	to_object_shared(self, obj)
-	for _, item in pairs(self.items) do
+	for _, item in ipairs(self.items) do
 		item:to_object(O.push_child(obj))
 	end
-	for _, part in pairs(self.parts) do
+	for _, part in ipairs(self.parts) do
 		part:to_object(O.push_child(obj))
 	end
 	M.Modifier.struct_list_to_tags(self.modifiers, obj)
@@ -332,8 +332,15 @@ local shared_props = {
 	Prop.Note.t_struct_head,
 }
 
-local function translate_basic(self, obj)
+local function translate_basic(context, self, obj)
 	self:set_name(O.name(obj))
+	if self.name then
+		local parent = context:value(1)
+		if parent and U.is_type(parent, M) then
+			parent.items[self.name] = self
+		end
+	end
+
 	self.source = O.source(obj)
 	self.sub_source = O.sub_source(obj)
 	self.source_certain = not O.marker_source_uncertain(obj)
@@ -363,10 +370,10 @@ M.p_definition_head = Match.Pattern{
 	children = M.t_definition_body,
 	tags = M.Modifier.t_struct_list_head,
 	quantity = Measurement.t_struct_list_head,
-	acceptor = function(_, self, obj)
+	acceptor = function(context, self, obj)
 		self.type = M.Type.definition
 		self.def_type = M.DefinitionTypeByNotation[O.identifier(obj)]
-		translate_basic(self, obj)
+		translate_basic(context, self, obj)
 	end,
 	--[[post_branch = function(_, self, _)
 		local primary_bucket = self.items[M.Element.Type.primary]
@@ -385,7 +392,7 @@ M.p_reference_head_id = Match.Pattern{
 	quantity = Measurement.t_struct_list_head,
 	acceptor = function(context, self, obj)
 		self.type = M.Type.reference
-		translate_basic(self, obj)
+		translate_basic(context, self, obj)
 		if O.is_identifier(obj) then
 			self:set_id(O.identifier(obj))
 		else
@@ -405,7 +412,7 @@ M.p_reference_head_empty = Match.Pattern{
 	quantity = Measurement.t_struct_list_head,
 	acceptor = function(context, self, obj)
 		self.type = M.Type.reference
-		translate_basic(self, obj)
+		translate_basic(context, self, obj)
 	end,
 }
 
@@ -507,7 +514,7 @@ Match.Pattern{
 	end,
 	acceptor = function(context, self, obj)
 		self.type = M.Type.composition
-		translate_basic(self, obj)
+		translate_basic(context, self, obj)
 	end,
 },
 })
@@ -585,6 +592,7 @@ local function element_acceptor(element, _, unit, obj)
 		)
 	end
 	bucket[element.index] = element
+	bucket[name] = element
 end
 
 -- Element
@@ -640,6 +648,7 @@ Match.Pattern{
 			element.index = 1
 			element.implicit = true
 			bucket[element.index] = element
+			bucket["P1"] = element
 		elseif not element.implicit or #bucket > 1 then
 			return Match.Error("sub-property defined in unit root after explicit element")
 		end

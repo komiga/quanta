@@ -119,6 +119,25 @@ function M:set_id(id, arbitrary)
 	end
 end
 
+function M:resolve(parent, resolver)
+	U.type_assert(resolver, "function")
+
+	if self.type == M.Type.reference then
+		if self.thing == nil then
+			resolver(parent, self)
+		end
+	end
+	if self.type ~= M.Type.composition then
+		parent = self
+	end
+	for _, item in ipairs(self.items) do
+		item:resolve(parent, resolver)
+	end
+	for _, part in ipairs(self.parts) do
+		part:resolve(parent, resolver)
+	end
+end
+
 local function unit_from_object(self, obj, implicit_scope, tree)
 	U.type_assert(obj, "userdata")
 
@@ -293,6 +312,10 @@ function M.Step:to_object(obj)
 	O.set_identifier(obj, "RS" .. tostring(self.index))
 end
 
+function M.Step:resolve(parent, resolver)
+	self.composition:resolve(parent, resolver)
+end
+
 M.Element = U.class(M.Element)
 
 M.Element.Type = {
@@ -323,6 +346,12 @@ function M.Element:to_object(obj)
 	to_object_shared(self, obj)
 	for _, s in ipairs(self.steps) do
 		s:to_object(O.push_child(obj))
+	end
+end
+
+function M.Element:resolve(parent, resolver)
+	for _, s in ipairs(self.steps) do
+		s:resolve(parent, resolver)
 	end
 end
 

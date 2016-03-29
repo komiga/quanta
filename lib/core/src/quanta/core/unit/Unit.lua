@@ -195,6 +195,13 @@ function M:to_object(obj, keep)
 	return obj
 end
 
+function M:is_resolved()
+	if self.type == M.Type.reference and self.id ~= nil then
+		return self.thing or self.id_arbitrary
+	end
+	return true
+end
+
 function M:resolve_refs(resolver)
 	if
 		self.type == M.Type.reference and

@@ -252,21 +252,23 @@ function M.Resolver:find_thing(unit)
 	U.assert(unit ~= nil)
 
 	local node
+	local immediate_parent = nil
 	local thing, variant, terminate
 	for i = #self.stack, 1, -1 do
 		node = self.stack[i]
-		if node.searcher then
-			thing, variant, terminate = node.searcher(self, node.part, unit)
-			if thing then
-				return thing, variant
-			end
-			if terminate then
-				break
-			end
+		if not immediate_parent and node.part then
+			immediate_parent = node.part
+		end
+		thing, variant, terminate = node.searcher(self, node.part, unit)
+		if thing then
+			return thing, variant
+		end
+		if terminate then
+			break
 		end
 	end
 	if self.result then
-		table.insert(self.result.not_found, unit)
+		table.insert(self.result.not_found, {unit = unit, parent = immediate_parent})
 	end
 	return nil, nil
 end

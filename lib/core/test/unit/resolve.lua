@@ -25,20 +25,6 @@ local universe_text = [[
 	}}
 ]]
 
-Vessel.init("vessel_data")
-local universe = Entity.read_universe(O.create_mv(universe_text))
-U.assert(universe)
-
-local function resolver(parent, unit)
-	if parent then
-		unit.thing = parent.parts[unit.id] or parent.items[unit.id]
-	end
-	if not unit.thing then
-		unit.thing = universe:search(nil, unit.id)
-	end
-	U.print("%-5s %s => %s", parent ~= nil, unit.id, unit.thing ~= nil)
-end
-
 local tests = {
 make_test([[
 	a
@@ -65,14 +51,20 @@ make_test([[
 }),
 
 make_test([[
-	U{E1 = {a}, P1 = {E1}}
+	u1 = U{E1 = {a}, P1 = {E1}}
+	u1{P1}
+	u1{P2}
 ]], {
 	true,
 	true,
+	true,
+	true,
+	true,
+	false,
 }),
 }
 
-function do_test(t, implicit_scope)
+function do_test(t, implicit_scope, resolver)
 	local obj = O.create_mv(t.text)
 	U.assert(obj ~= nil)
 
@@ -108,14 +100,50 @@ function do_test(t, implicit_scope)
 		end
 	end
 
-	unit:resolve(nil, resolver)
+	resolver:do_tree(unit)
 	check_unit(unit)
 end
 
+local function searcher_wrapper(name, searcher)
+	return function(resolver, parent, unit)
+		local thing, variant, terminate = searcher(resolver, parent, unit)
+		U.print(
+			"%10s %-5s %s => %s, %s, %s%s",
+			name,
+			parent ~= nil,
+			unit.id,
+			thing ~= nil,
+			variant ~= nil,
+			not not terminate,
+			thing ~= nil and "\n" or ""
+		)
+		return thing, variant, terminate
+	end
+end
+
+local function select_searcher(part)
+	if part.type ~= Unit.Type.reference then
+		return searcher_wrapper("child", Unit.Resolver.searcher_unit_child(part))
+	else
+		return searcher_wrapper("selector", Unit.Resolver.searcher_unit_selector(part))
+	end
+end
+
 function main()
+	Vessel.init("vessel_data")
+	local universe = Entity.read_universe(O.create_mv(universe_text))
+	U.assert(universe)
+
+	local resolver = Unit.Resolver(select_searcher)
+	resolver:push_searcher(function()
+		U.print("")
+		return nil, nil
+	end)
+	resolver:push_searcher(searcher_wrapper("universe", Unit.Resolver.searcher_universe(universe, nil, nil)))
+
 	local implicit_scope = make_time("2016-01-01Z")
 	for _, t in pairs(tests) do
-		do_test(t, implicit_scope)
+		do_test(t, implicit_scope, resolver)
 	end
 
 	return 0

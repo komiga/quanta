@@ -334,10 +334,13 @@ M.Resolver.select_searcher_default = M.Resolver.searcher_unit_sub_auto
 
 M.Modifier = U.class(M.Modifier)
 
-function M.Modifier:__init()
-	self.id = nil
-	self.id_hash = O.NAME_NULL
-	self.data = nil
+function M.Modifier:__init(id, id_hash, data)
+	U.type_assert(id, "string", true)
+	U.type_assert(id_hash, "number", true)
+
+	self.id = id
+	self.id_hash = id_hash or (id and O.hash_name(id) or O.NAME_NULL)
+	self.data = data
 end
 
 function M.Modifier:to_object(obj)
@@ -369,9 +372,7 @@ function M.Modifier.adapt_struct_list()
 		name = true,
 		children = Match.Any,
 		acceptor = function(context, parent, obj)
-			local modifier = M.Modifier()
-			modifier.id = O.name(obj)
-			modifier.id_hash = O.name_hash(obj)
+			local modifier = M.Modifier(O.name(obj), O.name_hash(obj))
 			table.insert(parent.modifiers, modifier)
 
 			return context.user.director:read_modifier(context, parent, modifier, obj)

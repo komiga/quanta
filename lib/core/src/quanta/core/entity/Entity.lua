@@ -85,15 +85,15 @@ function M:any_sources()
 	return self.generic:any_sources()
 end
 
-function M:has_variant(lead, sub)
+function M:variant(lead, sub)
 	if lead == 0 then
-		return true
+		return self.generic
 	end
-	local s = self.generic.sources[lead]
-	if s then
-		return sub == 0 or s.sources[sub] ~= nil
+	local v = self.generic.sources[lead]
+	if v and sub ~= 0 then
+		return v.sources[sub]
 	end
-	return false
+	return v
 end
 
 function M:add(entity)

@@ -314,12 +314,14 @@ function M.Resolver.searcher_unit_selector(search_in, no_terminate)
 end
 
 function M.Resolver.searcher_unit_sub_auto(search_in, selector_no_terminate)
-	if part.type ~= Unit.Type.reference then
+	if search_in.type ~= M.Type.reference then
 		return M.Resolver.searcher_unit_child(search_in)
 	else
 		return M.Resolver.searcher_unit_selector(search_in, selector_no_terminate)
 	end
 end
+
+M.Resolver.select_searcher_default = M.Resolver.searcher_unit_sub_auto
 
 M.Modifier = U.class(M.Modifier)
 

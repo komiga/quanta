@@ -47,6 +47,7 @@ function M:__init()
 	self.scope = nil
 	-- Entity or Unit
 	self.thing = nil
+	self.thing_variant = nil
 
 	self.description = Prop.Description.struct("")
 	self.author = Prop.Author.struct({})
@@ -116,25 +117,6 @@ function M:set_id(id, arbitrary)
 		self.id = nil
 		self.id_hash = O.NAME_NULL
 		self.id_arbitrary = false
-	end
-end
-
-function M:resolve(parent, resolver)
-	U.type_assert(resolver, "function")
-
-	if self.type == M.Type.reference then
-		if self.thing == nil then
-			resolver(parent, self)
-		end
-	end
-	if self.type ~= M.Type.composition then
-		parent = self
-	end
-	for _, item in ipairs(self.items) do
-		item:resolve(parent, resolver)
-	end
-	for _, part in ipairs(self.parts) do
-		part:resolve(parent, resolver)
 	end
 end
 
@@ -211,6 +193,132 @@ function M:to_object(obj, keep)
 	Measurement.struct_list_to_quantity(self.measurements, obj)
 
 	return obj
+end
+
+function M:resolve_refs(resolver)
+	if
+		self.type == M.Type.reference and
+		self.thing == nil and
+		self.id ~= nil and
+		not self.id_arbitrary
+	then
+		self.thing, self.thing_variant = resolver:find_thing(self)
+	end
+
+	resolver:push(self)
+	for _, item in ipairs(self.items) do
+		item:resolve_refs(resolver)
+	end
+	for _, part in ipairs(self.parts) do
+		part:resolve_refs(resolver)
+	end
+	resolver:pop()
+end
+
+M.Resolver = U.class(M.Resolver)
+
+function M.Resolver:__init(select_searcher)
+	U.type_assert(select_searcher, "function")
+
+	self.select_searcher = select_searcher
+	self.stack = {}
+end
+
+function M.Resolver:push(part)
+	U.assert(part ~= nil)
+	local searcher = self.select_searcher(part)
+	if searcher then
+		table.insert(self.stack, {part = part, searcher = searcher})
+	end
+end
+
+function M.Resolver:push_searcher(searcher)
+	U.type_assert(searcher, "function")
+	table.insert(self.stack, {searcher = searcher})
+end
+
+function M.Resolver:pop()
+	table.remove(self.stack)
+end
+
+function M.Resolver:find_thing(unit)
+	U.assert(unit ~= nil)
+
+	local node
+	local thing, variant, terminate
+	for i = #self.stack, 1, -1 do
+		node = self.stack[i]
+		if node.searcher then
+			thing, variant, terminate = node.searcher(self, node.part, unit)
+			if thing then
+				return thing, variant
+			end
+			if terminate then
+				break
+			end
+		end
+	end
+	if self.result then
+		table.insert(self.result.not_found, unit)
+	end
+	return nil, nil
+end
+
+function M.Resolver:do_tree(part)
+	U.assert(part ~= nil)
+	U.assert(self.result == nil)
+
+	local stack_size = #self.stack
+	local result = {
+		not_found = {},
+	}
+	self.result = result
+
+	part.resolve_refs(part, self)
+
+	self.result = nil
+	U.assert(stack_size == #self.stack)
+
+	return result
+end
+
+function M.Resolver.searcher_universe(universe, branches, handler)
+	U.assert(universe ~= nil)
+	U.type_assert(branches, "table", true)
+	U.type_assert(handler, "function", true)
+	return function(resolver, _, unit)
+		local entity = universe:search(branches, unit.id, handler)
+		if entity then
+			return entity, entity:variant(unit.source, unit.sub_source)
+		end
+		return nil, nil, false
+	end
+end
+
+function M.Resolver.searcher_unit_child(search_in)
+	return function(resolver, _, unit)
+		if unit.source == 0 then
+			return (search_in.parts[unit.id] or search_in.items[unit.id]), nil, false
+		end
+		return nil, nil, false
+	end
+end
+
+function M.Resolver.searcher_unit_selector(search_in, no_terminate)
+	return function(resolver, _, unit)
+		if search_in.thing and U.is_type(search_in.thing, M) then
+			return (search_in.thing.items[unit.id] or search_in.thing.parts[unit.id]), nil, not no_terminate
+		end
+		return nil, nil, false
+	end
+end
+
+function M.Resolver.searcher_unit_sub_auto(search_in, selector_no_terminate)
+	if part.type ~= Unit.Type.reference then
+		return M.Resolver.searcher_unit_child(search_in)
+	else
+		return M.Resolver.searcher_unit_selector(search_in, selector_no_terminate)
+	end
 end
 
 M.Modifier = U.class(M.Modifier)
@@ -312,10 +420,6 @@ function M.Step:to_object(obj)
 	O.set_identifier(obj, "RS" .. tostring(self.index))
 end
 
-function M.Step:resolve(parent, resolver)
-	self.composition:resolve(parent, resolver)
-end
-
 M.Element = U.class(M.Element)
 
 M.Element.Type = {
@@ -349,9 +453,9 @@ function M.Element:to_object(obj)
 	end
 end
 
-function M.Element:resolve(parent, resolver)
+function M.Element:resolve_refs(resolver)
 	for _, s in ipairs(self.steps) do
-		s:resolve(parent, resolver)
+		s.composition:resolve_refs(resolver)
 	end
 end
 

@@ -29,7 +29,7 @@ function M:from_object(obj)
 	self.entry_by_marker = {}
 	self.attachments = {}
 
-	local context = Vessel.new_match_context(self.date)
+	local context = Vessel.new_match_context(nil)
 	context.user.tracker = self
 	if not context:consume(M.t_head, obj, self) then
 		return false, context.error:to_string(), context.error.source_line
@@ -853,6 +853,7 @@ Match.Pattern{
 		end
 
 		T.set(self.date, O.time(obj))
+		context.user.implicit_scope = T(self.date)
 	end,
 },
 -- entries = list{Entry}

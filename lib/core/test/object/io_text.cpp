@@ -261,6 +261,11 @@ struct Test {
 	TSE("\"\\t\"", "\"\t\"")
 	TSE("\"\\n\"", "```\n```")
 
+	TSS("type\"\"")
+	TSE("type``````", "type\"\"")
+	TSS("type\"value\"")
+	TSS("type```value\nvalue```")
+
 // names
 	TF("=")
 	TF("a=")

@@ -65,7 +65,8 @@ void object::clear_value(Object& obj) {
 		internal::clear_property(obj, M_TM_PROPERTIES);
 		break;
 	case ObjectValueType::string:
-		unmanaged_string::clear(obj.value.string, a);
+		unmanaged_string::clear(obj.value.string.value, a);
+		unmanaged_string::clear(obj.value.string.type, a);
 		break;
 	case ObjectValueType::identifier:
 		unmanaged_string::clear(obj.value.identifier, a);
@@ -106,7 +107,8 @@ void object::copy(Object& dst, Object const& src, bool const children IGEN_DEFAU
 		dst.value.time = src.value.time;
 		break;
 	case ObjectValueType::string:
-		unmanaged_string::set(dst.value.string, src.value.string, a);
+		unmanaged_string::set(dst.value.string.value, src.value.string.value, a);
+		unmanaged_string::set(dst.value.string.type, src.value.string.type, a);
 		break;
 	case ObjectValueType::identifier:
 		unmanaged_string::set(dst.value.identifier, src.value.identifier, a);

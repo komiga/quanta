@@ -137,12 +137,16 @@ struct Object {
 		};
 		HashedUnmanagedString<ObjectValueHasher> unit;
 	};
+	struct String {
+		UnmanagedString value;
+		HashedUnmanagedString<ObjectValueHasher> type;
+	};
 
 	union Value {
 		bool boolean;
 		Numeric numeric;
 		Time time;
-		UnmanagedString string;
+		String string;
 		HashedUnmanagedString<ObjectValueHasher> identifier;
 	};
 

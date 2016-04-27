@@ -555,13 +555,36 @@ inline void resolve_time(Object& obj, Time context) {
 /// String value.
 inline StringRef string(Object const& obj) {
 	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));
-	return obj.value.string;
+	return obj.value.string.value;
 }
 
 /// Set string value.
 inline void set_string(Object& obj, StringRef const value) {
 	object::set_type(obj, ObjectValueType::string);
-	unmanaged_string::set(obj.value.string, value, memory::default_allocator());
+	unmanaged_string::set(obj.value.string.value, value, memory::default_allocator());
+}
+
+/// String type.
+inline StringRef string_type(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));
+	return obj.value.string.type;
+}
+
+/// String type hash.
+inline ObjectValueHash string_type_hash(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::string));
+	return obj.value.string.type.hash;
+}
+
+/// Whether the string value is typed.
+inline bool has_string_type(Object const& obj) {
+	return object::is_type(obj, ObjectValueType::string) && unmanaged_string::any(obj.value.string.type);
+}
+
+/// Set string type.
+inline void set_string_type(Object& obj, StringRef const type) {
+	object::set_type(obj, ObjectValueType::string);
+	unmanaged_string::set(obj.value.string.type, type, memory::default_allocator());
 }
 
 /// Identifier value.
@@ -585,7 +608,7 @@ inline void set_identifier(Object& obj, StringRef const value) {
 /// String or identifier value.
 inline StringRef text(Object const& obj) {
 	TOGO_ASSERTE(object::is_type_any(obj, type_mask_textual));
-	return object::is_type(obj, ObjectValueType::string) ? obj.value.string : obj.value.identifier;
+	return object::is_type(obj, ObjectValueType::string) ? obj.value.string.value : obj.value.identifier;
 }
 
 /// Set type to expression.
@@ -730,7 +753,8 @@ inline Object::Object(Object&& other)
 		other.value.time = {};
 		break;
 	case ObjectValueType::string:
-		other.value.string = {};
+		other.value.string.value = {};
+		other.value.string.type = {};
 		break;
 	case ObjectValueType::identifier:
 		other.value.identifier = {};

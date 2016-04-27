@@ -348,6 +348,7 @@ inline static bool is_identifier_terminator(unsigned const c) {
 	case '}': case ']': case ')':
 	case '{': case '[': case '(':
 	case '+':
+	case '\"': case '`':
 	case '*': case '/':
 	case '\\':
 		return true;

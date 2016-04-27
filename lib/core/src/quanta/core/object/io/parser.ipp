@@ -1090,7 +1090,12 @@ static bool parser_read_source(ObjectParser& p) {
 }
 
 static void parser_apply(ObjectParser& p, ApplyBufferAs const apply_as = ApplyBufferAs::value) {
-	// TOGO_LOGF("apply %u\n", unsigned_cast(p.buffer_type));
+	/*TOGO_LOGF(
+		"apply %u, [%.*s]\n",
+		unsigned_cast(p.buffer_type),
+		parser_buffer_size(p),
+		array::begin(p.buffer)
+	);*/
 	TOGO_DEBUG_ASSERTE(p.buffer_type != PB_NONE);
 	auto& obj = *p.branch->obj;
 	switch (apply_as) {
@@ -1505,6 +1510,29 @@ STAGE(stage_unit, BF_NONE,
 nullptr
 );
 
+STAGE(stage_typed_string, BF_NONE,
+[](ObjectParser& p) -> Response {
+	auto& obj = *p.branch->obj;
+	RESP_IF(!object::is_identifier(obj), pass)
+	else if (p.c == '\"') {
+		parser_read_string_quote(p);
+	} else if (p.c == '`') {
+		parser_read_string_block(p);
+	} else {
+		RESP(pass);
+	}
+	RESP_IF(p.flags & PF_ERROR, error)
+	else {
+		auto type = obj.value.identifier;
+		obj.value.identifier = {};
+		parser_apply(p);
+		obj.value.string.type = type;
+		RESP(next);
+	}
+},
+nullptr
+);
+
 STAGE(stage_source, BF_NONE,
 [](ObjectParser& p) -> Response {
 	RESP_IF_ELSE(p.c == '$', exit, pass)
@@ -1883,6 +1911,7 @@ Stage const
 	&stage_marker_guess,
 	&stage_marker_approximation,
 	&stage_value, // -> stage_unit
+	&stage_typed_string,
 	&stage_source, // -> stage_sub_source
 	&stage_tags, // pre
 	&stage_children,

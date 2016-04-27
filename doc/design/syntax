@@ -14,6 +14,11 @@ r
     w
 ```
 
+typed"string"
+lua```
+-- tag strings to hint usage (e.g., for embedding code)
+```
+
 1 \\ integer
 1.0 \\ floating-point
 1unit_type \\ unit type follows numeric value
@@ -123,6 +128,7 @@ Integer = [\-+]? [0-9]+
 DecimalNumber = [\-+]? [0-9]* \.? [0-9]+
 DecimalNumberWithExponent = DecimalNumber ([eE][\-+]? [0-9]* \.? [0-9]+)?
 Unit = Identifier
+StringType = Identifier
 Null = "null"
 Boolean = "false" | "true"
 
@@ -146,9 +152,10 @@ Sources = Source? SubSource?
 ValueConstant = Null | Boolean
 ValueNumber = (Integer | DecimalNumberWithExponent) Unit?
 ValueCurrency = "¤" DecimalNumber Unit
-ValueString = Identifier | "\"" (.*|\\\")* "\"" | "```" [.\s\n]* "```"
+ValueIdentifier = Identifier
+ValueString = StringType? ("\"" (.*|\\\")* "\"" | "```" [.\s\n]* "```")
 ValueExpression = "(" (NamelessObject Operator)*  NamelessObject ")" | (NamelessObject Operator)* NamelessObject
-Value = ValueConstant | ValueNumber | ValueCurrency | ValueString | ValueExpression
+Value = ValueConstant | ValueNumber | ValueCurrency | ValueIdentifier | ValueString | ValueExpression
 
 NamelessObject = ValueMarkers! Value! Sources! PreTags! Children! PostTags? Quantity?
 Object = Name? NamelessObject

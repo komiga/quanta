@@ -611,6 +611,30 @@ TOGO_LI_FUNC_DEF(set_string) {
 	return 0;
 }
 
+TOGO_LI_FUNC_DEF(string_type) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, object::string_type(*obj));
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(string_type_hash) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, object::string_type_hash(*obj));
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(has_string_type) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, object::has_string_type(*obj));
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(set_string_type) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	object::set_string_type(*obj, lua::get_string(L, 2));
+	return 0;
+}
+
 TOGO_LI_FUNC_DEF(identifier) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	lua::push_value(L, object::identifier(*obj));
@@ -1024,6 +1048,10 @@ static LuaModuleFunctionArray const li_funcs{
 
 	TOGO_LI_FUNC_REF(object, string)
 	TOGO_LI_FUNC_REF(object, set_string)
+	TOGO_LI_FUNC_REF(object, string_type)
+	TOGO_LI_FUNC_REF(object, string_type_hash)
+	TOGO_LI_FUNC_REF(object, has_string_type)
+	TOGO_LI_FUNC_REF(object, set_string_type)
 
 	TOGO_LI_FUNC_REF(object, identifier)
 	TOGO_LI_FUNC_REF(object, identifier_hash)

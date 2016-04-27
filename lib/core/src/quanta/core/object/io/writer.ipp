@@ -297,7 +297,12 @@ static bool write_object(
 	}	break;
 
 	case ObjectValueType::string:
-		RETURN_ERROR(write_string(stream, object::string(obj)));
+		if (object::has_string_type(obj)) {
+			RETURN_ERROR(write_identifier(stream, object::string_type(obj)));
+		}
+		RETURN_ERROR(
+			write_string(stream, object::string(obj))
+		);
 		break;
 
 	case ObjectValueType::identifier:

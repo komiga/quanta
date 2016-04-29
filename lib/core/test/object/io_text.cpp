@@ -272,6 +272,8 @@ struct Test {
 	TF("=,")
 	TF("=;")
 	TF("=\n")
+	TF("1=b")
+	TSE(".1=b", ".1 = b")
 	TSE("a=1", "a = 1")
 	TSE("a=b", "a = b")
 	TSE("a = 1", "a = 1")

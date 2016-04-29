@@ -37,6 +37,7 @@ make_search_test([[
 			v = Generic{}
 		}}
 	}}
+	.1 = Generic{}
 ]],
 function(universe)
 	return {
@@ -72,6 +73,9 @@ end, {
 	make_search_test_item(true, "u", "c.u"),
 	make_search_test_item(true, "d", "c.d"),
 	make_search_test_item(true, "v", "c.d.v"),
+
+	make_search_test_item(true, "1", "1"),
+	make_search_test_item(true, ".1", "1"),
 
 	make_search_test_item(false, ".n"),
 	make_search_test_item(false, ".a.n"),

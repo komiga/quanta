@@ -9,6 +9,10 @@ local Prop = require "Quanta.Prop"
 local Unit = require "Quanta.Unit"
 local M = U.module(...)
 
+local BYTE_DOT = string.byte('.')
+local BYTE_DIGIT_0 = string.byte('0')
+local BYTE_DIGIT_9 = string.byte('9')
+
 M.Type = {
 	thing = 1,
 	category = 2,
@@ -61,6 +65,10 @@ end
 function M:set_name(name)
 	U.type_assert(name, "string")
 	U.assert(#name > 0, "name cannot be empty")
+
+	if string.byte(name, 1) == BYTE_DOT then
+		name = string.sub(name, 2)
+	end
 	if self.parent then
 		self.parent.children[self.name_hash] = nil
 	end
@@ -158,8 +166,6 @@ function M.make_search_branch(entity, depth)
 	U.type_assert(depth, "number")
 	return {entity, depth}
 end
-
-local BYTE_DOT = string.byte('.')
 
 local function ref_parts(ref)
 	local parts = {}
@@ -267,7 +273,12 @@ function M:to_object(obj)
 	end
 
 	if self.name_hash ~= O.NAME_NULL then
-		O.set_name(obj, self.name)
+		local first = string.byte(self.name, 1)
+		if first >= BYTE_DIGIT_0 and first <= BYTE_DIGIT_9 then
+			O.set_name(obj, "." .. self.name)
+		else
+			O.set_name(obj, self.name)
+		end
 	else
 		O.set_name(obj, "NO_NAME")
 	end

@@ -156,7 +156,7 @@ local function measurement_less(lobj, lunit, robj, runit)
 	return false
 end
 
-function M:__init(obj_or_value, unit, of, approximation, certain)
+function M:__init(value, unit, of, approximation, certain)
 	self.of = 0
 	self.value = 0
 	self.qindex = M.QuantityIndex.dimensionless
@@ -164,10 +164,12 @@ function M:__init(obj_or_value, unit, of, approximation, certain)
 	self.approximation = 0
 	self.certain = true
 
-	if U.is_type(obj_or_value, "number") then
-		self:set(obj_or_value, unit or "", of, approximation, certain)
-	elseif obj_or_value ~= nil then
-		self:from_object(obj_or_value)
+	if U.is_type(value, "number") then
+		self:set(value, unit or "", of, approximation, certain)
+	elseif U.is_instance(value, M) then
+		self:copy(value)
+	elseif value ~= nil then
+		self:from_object(value)
 	end
 end
 
@@ -248,6 +250,15 @@ function M:to_object(obj, no_rebase)
 			O.set_unit(obj, quantity.name .. "_unknown")
 		end
 	end
+end
+
+function M:copy(measurement)
+	self.of = measurement.of
+	self.value = measurement.value
+	self.qindex = measurement.qindex
+	self.magnitude = measurement.magnitude
+	self.approximation = measurement.approximation
+	self.certain = measurement.certain
 end
 
 function M:set(value, unit, of, approximation, certain)

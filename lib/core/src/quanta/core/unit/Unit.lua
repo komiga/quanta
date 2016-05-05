@@ -226,7 +226,7 @@ M.Resolver = U.class(M.Resolver)
 
 function M.Resolver:__init(select_searcher, scope_searcher, scope_searcher_data)
 	U.type_assert(select_searcher, "function")
-	U.type_assert(scope_searcher, "function", true)
+	U.type_assert(scope_searcher, "function")
 
 	self.select_searcher = select_searcher
 	self.scope_searcher = scope_searcher

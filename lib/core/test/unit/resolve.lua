@@ -134,7 +134,12 @@ function main()
 	local universe = Entity.read_universe(O.create_mv(universe_text))
 	U.assert(universe)
 
-	local resolver = Unit.Resolver(select_searcher)
+	local resolver = Unit.Resolver(
+		select_searcher,
+		function(_, _, _)
+			U.assert(false, "TODO")
+		end
+	)
 	resolver:push_searcher(function()
 		U.print("")
 		return nil, nil

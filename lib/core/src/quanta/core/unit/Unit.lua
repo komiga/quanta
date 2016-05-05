@@ -230,7 +230,7 @@ function M.Resolver:__init(select_searcher, scope_searcher, scope_searcher_data)
 
 	self.select_searcher = select_searcher
 	self.scope_searcher = scope_searcher
-	self.scope_searcher_data = self.scope_searcher_data
+	self.scope_searcher_data = scope_searcher_data
 	self.stack = {}
 end
 

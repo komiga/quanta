@@ -224,10 +224,13 @@ end
 
 M.Resolver = U.class(M.Resolver)
 
-function M.Resolver:__init(select_searcher)
+function M.Resolver:__init(select_searcher, scope_searcher, scope_searcher_data)
 	U.type_assert(select_searcher, "function")
+	U.type_assert(scope_searcher, "function", true)
 
 	self.select_searcher = select_searcher
+	self.scope_searcher = scope_searcher
+	self.scope_searcher_data = self.scope_searcher_data
 	self.stack = {}
 end
 
@@ -251,20 +254,27 @@ end
 function M.Resolver:find_thing(unit)
 	U.assert(unit ~= nil)
 
-	local node
-	local immediate_parent = nil
-	local thing, variant, terminate
-	for i = #self.stack, 1, -1 do
-		node = self.stack[i]
-		if not immediate_parent and node.part then
-			immediate_parent = node.part
-		end
-		thing, variant, terminate = node.searcher(self, node.part, unit)
+	local thing, variant
+	if unit.scope and self.scope_searcher then
+		thing, variant, _ = self.scope_searcher(self, self.scope_searcher_data, unit)
 		if thing then
 			return thing, variant
 		end
-		if terminate then
-			break
+	else
+		local node, terminate
+		local immediate_parent = nil
+		for i = #self.stack, 1, -1 do
+			node = self.stack[i]
+			if not immediate_parent and node.part then
+				immediate_parent = node.part
+			end
+			thing, variant, terminate = node.searcher(self, node.part, unit)
+			if thing then
+				return thing, variant
+			end
+			if terminate then
+				break
+			end
 		end
 	end
 	if self.result then
@@ -304,12 +314,16 @@ function M.Resolver.searcher_universe(universe, branches, handler)
 	end
 end
 
+function M.Resolver.searcher_unit_child_func(resolver, search_in, unit)
+	if unit.source == 0 then
+		return (search_in.parts[unit.id] or search_in.items[unit.id]), nil, false
+	end
+	return nil, nil, false
+end
+
 function M.Resolver.searcher_unit_child(search_in)
 	return function(resolver, _, unit)
-		if unit.source == 0 then
-			return (search_in.parts[unit.id] or search_in.items[unit.id]), nil, false
-		end
-		return nil, nil, false
+		return M.Resolver.searcher_unit_child_func(resolver, search_in, unit)
 	end
 end
 

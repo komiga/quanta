@@ -327,7 +327,7 @@ function M.Source:__init(parent)
 end
 
 function M.Source:any_sources()
-	return #self.sources > 0
+	return next(self.sources) ~= nil
 end
 
 function M.Source:has_author()

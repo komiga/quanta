@@ -22,6 +22,7 @@ local universe_text = [[
 		c = Generic{children = {
 			d = Generic{}
 		}}
+		e = Generic{}
 	}}
 ]]
 
@@ -34,6 +35,15 @@ make_test([[
 	n
 ]], {
 	true,
+	true,
+	true,
+	true,
+	false,
+}),
+
+make_test([[
+	b{c, e, n}
+]], {
 	true,
 	true,
 	true,

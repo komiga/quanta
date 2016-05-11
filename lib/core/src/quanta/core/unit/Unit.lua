@@ -83,6 +83,64 @@ function M.Definition()
 	return unit
 end
 
+function M:make_copy()
+	return U.make_empty_object(M):copy(self)
+end
+
+-- NB: doesn't actually copy common props for efficiency
+function M:copy(unit)
+	self.type = unit.type
+	self.def_type = unit.def_type
+	self.name = unit.name
+	self.name_hash = unit.name_hash
+	self.id = unit.id
+	self.id_hash = unit.id_hash
+	self.id_arbitrary = unit.id_arbitrary
+
+	self.scope = T(unit.scope)
+	self.thing = unit.thing
+	self.thing_variant = unit.thing_variant
+
+	self.description = unit.description
+	self.author = unit.author
+	self.note = unit.note
+
+	self.source = unit.source
+	self.sub_source = unit.sub_source
+	self.source_certain = unit.source_certain
+	self.sub_source_certain = unit.sub_source_certain
+	self.variant_certain = unit.variant_certain
+	self.presence_certain = unit.presence_certain
+
+	self.items = {}
+	self.parts = {}
+	for _, item in ipairs(unit.items) do
+		local copy = item:make_copy()
+		table.insert(self.items, copy)
+		if copy.name_hash ~= O.NAME_NULL then
+			self.items[copy.name] = copy
+		end
+	end
+	for _, part in ipairs(unit.parts) do
+		local copy = part:make_copy()
+		table.insert(self.parts, copy)
+		if copy.name_hash ~= O.NAME_NULL then
+			self.parts[copy.name] = copy
+		end
+	end
+
+	self.modifiers = M.Modifier.struct_list({})
+	self.measurements = Measurement.struct_list({})
+	for _, modifier in ipairs(unit.modifiers) do
+		table.insert(self.modifiers, modifier:make_copy())
+	end
+	for _, measurement in ipairs(unit.measurements) do
+		table.insert(self.measurements, measurement:make_copy())
+	end
+
+	return self
+end
+
 function M:set_name(name)
 	U.type_assert(name, "string", true)
 
@@ -357,6 +415,19 @@ function M.Modifier:__init(id, id_hash, data)
 	self.data = data
 end
 
+function M.Modifier:make_copy()
+	return U.make_empty_object(M.Modifier):copy(self)
+end
+
+function M.Modifier:copy(modifier)
+	self.id = modifier.id
+	self.id_hash = modifier.id_hash
+	if modifier.data then
+		self.data = modifier.data:make_copy()
+	end
+	return self
+end
+
 function M.Modifier:to_object(obj)
 	U.type_assert(obj, "userdata", true)
 	if not obj then
@@ -418,6 +489,15 @@ function M.UnknownModifier:__init(obj)
 	self.obj = obj or O.create()
 end
 
+function M.UnknownModifier:make_copy()
+	return U.make_empty_object(M.UnknownModifier):copy(self)
+end
+
+function M.UnknownModifier:copy(unknown_modifier)
+	O.copy_children(self.obj, unknown_modifier.obj)
+	return self
+end
+
 function M.UnknownModifier:from_object(context, ref, modifier, obj)
 	O.copy_children(self.obj, obj)
 end
@@ -437,6 +517,18 @@ function M.Step:__init()
 	self.index = 1
 	self.implicit = false
 	self.composition = M.Composition()
+end
+
+function M.Step:make_copy()
+	return U.make_empty_object(M.Step):copy(self)
+end
+
+function M.Step:copy(step)
+	self.index = step.index
+	self.implicit = step.implicit
+	self.composition = step.composition:make_copy()
+
+	return self
 end
 
 function M.Step:to_object(obj)
@@ -467,6 +559,26 @@ function M.Element:__init()
 	self.author = Prop.Author.struct({})
 	self.note = Prop.Note.struct({})
 	self.steps = {}
+end
+
+function M.Element:make_copy()
+	return U.make_empty_object(M.Element):copy(self)
+end
+
+function M.Element:copy(element)
+	self.type = element.type
+	self.index = element.index
+	self.implicit = element.implicit
+	self.description = element.description
+	self.author = element.author
+	self.note = element.note
+
+	self.steps = {}
+	for _, step in ipairs(element.steps) do
+		table.insert(self.steps, step:make_copy())
+	end
+
+	return self
 end
 
 function M.Element:to_object(obj)

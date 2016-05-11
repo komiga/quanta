@@ -387,8 +387,13 @@ end
 
 function M.Resolver.searcher_unit_selector(search_in, no_terminate)
 	return function(resolver, _, unit)
-		if search_in.thing and U.is_type(search_in.thing, M) then
-			return (search_in.thing.items[unit.id] or search_in.thing.parts[unit.id]), nil, not no_terminate
+		local thing = search_in.thing
+		if thing then
+			if U.is_type(thing, M) then
+				return (thing.items[unit.id] or thing.parts[unit.id]), nil, not no_terminate
+			elseif thing.children then
+				return thing.children[unit.id_hash], nil, not no_terminate
+			end
 		end
 		return nil, nil, false
 	end

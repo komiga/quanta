@@ -166,11 +166,23 @@ function M:__init(value, unit, of, approximation, certain)
 
 	if U.is_type(value, "number") then
 		self:set(value, unit or "", of, approximation, certain)
-	elseif U.is_instance(value, M) then
-		self:copy(value)
 	elseif value ~= nil then
 		self:from_object(value)
 	end
+end
+
+function M:make_copy()
+	return U.make_empty_object():copy(self)
+end
+
+function M:copy(measurement)
+	self.of = measurement.of
+	self.value = measurement.value
+	self.qindex = measurement.qindex
+	self.magnitude = measurement.magnitude
+	self.approximation = measurement.approximation
+	self.certain = measurement.certain
+	return self
 end
 
 function M:from_object(obj)
@@ -250,15 +262,6 @@ function M:to_object(obj, no_rebase)
 			O.set_unit(obj, quantity.name .. "_unknown")
 		end
 	end
-end
-
-function M:copy(measurement)
-	self.of = measurement.of
-	self.value = measurement.value
-	self.qindex = measurement.qindex
-	self.magnitude = measurement.magnitude
-	self.approximation = measurement.approximation
-	self.certain = measurement.certain
 end
 
 function M:set(value, unit, of, approximation, certain)

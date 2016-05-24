@@ -298,6 +298,10 @@ function M:rebase(unit)
 	end
 end
 
+function M:quantity()
+	return M.Quantity[self.qindex]
+end
+
 function M:unit()
 	return M.Quantity[self.qindex].UnitByMagnitude[self.magnitude]
 end

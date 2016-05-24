@@ -17,7 +17,17 @@ M.Quantity = {
 	end,
 },
 {
+	name = "ratio",
+	translation_preference = 0,
+	convert = function(self, m)
+		-- TODO
+		m.qindex = self.index
+		m.magnitude = 0
+	end,
+},
+{
 	name = "mass",
+	tangible = true,
 	translation_preference = 3,
 	convert = function(self, m)
 		-- TODO: 1u/cm³ density in measurement?
@@ -26,6 +36,7 @@ M.Quantity = {
 },
 {
 	name = "volume",
+	tangible = true,
 	translation_preference = 2,
 	convert = function(self, m)
 		-- TODO
@@ -81,6 +92,10 @@ do
 	define_units(M.Quantity.dimensionless, {
 		{"" ,  0},
 		{"u",  0}, -- FIXME: this should probably not be allowed in the future
+	})
+
+	define_units(M.Quantity.ratio, {
+		{"ratio",  0},
 	})
 
 	define_units(M.Quantity.mass, {

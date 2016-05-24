@@ -172,7 +172,7 @@ function M:__init(value, unit, of, approximation, certain)
 end
 
 function M:make_copy()
-	return U.make_empty_object():copy(self)
+	return U.make_empty_object(M):copy(self)
 end
 
 function M:copy(measurement)

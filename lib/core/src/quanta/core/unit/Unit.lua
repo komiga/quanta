@@ -97,7 +97,7 @@ function M:copy(unit)
 	self.id_hash = unit.id_hash
 	self.id_arbitrary = unit.id_arbitrary
 
-	self.scope = T(unit.scope)
+	self.scope = unit.scope and T(unit.scope) or nil
 	self.thing = unit.thing
 	self.thing_variant = unit.thing_variant
 

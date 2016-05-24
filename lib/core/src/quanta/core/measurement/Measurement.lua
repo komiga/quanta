@@ -313,6 +313,26 @@ function M:rebase(unit)
 	end
 end
 
+function M:add(measurement)
+	U.assert(U.is_instance(measurement, M))
+	if measurement.qindex ~= self.qindex or measurement.magnitude ~= self.magnitude then
+		U.assert(M.Quantity[self.qindex].tangible, "lhs must be a tangible quantity if the rhs is not of the same quantity")
+		measurement = measurement:make_copy()
+		measurement:rebase(self:unit())
+	end
+	self.value = self.value + measurement.value
+	self.of = self.of + measurement.of
+	self.approximation = U.clamp(self.approximation + measurement.approximation, -3, 3)
+	self.certain = self.certain and measurement.certain
+end
+
+function M:sub(measurement)
+	U.assert(U.is_instance(measurement, M))
+	measurement.value = -measurement.value
+	self:add(measurement)
+	measurement.value = -measurement.value
+end
+
 function M:quantity()
 	return M.Quantity[self.qindex]
 end

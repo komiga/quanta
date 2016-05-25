@@ -264,17 +264,17 @@ function M:to_object(obj, no_rebase)
 		if value > 0 then
 			O.set_expression(obj)
 			O.clear_children(obj)
-			O.set_integer(O.push_child(obj), self.of)
+			O.set_decimal(O.push_child(obj), self.of)
 			obj = O.push_child(obj)
 			O.set_op(obj, O.Operator.div)
 		else
-			O.set_integer(obj, self.of)
+			O.set_decimal(obj, self.of)
 		end
 	end
 
+	O.set_value_approximation(obj, self.approximation)
+	O.set_value_certain(obj, self.certain)
 	if value > 0 then
-		O.set_value_approximation(obj, self.approximation)
-		O.set_value_certain(obj, self.certain)
 		O.set_decimal(obj, value)
 		if unit then
 			O.set_unit(obj, unit.name)

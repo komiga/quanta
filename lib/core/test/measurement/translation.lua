@@ -16,10 +16,9 @@ function make_test(text, item_index, value, unit, of, approximation, certain)
 end
 
 local translation_tests = {
-	make_test("2"  , 0, 2, ""  ),
-	make_test("2u" , 0, 2, "u" ),
-	make_test("2g" , 0, 2, "g" ),
-	make_test("2ml", 0, 2, "ml"),
+	make_test("2"  , 0, 0, ""  , 2),
+	make_test("2g" , 0, 2, "g" , 0),
+	make_test("2ml", 0, 2, "ml", 0),
 
 	make_test("1/2g", 2, 2, "g", 1),
 	make_test("1/2ml/3g", 3, 3, "g", 1),
@@ -28,12 +27,12 @@ local translation_tests = {
 	make_test("1µg/2mg", 2, 2, "mg"),
 	make_test("2mg/1µg", 1, 2, "mg"),
 
-	make_test("?1/2", 2, 2, ""),
-	make_test("~1/2", 2, 2, ""),
-	make_test("~~1/~2", 2, 2, "", 0, -1),
-	make_test("?1/~~2", 2, 2, "", 0, -2),
-	make_test("G~1/~~~2", 2, 2, "", 0, -3),
-	make_test("G~^1/?2", 2, 2, "", 0, 0, false),
+	make_test("?1/2", 2, 0, "", 2),
+	make_test("~1/2", 2, 0, "", 2),
+	make_test("~~1/~2", 2, 0, "", 2, -1),
+	make_test("?1/~~2", 2, 0, "", 2, -2),
+	make_test("G~1/~~~2", 2, 0, "", 2, -3),
+	make_test("G~^1/?2", 2, 0, "", 2, 0, false),
 }
 
 function do_translation_test(t)

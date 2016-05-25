@@ -91,7 +91,6 @@ do
 
 	define_units(M.Quantity.dimensionless, {
 		{"" ,  0},
-		{"u",  0}, -- FIXME: this should probably not be allowed in the future
 	})
 
 	define_units(M.Quantity.ratio, {
@@ -208,8 +207,14 @@ function M:from_object(obj)
 		if not unit then
 			return false
 		end
+		local value = O.numeric(obj)
+		local of = 0
+		if unit.qindex == M.QuantityIndex.dimensionless then
+			of = value
+			value = 0
+		end
 		self:set(
-			O.numeric(obj), unit, 0,
+			value, unit, of,
 			O.value_approximation(obj),
 			not (O.marker_value_uncertain(obj) or O.marker_value_guess(obj))
 		)

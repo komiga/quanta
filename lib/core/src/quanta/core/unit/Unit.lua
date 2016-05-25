@@ -495,7 +495,7 @@ function M.UnknownModifier:__init(obj)
 end
 
 function M.UnknownModifier:make_copy()
-	return U.make_empty_object(M.UnknownModifier):copy(self)
+	return M.UnknownModifier():copy(self)
 end
 
 function M.UnknownModifier:copy(unknown_modifier)

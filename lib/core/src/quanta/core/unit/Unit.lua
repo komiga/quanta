@@ -83,6 +83,10 @@ function M.Definition()
 	return unit
 end
 
+function M:is_empty()
+	return not self.id and #self.items == 0 and #self.parts == 0
+end
+
 function M:make_copy()
 	return U.make_empty_object(M):copy(self)
 end

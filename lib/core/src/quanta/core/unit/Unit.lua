@@ -618,7 +618,7 @@ local function translate_basic(context, self, obj)
 		local parent = context:value(1)
 		if parent and U.is_type(parent, M) then
 			if parent.items[self.name] then
-				context:set_error(Match.Error("name '%s' is not unique in this scope", self.name))
+				context:set_error(Match.Error("name '%s' is not unique in this scope", self.name), obj)
 				return
 			end
 			parent.items[self.name] = self

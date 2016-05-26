@@ -91,6 +91,20 @@ function M:make_copy()
 	return U.make_empty_object(M):copy(self)
 end
 
+local function copy_items(dest, source)
+	for _, item in ipairs(source) do
+		local copy = item:make_copy()
+		table.insert(dest, copy)
+		if U.is_instance(copy, M) then
+			if copy.name_hash ~= O.NAME_NULL then
+				dest[copy.name] = copy
+			end
+		else
+			dest[copy:name()] = copy
+		end
+	end
+end
+
 -- NB: doesn't actually copy common props for efficiency
 function M:copy(unit)
 	self.type = unit.type
@@ -118,20 +132,8 @@ function M:copy(unit)
 
 	self.items = {}
 	self.parts = {}
-	for _, item in ipairs(unit.items) do
-		local copy = item:make_copy()
-		table.insert(self.items, copy)
-		if copy.name_hash ~= O.NAME_NULL then
-			self.items[copy.name] = copy
-		end
-	end
-	for _, part in ipairs(unit.parts) do
-		local copy = part:make_copy()
-		table.insert(self.parts, copy)
-		if copy.name_hash ~= O.NAME_NULL then
-			self.parts[copy.name] = copy
-		end
-	end
+	copy_items(self.items, unit.items)
+	copy_items(self.parts, unit.parts)
 
 	self.modifiers = M.Modifier.struct_list({})
 	self.measurements = Measurement.struct_list({})
@@ -570,6 +572,10 @@ function M.Element:__init()
 	self.steps = {}
 end
 
+function M.Element:name()
+	return M.Element.Type[self.type].notation .. tostring(self.index)
+end
+
 function M.Element:make_copy()
 	return U.make_empty_object(M.Element):copy(self)
 end
@@ -593,7 +599,7 @@ end
 function M.Element:to_object(obj)
 	U.type_assert(obj, "userdata")
 
-	O.set_name(obj, M.Element.Type[self.type].notation .. tostring(self.index))
+	O.set_name(obj, self:name())
 	to_object_shared(self, obj)
 	for _, s in ipairs(self.steps) do
 		s:to_object(O.push_child(obj))

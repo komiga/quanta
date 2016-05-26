@@ -592,7 +592,7 @@ end
 
 function M.Context:set_error(err, obj)
 	self.error = err
-	if not self.error.obj then
+	if not self.error.obj and obj then
 		self.error:set_obj(obj)
 	end
 	if not self.error.path then

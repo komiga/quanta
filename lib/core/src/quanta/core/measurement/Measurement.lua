@@ -151,7 +151,7 @@ M.define_quantity({
 		return value * 28.349523
 	end},
 	{"lb", 3, function(value)
-		return value * 0.453592370
+		return value * 453.592370
 	end},
 })
 
@@ -176,7 +176,7 @@ M.define_quantity({
 		return value * 29.573529
 	end},
 	{"gal", 3, function(value)
-		return value * 3.785411784
+		return value * 3785.411784
 	end},
 })
 

@@ -71,27 +71,27 @@ function main()
 			m.magnitude == 0
 		)
 
-		m:rebase("g")
+		m:convert("g", true)
 		U.assert(
 			m.value == 1 and
 			m.qindex == Measurement.QuantityIndex.mass and
 			m.magnitude == 0
 		)
 
-		m:rebase("mg")
+		m:convert("mg")
 		U.assert(m.value == 1000 and m.magnitude == -3)
-		m:rebase("kg")
+		m:convert("kg")
 		U.assert(m.value == 0.001 and m.magnitude == 3)
-		m:rebase("g")
+		m:convert("g")
 		U.assert(m.value == 1 and m.magnitude == 0)
 
-		m:rebase("ml")
+		m:convert("ml")
 		U.assert(m.value == 1 and m.magnitude == 0)
 
 		m:set(12, "µg")
 		U.assert(m.value == 12 and m.magnitude == -6)
 
-		m:rebase("g")
+		m:convert("g")
 		U.assert(m.value == 0.000012 and m.magnitude == 0)
 	end
 

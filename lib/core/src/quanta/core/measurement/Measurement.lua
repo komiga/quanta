@@ -122,10 +122,10 @@ M.define_quantity({
 
 	-- customary
 	{"cal", 0, function(value)
-		return value * 0.239
+		return value / 0.239
 	end},
 	{"kcal", 3, function(value)
-		return value * 0.000239
+		return value / 0.239
 	end},
 })
 

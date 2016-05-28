@@ -23,9 +23,9 @@ function M.define_quantity(quantity, units)
 	table.insert(M.Quantity, quantity)
 	quantity.index = #M.Quantity
 	quantity.__is_quantity = true
-	quantity.UnitByMagnitude = quantity.UnitByMagnitude or {}
-	quantity.CompatibleWith = quantity.CompatibleWith or {}
-	quantity.CompatibleWith[quantity.index] = true
+	quantity.unit_by_magnitude = quantity.unit_by_magnitude or {}
+	quantity.convert = quantity.convert or {}
+	quantity.convert[quantity.index] = function(_, _) end
 
 	M.Quantity[quantity.name] = quantity
 	M.QuantityIndex[quantity.name] = quantity.index
@@ -50,8 +50,8 @@ function M.define_units(quantity, units)
 			convert = U.is_type(order[3], "function") and order[3] or nil,
 		}
 		def.is_si = def.convert == nil
-		if def.is_si and not quantity.UnitByMagnitude[def.magnitude] then
-			quantity.UnitByMagnitude[def.magnitude] = def
+		if def.is_si and not quantity.unit_by_magnitude[def.magnitude] then
+			quantity.unit_by_magnitude[def.magnitude] = def
 		end
 
 		for _, name in pairs(names) do
@@ -70,11 +70,12 @@ end
 
 function M.resolve_quantity_references()
 	for _, quantity in ipairs(M.Quantity) do
-		for _, name in ipairs(quantity.CompatibleWith) do
-			if type(name) == "string" then
-				local ref_quantity = M.Quantity[name]
-				U.assert(ref_quantity, "quantity does not exist: %s", name)
-				quantity.CompatibleWith[ref_quantity.index] = true
+		for key, convert_func in pairs(quantity.convert) do
+			if type(key) == "string" then
+				U.type_assert(convert_func, "function")
+				local ref_quantity = M.Quantity[key]
+				U.assert(ref_quantity, "quantity does not exist: %s", key)
+				quantity.convert[ref_quantity.index] = convert_func
 			end
 		end
 	end
@@ -83,10 +84,12 @@ end
 M.define_quantity({
 	name = "dimensionless",
 	translation_preference = 0,
-	convert = function(self, m)
-		m.qindex = self.index
-		m.magnitude = 0
-	end,
+	convert = {
+		dimensionless = function(m, _)
+			m.value = m.of
+			m.of = 0
+		end,
+	},
 }, {
 	{"" , 0},
 })
@@ -94,11 +97,12 @@ M.define_quantity({
 M.define_quantity({
 	name = "ratio",
 	translation_preference = 0,
-	convert = function(self, m)
-		-- TODO
-		m.qindex = self.index
-		m.magnitude = 0
-	end,
+	convert = {
+		dimensionless = function(m, _)
+			m.of = m.value
+			m.value = 0
+		end,
+	},
 }, {
 	{"ratio",  0},
 })
@@ -106,9 +110,6 @@ M.define_quantity({
 M.define_quantity({
 	name = "joule",
 	translation_preference = 0,
-	convert = function(self, m)
-		U.assert(false)
-	end,
 }, {
 	-- SI
 	{"GJ",  9},
@@ -132,11 +133,11 @@ M.define_quantity({
 	name = "mass",
 	tangible = true,
 	translation_preference = 3,
-	CompatibleWith = {"volume"},
-	convert = function(self, m)
-		-- TODO: 1u/cm³ density in measurement?
-		m.qindex = self.index
-	end,
+	convert = {
+		volume = function(m, _)
+			-- TODO: density
+		end,
+	},
 }, {
 	-- SI
 	{"kg",  3},
@@ -158,11 +159,11 @@ M.define_quantity({
 	name = "volume",
 	tangible = true,
 	translation_preference = 2,
-	CompatibleWith = {"mass"},
-	convert = function(self, m)
-		-- TODO
-		m.qindex = self.index
-	end,
+	convert = {
+		mass = function(m, _)
+			-- TODO: density
+		end,
+	},
 }, {
 	-- SI
 	{{"l" , "L" },  3},
@@ -182,10 +183,6 @@ M.define_quantity({
 M.define_quantity({
 	name = "transitional",
 	translation_preference = 1,
-	convert = function(self, m)
-		-- TODO
-		m.qindex = self.index
-	end,
 }, {
 	-- "International Unit". used in pharmacology. rather annoying..
 	{"IU",  0},
@@ -198,7 +195,8 @@ function M.get_unit(unit)
 		return M.Unit[O.hash_value(unit)]
 	elseif U.is_type(unit, "number") then
 		return M.Unit[unit]
-	elseif U.is_type(unit, "table") and unit.quantity ~= nil then
+	elseif U.is_type(unit, "table") then
+		U.assert(unit, unit.__is_unit)
 		return unit
 	end
 	return nil
@@ -311,10 +309,10 @@ function M:to_object(obj, no_rebase)
 
 	local quantity = M.Quantity[self.qindex]
 	local value = self.value
-	local unit = quantity.UnitByMagnitude[self.magnitude]
+	local unit = quantity.unit_by_magnitude[self.magnitude]
 	if not unit and not no_rebase then
 		value = value * (10 ^ self.magnitude)
-		unit = quantity.UnitByMagnitude[0]
+		unit = quantity.unit_by_magnitude[0]
 	end
 
 	if self.of > 0 then
@@ -361,21 +359,23 @@ function M:set(value, unit, of, approximation, certain)
 	end
 end
 
-function M:rebase(unit, force)
+function M:convert(unit, force)
 	unit = M.get_unit(unit)
 	U.type_assert(unit, "table")
-	U.assert(
-		force or unit.quantity.CompatibleWith[self.qindex] == true,
-		"units must be compatible"
-	)
+	local convert = self:quantity().convert[unit.qindex]
+	U.assert(force or convert, "units must be compatible")
 
 	if self.qindex ~= unit.qindex then
-		unit.quantity.convert(unit.quantity, self)
+		if convert then
+			convert(self, unit)
+		end
+		self.qindex = unit.qindex
 	end
 	if self.magnitude ~= unit.magnitude then
 		self.value = self.value * (10 ^ (self.magnitude - unit.magnitude))
 		self.magnitude = unit.magnitude
 	end
+	return convert ~= nil
 end
 
 function M:add(measurement)
@@ -383,7 +383,7 @@ function M:add(measurement)
 	if measurement.qindex ~= self.qindex or measurement.magnitude ~= self.magnitude then
 		U.assert(M.Quantity[self.qindex].tangible, "lhs must be a tangible quantity if the rhs is not of the same quantity")
 		measurement = measurement:make_copy()
-		measurement:rebase(self:unit())
+		measurement:convert(self:unit())
 	end
 	self.value = self.value + measurement.value
 	self.of = self.of + measurement.of
@@ -403,7 +403,7 @@ function M:quantity()
 end
 
 function M:unit()
-	return M.Quantity[self.qindex].UnitByMagnitude[self.magnitude]
+	return M.Quantity[self.qindex].unit_by_magnitude[self.magnitude]
 end
 
 function M:is_exact()
@@ -412,6 +412,19 @@ end
 
 function M:is_empty()
 	return self.of == 0 and self.value == 0
+end
+
+function M:is_convertible(lookup)
+	U.assert(lookup ~= nil)
+	local quantity
+	if U.is_type(lookup, "table") and lookup.__is_quantity then
+		quantity = lookup
+	else
+		local unit = M.get_unit(lookup)
+		U.assert(unit, "unit %s not found", tostring(lookup))
+		quantity = unit.quantity
+	end
+	return self:quantity().convert[quantity.index] ~= nil
 end
 
 function M:__eq(y)

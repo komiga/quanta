@@ -132,7 +132,7 @@ M.define_quantity({
 M.define_quantity({
 	name = "mass",
 	tangible = true,
-	translation_preference = 3,
+	translation_preference = 2,
 	convert = {
 		volume = function(m, _)
 			-- TODO: density
@@ -158,7 +158,7 @@ M.define_quantity({
 M.define_quantity({
 	name = "volume",
 	tangible = true,
-	translation_preference = 2,
+	translation_preference = 1,
 	convert = {
 		mass = function(m, _)
 			-- TODO: density
@@ -182,7 +182,7 @@ M.define_quantity({
 
 M.define_quantity({
 	name = "transitional",
-	translation_preference = 1,
+	translation_preference = 0,
 }, {
 	-- "International Unit". used in pharmacology. rather annoying..
 	{"IU",  0},

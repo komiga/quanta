@@ -342,7 +342,7 @@ end
 function M:set(value, unit, of, approximation, certain)
 	U.type_assert(value, "number")
 	unit = M.get_unit(unit)
-	U.type_assert(unit, "table")
+	U.assert(unit)
 	U.type_assert(of, "number", true)
 	U.type_assert(approximation, "number", true)
 	U.type_assert(certain, "boolean", true)
@@ -361,7 +361,7 @@ end
 
 function M:convert(unit, force)
 	unit = M.get_unit(unit)
-	U.type_assert(unit, "table")
+	U.assert(unit)
 	local convert = self:quantity().convert[unit.qindex]
 	U.assert(force or convert, "units must be compatible")
 

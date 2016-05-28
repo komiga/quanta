@@ -7,16 +7,91 @@ local M = U.module(...)
 
 U.class(M)
 
-M.Quantity = {
-{
+M.Quantity = {}
+M.QuantityIndex = {}
+M.Unit = {}
+
+function M.define_quantity(quantity, units)
+	local existing_quantity = M.Quantity[quantity.name]
+	if existing_quantity then
+		U.assert(false, "name collision: %s : %s",
+			existing_quantity.name,
+			quantity.name
+		)
+	end
+
+	table.insert(M.Quantity, quantity)
+	quantity.index = #M.Quantity
+	quantity.__is_quantity = true
+	quantity.UnitByMagnitude = quantity.UnitByMagnitude or {}
+	quantity.CompatibleWith = quantity.CompatibleWith or {}
+	quantity.CompatibleWith[quantity.index] = true
+
+	M.Quantity[quantity.name] = quantity
+	M.QuantityIndex[quantity.name] = quantity.index
+
+	if units then
+		M.define_units(quantity, units)
+	end
+end
+
+function M.define_units(quantity, units)
+	U.assert(quantity)
+	for _, order in pairs(units) do
+		local names = order[1]
+		names = U.is_type(names, "string") and {names} or names
+
+		local def = {
+			__is_unit = true,
+			name = names[1],
+			qindex = quantity.index,
+			quantity = quantity,
+			magnitude = order[2],
+			convert = U.is_type(order[3], "function") and order[3] or nil,
+		}
+		def.is_si = def.convert == nil
+		if def.is_si and not quantity.UnitByMagnitude[def.magnitude] then
+			quantity.UnitByMagnitude[def.magnitude] = def
+		end
+
+		for _, name in pairs(names) do
+			local name_hash = O.hash_value(name)
+			local existing_unit = M.Unit[name_hash]
+			if existing_unit then
+				U.assert(false, "name collision: %s (%d) : %s (%d)",
+					existing_unit.name, existing_unit.name_hash,
+					name, name_hash
+				)
+			end
+			M.Unit[name_hash] = def
+		end
+	end
+end
+
+function M.resolve_quantity_references()
+	for _, quantity in ipairs(M.Quantity) do
+		for _, name in ipairs(quantity.CompatibleWith) do
+			if type(name) == "string" then
+				local ref_quantity = M.Quantity[name]
+				U.assert(ref_quantity, "quantity does not exist: %s", name)
+				quantity.CompatibleWith[ref_quantity.index] = true
+			end
+		end
+	end
+end
+
+M.define_quantity({
 	name = "dimensionless",
 	translation_preference = 0,
 	convert = function(self, m)
 		m.qindex = self.index
 		m.magnitude = 0
 	end,
-},
-{
+}, {
+	{"" , 0},
+})
+
+M.define_quantity({
 	name = "ratio",
 	translation_preference = 0,
 	convert = function(self, m)
@@ -24,117 +99,99 @@ M.Quantity = {
 		m.qindex = self.index
 		m.magnitude = 0
 	end,
-},
-{
+}, {
+	{"ratio",  0},
+})
+
+M.define_quantity({
+	name = "joule",
+	translation_preference = 0,
+	convert = function(self, m)
+		U.assert(false)
+	end,
+}, {
+	-- SI
+	{"GJ",  9},
+	{"MJ",  6},
+	{"kJ",  3},
+	{"J" ,  0},
+	{"mJ", -3},
+	{"µJ", -6},
+	{"nJ", -9},
+
+	-- customary
+	{"cal", 0, function(value)
+		return value * 0.239
+	end},
+	{"kcal", 3, function(value)
+		return value * 0.000239
+	end},
+})
+
+M.define_quantity({
 	name = "mass",
 	tangible = true,
 	translation_preference = 3,
+	CompatibleWith = {"volume"},
 	convert = function(self, m)
 		-- TODO: 1u/cm³ density in measurement?
 		m.qindex = self.index
 	end,
-},
-{
+}, {
+	-- SI
+	{"kg",  3},
+	{"g" ,  0},
+	{"mg", -3},
+	{"µg", -6},
+	{"ng", -9},
+
+	-- U.S. customary units
+	{"oz", 0, function(value)
+		return value * 28.349523
+	end},
+	{"lb", 3, function(value)
+		return value * 0.453592370
+	end},
+})
+
+M.define_quantity({
 	name = "volume",
 	tangible = true,
 	translation_preference = 2,
+	CompatibleWith = {"mass"},
 	convert = function(self, m)
 		-- TODO
 		m.qindex = self.index
 	end,
-},
-{
+}, {
+	-- SI
+	{{"l" , "L" },  3},
+	{{"ml", "mL"},  0},
+	{{"µl", "µL"}, -3},
+	{{"nl", "nL"}, -6},
+
+	-- U.S. customary units
+	{"fl_oz", 0, function(value)
+		return value * 29.573529
+	end},
+	{"gal", 3, function(value)
+		return value * 3.785411784
+	end},
+})
+
+M.define_quantity({
 	name = "transitional",
 	translation_preference = 1,
 	convert = function(self, m)
 		-- TODO
 		m.qindex = self.index
 	end,
-},
-}
-M.QuantityIndex = {}
-M.Unit = {}
+}, {
+	-- "International Unit". used in pharmacology. rather annoying..
+	{"IU",  0},
+})
 
-do
-	for i, q in ipairs(M.Quantity) do
-		q.index = i
-		q.UnitByMagnitude = {}
-		M.Quantity[q.name] = q
-		M.QuantityIndex[q.name] = i
-	end
-
-	local function define_units(quantity, orders)
-		U.assert(quantity)
-		for _, order in pairs(orders) do
-			local names = order[1]
-			names = U.is_type(names, "string") and {names} or names
-
-			local def = {
-				name = names[1],
-				qindex = quantity.index,
-				quantity = quantity,
-				magnitude = U.is_type(order[2], "number") and order[2] or 0,
-				convert = U.is_type(order[2], "function") and order[2] or nil,
-			}
-			def.is_si = def.convert == nil
-			if def.is_si and not quantity.UnitByMagnitude[def.magnitude] then
-				quantity.UnitByMagnitude[def.magnitude] = def
-			end
-
-			for _, name in pairs(names) do
-				local name_hash = O.hash_value(name)
-				U.assert(not M.Unit[name_hash])
-				M.Unit[name_hash] = def
-			end
-		end
-	end
-
-	define_units(M.Quantity.dimensionless, {
-		{"" ,  0},
-	})
-
-	define_units(M.Quantity.ratio, {
-		{"ratio",  0},
-	})
-
-	define_units(M.Quantity.mass, {
-		-- SI
-		{"kg",  3},
-		{"g" ,  0},
-		{"mg", -3},
-		{"µg", -6},
-		{"ng", -9},
-
-		-- U.S. customary units
-		{"oz", function(value)
-			return value * 28.349523
-		end},
-		{"lb", function(value)
-			return value * 453.592370
-		end},
-	})
-
-	define_units(M.Quantity.volume, {
-		-- SI
-		{{"l" , "L" },  3},
-		{{"ml", "mL"},  0},
-		{{"µl", "µL"}, -3},
-		{{"nl", "nL"}, -6},
-
-		-- U.S. customary units
-		{"fl_oz", function(value)
-			return value * 29.573529
-		end},
-		{"gal", function(value)
-			return value * 3785.411784
-		end},
-	})
-
-	define_units(M.Quantity.transitional, {
-		-- "International Unit". used in pharmacology. rather annoying..
-		{"IU",  0},
-	})
-end
+M.resolve_quantity_references()
 
 function M.get_unit(unit)
 	if U.is_type(unit, "string") then
@@ -304,10 +361,13 @@ function M:set(value, unit, of, approximation, certain)
 	end
 end
 
-function M:rebase(unit)
+function M:rebase(unit, force)
 	unit = M.get_unit(unit)
 	U.type_assert(unit, "table")
-	U.assert(unit.is_si, "rebase unit must be SI")
+	U.assert(
+		force or unit.quantity.CompatibleWith[self.qindex] == true,
+		"units must be compatible"
+	)
 
 	if self.qindex ~= unit.qindex then
 		unit.quantity.convert(unit.quantity, self)

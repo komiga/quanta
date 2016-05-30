@@ -79,10 +79,11 @@ function M:set_name(name)
 	end
 end
 
-function M:ref()
+function M:ref(stop_at)
+	U.type_assert(stop_at, M, true)
 	local parts = {}
 	local entity = self
-	while entity and entity.type ~= M.Type.universe do
+	while entity and entity.type ~= M.Type.universe and entity ~= stop_at do
 		table.insert(parts, 1, entity.name)
 		entity = entity.parent
 	end

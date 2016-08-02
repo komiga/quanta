@@ -316,7 +316,7 @@ function M:to_object(obj, no_rebase)
 	end
 
 	if self.of > 0 then
-		if value > 0 then
+		if value ~= 0 then
 			O.set_expression(obj)
 			O.clear_children(obj)
 			O.set_decimal(O.push_child(obj), self.of)
@@ -329,7 +329,7 @@ function M:to_object(obj, no_rebase)
 
 	O.set_value_approximation(obj, self.approximation)
 	O.set_value_certain(obj, self.certain)
-	if value > 0 then
+	if value ~= 0 then
 		O.set_decimal(obj, value)
 		if unit then
 			O.set_unit(obj, unit.name)

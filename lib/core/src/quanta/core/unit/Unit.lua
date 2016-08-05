@@ -950,9 +950,14 @@ Match.Pattern{
 
 M.t_definition_element_body:add(shared_props)
 
-local function step_post_branch(_, composition, _)
+local function step_post_branch(context, composition, obj)
 	if #composition.items == 0 then
 		return Match.Error("no items specified for step")
+	end
+	if O.has_quantity(obj) then
+		if not context:consume(Measurement.t_struct_list_head, O.quantity(obj), composition) then
+			return
+		end
 	end
 end
 

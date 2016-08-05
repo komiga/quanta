@@ -547,6 +547,7 @@ function M.Step:to_object(obj)
 
 	self.composition:to_object(obj, true)
 	O.set_identifier(obj, "RS" .. tostring(self.index))
+	return obj
 end
 
 M.Element = U.class(M.Element)
@@ -837,9 +838,18 @@ M.t_definition_head:add(M.p_definition_head)
 
 M.t_definition_body:add(shared_props)
 
-local function element_post_branch(_, element, _)
+local function element_post_branch(context, element, obj)
 	if #element.steps == 0 then
 		return Match.Error("no steps specified for element")
+	end
+	if not element.implicit and O.has_quantity(obj) then
+		local last_step = U.table_last(element.steps)
+		if #last_step.composition.measurements > 0 then
+			return Match.Error("element carries final measurement, but its last step already has a measurement")
+		end
+		if not context:consume(Measurement.t_struct_list_head, O.quantity(obj), last_step.composition) then
+			return
+		end
 	end
 end
 
@@ -892,6 +902,7 @@ Match.Pattern{
 	name = element_name_filter,
 	vtype = O.Type.null,
 	children = M.t_definition_element_body,
+	quantity = Match.Any,
 	acceptor = function(context, unit, obj)
 		local element = M.Element()
 		return element_acceptor(element, context, unit, obj) or element
@@ -904,6 +915,7 @@ Match.Pattern{
 	vtype = {O.Type.identifier, O.Type.string},
 	children = Match.Any,
 	tags = Match.Any,
+	quantity = Match.Any,
 	branch = M.t_reference_head,
 	acceptor = function(context, unit, obj)
 		local element = M.Element()

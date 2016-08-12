@@ -9,10 +9,15 @@ local Measurement = require "Quanta.Measurement"
 local Prop = require "Quanta.Prop"
 local M = U.module(...)
 
+M.element_name_pattern = "^[A-Z][0-9]+$"
+M.step_id_pattern = "^RS[0-9]+$"
+
 M.Type = {
 	reference = 1,
 	composition = 2,
 	definition = 3,
+	step = 4,
+	element = 5,
 }
 
 M.DefinitionType = {
@@ -32,11 +37,24 @@ for i, t in ipairs(M.DefinitionType) do
 	M.DefinitionTypeByNotation[t.notation] = i
 end
 
+M.ElementType = {
+	{name = "generic", notation = "E"},
+	{name = "primary", notation = "P"},
+}
+
+for _, t in ipairs(M.ElementType) do
+	t.value = string.byte(t.notation)
+	M.ElementType[t.name] = t.value
+	M.ElementType[t.notation] = t.value
+end
+
 U.class(M)
 
 function M:__init()
 	self.type = M.Type.reference
-	self.def_type = M.DefinitionType.none
+	self.sub_type = M.DefinitionType.none
+	self.seq_index = 0
+	self.implicit = false
 	self.name = nil
 	self.name_hash = O.NAME_NULL
 	self.id = nil
@@ -61,7 +79,7 @@ function M:__init()
 	self.presence_certain = true
 
 	self.items = {}
-	self.parts = {}
+	self.groups = {}
 
 	self.modifiers = M.Modifier.struct_list({})
 	self.measurements = Measurement.struct_list({})
@@ -83,32 +101,59 @@ function M.Definition()
 	return unit
 end
 
+function M.Step(seq, implicit)
+	U.type_assert_any(seq, {"number", "string"}, true)
+	U.type_assert(implicit, "boolean", true)
+
+	local unit = M()
+	unit.type = M.Type.step
+	unit.implicit = U.optional(implicit, false)
+	if seq ~= nil then
+		unit:set_seq(seq)
+	end
+	return unit
+end
+
+function M.Element(sub_type, seq_index, implicit)
+	U.type_assert(sub_type, "number", true)
+	U.type_assert(seq_index, "number", true)
+	U.type_assert(implicit, "boolean", true)
+
+	local unit = M()
+	unit.type = M.Type.element
+	unit.implicit = U.optional(implicit, false)
+	unit.sub_type = U.optional(sub_type, M.ElementType.generic)
+	if seq_index ~= nil then
+		unit:set_seq(U.max(0, seq_index))
+	end
+	return unit
+end
+
+function M.ElementFromString(seq, implicit)
+	U.type_assert(seq, "string")
+	U.type_assert(implicit, "boolean", true)
+
+	local unit = M()
+	unit.type = M.Type.element
+	unit.implicit = U.optional(implicit, false)
+	unit:set_seq(seq)
+	return unit
+end
+
 function M:is_empty()
-	return not self.id and #self.items == 0 and #self.parts == 0
+	return not self.id and #self.items == 0
 end
 
 function M:make_copy()
 	return U.make_empty_object(M):copy(self)
 end
 
-local function copy_items(dest, source)
-	for _, item in ipairs(source) do
-		local copy = item:make_copy()
-		table.insert(dest, copy)
-		if U.is_instance(copy, M) then
-			if copy.name_hash ~= O.NAME_NULL then
-				dest[copy.name] = copy
-			end
-		else
-			dest[copy:name()] = copy
-		end
-	end
-end
-
 -- NB: doesn't actually copy common props for efficiency
 function M:copy(unit)
 	self.type = unit.type
-	self.def_type = unit.def_type
+	self.sub_type = unit.sub_type
+	self.seq_index = unit.seq_index
+	self.implicit = unit.implicit
 	self.name = unit.name
 	self.name_hash = unit.name_hash
 	self.id = unit.id
@@ -131,9 +176,10 @@ function M:copy(unit)
 	self.presence_certain = unit.presence_certain
 
 	self.items = {}
-	self.parts = {}
-	copy_items(self.items, unit.items)
-	copy_items(self.parts, unit.parts)
+	for _, item in ipairs(unit.items) do
+		self:add(item:make_copy())
+	end
+	self:rebuild_groups()
 
 	self.modifiers = M.Modifier.struct_list({})
 	self.measurements = Measurement.struct_list({})
@@ -184,6 +230,79 @@ function M:set_id(id, arbitrary)
 	end
 end
 
+function M:set_seq(seq)
+	if not U.is_type(seq, "string") then
+		U.type_assert(seq, "number")
+	elseif self.type == M.Type.element then
+		U.assert(
+			string.find(seq, M.element_name_pattern) ~= nil,
+			"element name must be of the form '<capital group letter><index in group>'"
+		)
+		self.sub_type = string.byte(seq)
+		seq = tonumber(string.sub(seq, 2))
+	elseif self.type == M.Type.step then
+		U.assert(
+			string.find(seq, M.step_id_pattern) ~= nil,
+			"step ID must be of the form 'RS<sequence index>'"
+		)
+		seq = tonumber(string.sub(seq, 3))
+	else
+		seq = tonumber(seq)
+		U.assert(seq ~= nil, "failed to set sequence from string")
+	end
+	seq = U.max(0, seq)
+	if self.seq_index == seq and (self.name_hash ~= O.NAME_NULL or self.id_hash ~= O.NAME_NULL) then
+		return
+	end
+	self.seq_index = seq
+	if self.seq_index == 0 then
+		self:set_name(nil)
+		self:set_id(nil)
+	elseif self.type == M.Type.element then
+		if self.sub_type == 0 then
+			self.sub_type = M.ElementType.generic
+		end
+		self:set_name(string.char(self.sub_type) .. tostring(self.seq_index))
+		--[[table.remove(parent:group(prev_sub_type), self.seq_index)
+		parent:group(self.sub_type)[self.seq_index] = self--]]
+	elseif self.type == M.Type.step then
+		self:set_id("RS" .. tostring(self.seq_index))
+	end
+	return self.seq_index
+end
+
+function M:group(group_id)
+	U.type_assert(group_id, "number")
+	U.assert(group_id > 0, "group must be non-zero")
+	local group = self.groups[group_id]
+	if not group then
+		group = {}
+		self.groups[group_id] = group
+	end
+	return group
+end
+
+function M:rebuild_groups()
+	self.groups = {}
+	for _, item in ipairs(self.items) do
+		if item.type == M.Type.element then
+			self:group(item.sub_type)[item.seq_index] = item
+		end
+	end
+end
+
+function M:add(item)
+	U.type_assert(item, M)
+	table.insert(self.items, item)
+	if item.type == M.Type.element and item.seq_index > 0 then
+		self:group(item.sub_type)[item.seq_index] = item
+	end
+	if item.name_hash ~= O.NAME_NULL then
+		self.items[item.name] = item
+	end
+	return item
+end
+
 local function unit_from_object(self, obj, implicit_scope, tree)
 	U.type_assert(obj, "userdata")
 
@@ -204,12 +323,6 @@ function M:from_object_by_type(obj, implicit_scope)
 	return unit_from_object(self, obj, implicit_scope, M.t_head_by_type[self.type])
 end
 
-local function to_object_shared(self, obj)
-	Prop.Description.struct_to_object(self.description, obj)
-	Prop.Author.struct_to_object(self.author, obj)
-	Prop.Note.struct_to_object(self.note, obj)
-end
-
 function M:to_object(obj, keep)
 	U.type_assert(obj, "userdata", true)
 	if not obj then
@@ -227,8 +340,10 @@ function M:to_object(obj, keep)
 		O.set_name(obj, self.name)
 	end
 
-	if self.type == M.Type.definition then
-		O.set_identifier(obj, M.DefinitionType[self.def_type].notation)
+	if self.type == M.Type.step then
+		O.set_identifier(obj, self.id)
+	elseif self.type == M.Type.definition then
+		O.set_identifier(obj, M.DefinitionType[self.sub_type].notation)
 	elseif self.type == M.Type.reference and self.id_hash ~= O.NAME_NULL then
 		local id = self.id .. (self.variant_certain and "" or "¿")
 		if self.id_arbitrary then
@@ -246,12 +361,11 @@ function M:to_object(obj, keep)
 	O.set_sub_source_certain(obj, self.sub_source_certain)
 	O.set_value_certain(obj, self.presence_certain)
 
-	to_object_shared(self, obj)
+	Prop.Description.struct_to_object(self.description, obj)
+	Prop.Author.struct_to_object(self.author, obj)
+	Prop.Note.struct_to_object(self.note, obj)
 	for _, item in ipairs(self.items) do
 		item:to_object(O.push_child(obj))
-	end
-	for _, part in ipairs(self.parts) do
-		part:to_object(O.push_child(obj))
 	end
 	M.Modifier.struct_list_to_tags(self.modifiers, obj)
 	Measurement.struct_list_to_quantity(self.measurements, obj)
@@ -279,9 +393,6 @@ function M:resolve_refs(resolver)
 	resolver:push(self)
 	for _, item in ipairs(self.items) do
 		item:resolve_refs(resolver)
-	end
-	for _, part in ipairs(self.parts) do
-		part:resolve_refs(resolver)
 	end
 	resolver:pop()
 end
@@ -380,7 +491,7 @@ end
 
 function M.Resolver.searcher_unit_child_func(resolver, search_in, unit)
 	if unit.source == 0 then
-		return (search_in.parts[unit.id] or search_in.items[unit.id]), nil, false
+		return search_in.items[unit.id], nil, false
 	end
 	return nil, nil, false
 end
@@ -396,7 +507,7 @@ function M.Resolver.searcher_unit_selector(search_in, no_terminate)
 		local thing = search_in.thing
 		if thing then
 			if U.is_type(thing, M) then
-				return (thing.items[unit.id] or thing.parts[unit.id]), nil, not no_terminate
+				return thing.items[unit.id], nil, not no_terminate
 			elseif thing.children then
 				return thing.children[unit.id_hash], nil, not no_terminate
 			end
@@ -462,7 +573,6 @@ function M.Modifier.struct_list_to_tags(list, obj)
 	end
 end
 
--- TODO: use a pattern instead of passively ignoring non-matching whole quantities
 function M.Modifier.adapt_struct_list()
 	local p_element = Match.Pattern{
 		name = true,
@@ -522,116 +632,24 @@ function M.UnknownModifier:compare_equal(other)
 	return true
 end
 
-M.Step = U.class(M.Step)
-
-function M.Step:__init()
-	self.index = 1
-	self.implicit = false
-	self.composition = M.Composition()
-end
-
-function M.Step:make_copy()
-	return U.make_empty_object(M.Step):copy(self)
-end
-
-function M.Step:copy(step)
-	self.index = step.index
-	self.implicit = step.implicit
-	self.composition = step.composition:make_copy()
-
-	return self
-end
-
-function M.Step:to_object(obj)
-	U.type_assert(obj, "userdata")
-
-	self.composition:to_object(obj, true)
-	O.set_identifier(obj, "RS" .. tostring(self.index))
-	return obj
-end
-
-M.Element = U.class(M.Element)
-
-M.Element.Type = {
-	{name = "generic", notation = "E"},
-	{name = "primary", notation = "P"},
-}
-
-for i, t in ipairs(M.Element.Type) do
-	t.index = i
-	M.Element.Type[t.name] = i
-	M.Element.Type[t.notation] = i
-end
-
-function M.Element:__init()
-	self.type = M.Element.Type.generic
-	self.index = 1
-	self.implicit = false
-	self.description = Prop.Description.struct("")
-	self.author = Prop.Author.struct({})
-	self.note = Prop.Note.struct({})
-	self.steps = {}
-end
-
-function M.Element:name()
-	return M.Element.Type[self.type].notation .. tostring(self.index)
-end
-
-function M.Element:make_copy()
-	return U.make_empty_object(M.Element):copy(self)
-end
-
-function M.Element:copy(element)
-	self.type = element.type
-	self.index = element.index
-	self.implicit = element.implicit
-	self.description = element.description
-	self.author = element.author
-	self.note = element.note
-
-	self.steps = {}
-	for _, step in ipairs(element.steps) do
-		table.insert(self.steps, step:make_copy())
-	end
-
-	return self
-end
-
-function M.Element:to_object(obj)
-	U.type_assert(obj, "userdata")
-
-	O.set_name(obj, self:name())
-	to_object_shared(self, obj)
-	for _, s in ipairs(self.steps) do
-		s:to_object(O.push_child(obj))
-	end
-end
-
-function M.Element:resolve_refs(resolver)
-	for _, s in ipairs(self.steps) do
-		s.composition:resolve_refs(resolver)
-	end
-end
-
-local shared_props = {
+local common_props = {
 	Prop.Description.t_struct_head,
 	Prop.Author.t_struct_head,
 	Prop.Note.t_struct_head,
 }
 
-local function translate_basic(context, self, obj)
-	self:set_name(O.name(obj))
-	if self.name then
-		local parent = context:value(1)
-		if parent and U.is_type(parent, M) then
-			if parent.items[self.name] then
-				context:set_error(Match.Error("name '%s' is not unique in this scope", self.name), obj)
-				return
-			end
-			parent.items[self.name] = self
+local function child_post_branch(context, self, obj)
+	local parent = context:value(1)
+	if self.name_hash ~= O.NAME_NULL then
+		if parent.items[self.name] then
+			return Match.Error("name '%s' is not unique in this scope", self.name)
 		end
 	end
+	parent:add(self)
+end
 
+local function translate_basic(context, self, obj)
+	self:set_name(O.name(obj))
 	self.source = O.source(obj)
 	self.sub_source = O.sub_source(obj)
 	self.source_certain = not O.marker_source_uncertain(obj)
@@ -663,15 +681,9 @@ M.p_definition_head = Match.Pattern{
 	quantity = Measurement.t_struct_list_head,
 	acceptor = function(context, self, obj)
 		self.type = M.Type.definition
-		self.def_type = M.DefinitionTypeByNotation[O.identifier(obj)]
+		self.sub_type = M.DefinitionTypeByNotation[O.identifier(obj)]
 		translate_basic(context, self, obj)
 	end,
-	--[[post_branch = function(_, self, _)
-		local primary_bucket = self.items[M.Element.Type.primary]
-		if #primary_bucket == 0 then
-			return Match.Error("no primary elements specified for unit")
-		end
-	end,--]]
 }
 
 -- x, x:m, x{...}
@@ -713,17 +725,16 @@ M.p_reference_head_empty,
 })
 
 M.t_reference_body:add({
-shared_props,
+common_props,
 Match.Pattern{
 	any = true,
 	branch = M.t_reference_head,
 	acceptor = function(context, self, obj)
 		table.insert(context.user.scope_save, context.user.scope)
 		context.user.scope = {}
-		local ref = M.Reference()
-		table.insert(self.items, ref)
-		return ref
+		return M.Reference()
 	end,
+	post_branch_pre = child_post_branch,
 	post_branch = function(context, self, obj)
 		context.user.scope = table.remove(context.user.scope_save)
 	end,
@@ -734,10 +745,7 @@ M.t_reference_body:build()
 M.t_reference_head:build()
 
 local function ref_acceptor(context, self, obj)
-	self.type = M.Type.composition
-	local item = M.Reference()
-	table.insert(self.items, item)
-	return item
+	return M.Reference()
 end
 
 M.p_composition_items = {
@@ -745,21 +753,29 @@ M.p_composition_items = {
 Match.Pattern{
 	layer = M.p_definition_head,
 	acceptor = function(context, self, obj)
-		self.type = M.Type.composition
-		local item = M.Definition()
-		table.insert(self.items, item)
-		return item
+		return M.Definition()
 	end,
+	post_branch_pre = child_post_branch,
 },
 -- sub ref
 Match.Pattern{
 	layer = M.p_reference_head_id,
 	acceptor = ref_acceptor,
+	post_branch_pre = child_post_branch,
 },
 Match.Pattern{
 	layer = M.p_reference_head_empty,
 	acceptor = ref_acceptor,
+	post_branch_pre = child_post_branch,
 },
+}
+
+M.p_composition_body_typed = Match.Pattern{
+	any = true,
+	branch = M.t_composition_body,
+	post_branch = function(context, self, obj)
+		self.type = M.Type.composition
+	end
 }
 
 -- time context
@@ -823,10 +839,9 @@ Match.Pattern{
 	any = true,
 	branch = M.t_composition_head,
 	acceptor = function(context, self, obj)
-		local item = M.Composition()
-		table.insert(self.items, item)
-		return item
+		return M.Composition()
 	end,
+	post_branch_pre = child_post_branch,
 },
 })
 
@@ -836,63 +851,51 @@ M.t_composition_head_gobble:build()
 
 M.t_definition_head:add(M.p_definition_head)
 
-M.t_definition_body:add(shared_props)
-
-local function element_post_branch(context, element, obj)
-	if #element.steps == 0 then
-		return Match.Error("no steps specified for element")
-	end
-	if not element.implicit and O.has_quantity(obj) then
-		local last_step = U.table_last(element.steps)
-		if #last_step.composition.measurements > 0 then
-			return Match.Error("element carries final measurement, but its last step already has a measurement")
-		end
-		if not context:consume(Measurement.t_struct_list_head, O.quantity(obj), last_step.composition) then
-			return
-		end
-	end
-end
+M.t_definition_body:add(common_props)
 
 local function element_name_filter(_, _, obj, _)
 	return (
 		O.is_named(obj) and
-		string.find(O.name(obj), "^[EP][0-9]+$") ~= nil
+		string.find(O.name(obj), M.element_name_pattern) ~= nil
 	)
 end
 
-local function element_acceptor(element, _, unit, obj)
-	local name = O.name(obj)
-	element.type = M.Element.Type[string.sub(name, 1, 1)]
-	U.assert(element.type ~= nil)
-	element.index = tonumber(string.sub(name, 2))
-
-	local bucket = element.type == M.Element.Type.generic and unit.items or unit.parts
-	local current = bucket[element.index]
-	if element.index <= 0 then
-		return Match.Error(
-			"element %s%d index must be greater than 0",
-			M.Element.Type[element.type].notation, element.index
-		)
+local function element_acceptor(element, _, unit, _)
+	local group = unit:group(element.sub_type)
+	local current = group[element.seq_index]
+	if element.seq_index <= 0 then
+		return Match.Error("element %s index must be greater than 0", element.name)
 	elseif current then
 		if current.implicit then
 			return Match.Error(
-				"cannot mix implicit and explicit elements (at explicit element %s%d)",
-				M.Element.Type[element.type].notation, element.index
+				"cannot mix implicit and explicit elements (at explicit element %s)",
+				element.name
 			)
 		else
+			return Match.Error("element %s already exists", element.name)
+		end
+	elseif element.seq_index ~= #group + 1 then
+		return Match.Error("element %s is not sequentially ordered", element.name)
+	end
+	unit:add(element)
+end
+
+local function element_post_branch(context, element, obj)
+	if #element.items == 0 then
+		return Match.Error("no steps specified for element %s", element.name)
+	end
+	if not element.implicit and O.has_quantity(obj) then
+		local last_step = U.table_last(element.items)
+		if #last_step.measurements > 0 then
 			return Match.Error(
-				"element %s%d already exists",
-				M.Element.Type[element.type].notation, element.index
+				"element %s carries final measurement, but its last step (RS%s) already has a measurement",
+				element.name, last_step.seq_index
 			)
 		end
-	elseif element.index ~= #bucket + 1 then
-		return Match.Error(
-			"element %s%d is not sequentially ordered",
-			M.Element.Type[element.type].notation, element.index
-		)
+		if not context:consume(Measurement.t_struct_list_head, O.quantity(obj), last_step) then
+			return
+		end
 	end
-	bucket[element.index] = element
-	bucket[name] = element
 end
 
 -- Element
@@ -904,7 +907,7 @@ Match.Pattern{
 	children = M.t_definition_element_body,
 	quantity = Match.Any,
 	acceptor = function(context, unit, obj)
-		local element = M.Element()
+		local element = M.ElementFromString(O.name(obj))
 		return element_acceptor(element, context, unit, obj) or element
 	end,
 	post_branch_pre = element_post_branch,
@@ -918,19 +921,13 @@ Match.Pattern{
 	quantity = Match.Any,
 	branch = M.t_reference_head,
 	acceptor = function(context, unit, obj)
-		local element = M.Element()
+		local element = M.ElementFromString(O.name(obj))
 		local err = element_acceptor(element, context, unit, obj)
 		if err then
 			return err
 		end
-		local step = M.Step()
-		step.index = 1
-		step.implicit = true
-		table.insert(element.steps, step)
-
-		local ref = M.Reference()
-		table.insert(step.composition.items, ref)
-		return ref
+		local step = element:add(M.Step(1, true))
+		return step:add(M.Reference())
 	end,
 	post_branch_pre = function(_, ref, _)
 		ref:set_name("prototype")
@@ -942,16 +939,11 @@ Match.Pattern{
 	any = true,
 	branch = M.t_definition_element_body,
 	acceptor = function(_, unit, obj)
-		local bucket = unit.parts
-		local element = bucket[1]
+		local group = unit:group(M.ElementType.primary)
+		local element = group[1]
 		if not element then
-			element = M.Element()
-			element.type = M.Element.Type.primary
-			element.index = 1
-			element.implicit = true
-			bucket[element.index] = element
-			bucket["P1"] = element
-		elseif not element.implicit or #bucket > 1 then
+			element = unit:add(M.Element(M.ElementType.primary, 1, true))
+		elseif not element.implicit or #group > 1 then
 			return Match.Error("sub-property defined in unit root after explicit element")
 		end
 		return element
@@ -960,14 +952,14 @@ Match.Pattern{
 },
 })
 
-M.t_definition_element_body:add(shared_props)
+M.t_definition_element_body:add(common_props)
 
-local function step_post_branch(context, composition, obj)
-	if #composition.items == 0 then
+local function step_post_branch(context, step, obj)
+	if #step.items == 0 then
 		return Match.Error("no items specified for step")
 	end
 	if O.has_quantity(obj) then
-		if not context:consume(Measurement.t_struct_list_head, O.quantity(obj), composition) then
+		if not context:consume(Measurement.t_struct_list_head, O.quantity(obj), step) then
 			return
 		end
 	end
@@ -979,28 +971,26 @@ M.t_definition_element_body:add({
 Match.Pattern{
 	vtype = O.Type.identifier,
 	value = function(_, _, obj, _)
-		return string.find(O.identifier(obj), "^RS[0-9]+$") ~= nil
+		return string.find(O.identifier(obj), M.step_id_pattern) ~= nil
 	end,
 	children = M.t_composition_body,
 	quantity = Match.Any,
 	acceptor = function(_, element, obj)
-		local step = M.Step()
-		step.index = tonumber(string.sub(O.identifier(obj), 3))
-
-		local current = element.steps[step.index]
-		if step.index <= 0 then
-			return Match.Error("step RS%d index must be greater than 0", step.index)
+		local step = M.Step(O.identifier(obj))
+		local current = element.items[step.seq_index]
+		if step.seq_index <= 0 then
+			return Match.Error("step RS%d index must be greater than 0", step.seq_index)
 		elseif current then
-			if element.steps[1].implicit then
-				return Match.Error("cannot mix implicit and explicit steps (at explicit step RS%d)", step.index)
+			if element.items[1].implicit then
+				return Match.Error("cannot mix implicit and explicit steps (at explicit step RS%d)", step.seq_index)
 			else
-				return Match.Error("step RS%d was already specified", step.index)
+				return Match.Error("step RS%d was already specified", step.seq_index)
 			end
-		elseif step.index ~= #element.steps + 1 then
-			return Match.Error("step RS%d is not sequentially ordered", step.index)
+		elseif step.seq_index ~= #element.items + 1 then
+			return Match.Error("step RS%d is not sequentially ordered", step.seq_index)
 		end
-		element.steps[step.index] = step
-		return step.composition
+		element:add(step)
+		return step
 	end,
 	post_branch_pre = step_post_branch,
 },
@@ -1009,16 +999,13 @@ Match.Pattern{
 	any = true,
 	branch = M.t_composition_body,
 	acceptor = function(_, element, obj)
-		local step = element.steps[1]
+		local step = element.items[1]
 		if not step then
-			step = M.Step()
-			step.index = 1
-			step.implicit = true
-			element.steps[step.index] = step
-		elseif not step.implicit or #element.steps > 1 then
+			step = element:add(M.Step(1, true))
+		elseif not step.implicit or #element.items > 1 then
 			return Match.Error("sub-property defined in element root after explicit step")
 		end
-		return step.composition
+		return step
 	end,
 	post_branch_pre = step_post_branch,
 },

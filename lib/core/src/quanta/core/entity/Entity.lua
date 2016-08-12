@@ -496,6 +496,13 @@ Match.Pattern{
 	acceptor = function(context, self, obj)
 		return self.composition
 	end,
+	post_branch = function(context, self, obj)
+		if self.composition.name_hash ~= O.NAME_NULL then
+			self.composition:set_name(nil)
+		elseif #self.composition.items == 1 then
+			self.composition.items[1]:set_name(nil)
+		end
+	end,
 },
 
 -- TODO

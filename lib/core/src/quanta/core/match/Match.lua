@@ -4,7 +4,12 @@ local U = require "togo.utility"
 local O = require "Quanta.Object"
 local M = U.module(...)
 
-M.debug = false
+function M.set_debug(general, trace)
+	M.debug = general
+	M.debug_trace = general or trace
+end
+
+M.set_debug(false, false)
 M.Any = {}
 
 local function filter_selector(x)
@@ -270,7 +275,7 @@ function M.Pattern:__init(...)
 		self.branch.name = nil
 		self.branch.names = nil
 
-		if M.debug then
+		if M.debug_trace then
 			self.branch.definition_location = string.format("[layer] %s", self.branch.definition_location)
 			self.definition_location = string.format(
 				"%s ==> %s",
@@ -299,7 +304,7 @@ function M.Pattern:__init(...)
 				end
 			end
 		end
-		if M.debug then
+		if M.debug_trace then
 			self.definition_location = U.get_trace(2)
 		end
 	end
@@ -332,7 +337,7 @@ function M.Tree:__init(patterns)
 	self.nodes = {}
 	self.positional = nil
 	self.keyed = nil
-	if M.debug then
+	if M.debug_trace then
 		self.definition_location = U.get_trace(2)
 	end
 
@@ -448,6 +453,13 @@ end
 local do_pattern, do_object, do_sub
 
 do_pattern = function(context, tree, p, obj, collection, keyed)
+	local function postamble(v)
+		if M.debug_trace then
+			context:trace_pop()
+		end
+		return v
+	end
+
 	if M.debug then
 		U.log("pattern: %s%s", keyed and "[keyed] " or "", p.definition_location)
 	end
@@ -460,6 +472,9 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 	if M.debug then
 		U.log("  [matches]")
 	end
+	if M.debug_trace then
+		context:trace_push(p)
+	end
 	local pushed = false
 	if p.acceptor then
 		local value = p.acceptor(context, context:value(), obj)
@@ -467,7 +482,7 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 			context:set_error(value, obj)
 		end
 		if context.error ~= nil then
-			return false
+			return postamble(false)
 		end
 		if value ~= nil then
 			pushed = true
@@ -478,21 +493,21 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 		end
 	end
 	if not do_sub(context, tree, nil, p.children, p.collect_post, obj, O.children) then
-		return false
+		return postamble(false)
 	end
 	if not do_sub(context, tree, nil, p.tags, p.collect_tags_post, obj, O.tags) then
-		return false
+		return postamble(false)
 	end
 	if p.quantity and O.has_quantity(obj) then
 		local b_tree, b_keyed, b_positional = into_tree(tree, nil, p.quantity)
 		if not do_object(context, b_tree, b_keyed, b_positional, O.quantity(obj), nil) then
-			return false
+			return postamble(false)
 		end
 	end
 	if p.branch then
 		local b_tree, b_keyed, b_positional = into_tree(tree, nil, p.branch)
 		if not do_object(context, b_tree, b_keyed, b_positional, obj, collection) then
-			return false
+			return postamble(false)
 		end
 	end
 
@@ -508,7 +523,7 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 	end
 	if p.post_branch_pre then
 		if not do_post_branch(p.post_branch_pre) then
-			return false
+			return postamble(false)
 		end
 	end
 	if pushed then
@@ -516,10 +531,10 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 	end
 	if p.post_branch then
 		if not do_post_branch(p.post_branch) then
-			return false
+			return postamble(false)
 		end
 	end
-	return true
+	return postamble(true)
 end
 
 do_object = function(context, tree, keyed, patterns, obj, collection)
@@ -587,6 +602,7 @@ M.Context = U.class(M.Context)
 
 function M.Context:__init()
 	self.stack = {}
+	self.trace_stack = {}
 	self.error = nil
 end
 
@@ -638,6 +654,27 @@ end
 function M.Context:path(rel)
 	local l = self:at(rel)
 	return l and l[3] or nil
+end
+
+function M.Context:trace_push(pattern)
+	U.type_assert(pattern, M.Pattern)
+	table.insert(self.trace_stack, pattern)
+end
+
+function M.Context:trace_pop()
+	U.assert(#self.trace_stack > 0)
+	table.remove(self.trace_stack)
+end
+
+function M.Context:trace_tostring()
+	local str = string.format("pattern trace (%d):", #self.trace_stack)
+	for i = #self.trace_stack, 1, -1 do
+		local p = self.trace_stack[i]
+		if p.definition_location ~= nil then
+			str = str .. string.format("\n    %2d %s", i, p.definition_location)
+		end
+	end
+	return str
 end
 
 function M.Context:consume(tree, obj, root, path)

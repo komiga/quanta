@@ -102,8 +102,7 @@ local BYTE_SLASH = string.byte('/')
 local function add_export(p)
 	if not M.exports[p] then
 		M.exports[p] = true
-		p = ';' .. p
-		package.path = package.path .. p
+		package.path = package.path .. ';' .. p
 	end
 end
 

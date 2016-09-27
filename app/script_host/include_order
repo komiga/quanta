@@ -1,7 +1,3 @@
 
 return {
-	N("interface", {
-		N("command_help"),
-		N("command_run"),
-	}),
 }

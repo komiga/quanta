@@ -176,6 +176,7 @@ function M:copy(unit)
 	self.presence_certain = unit.presence_certain
 
 	self.items = {}
+	self.groups = {}
 	for _, item in ipairs(unit.items) do
 		self:add(item:make_copy())
 	end

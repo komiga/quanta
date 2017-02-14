@@ -16,8 +16,8 @@ M.Type = {
 	reference = 1,
 	composition = 2,
 	definition = 3,
-	step = 4,
-	element = 5,
+	element = 4,
+	step = 5,
 }
 
 M.DefinitionType = {

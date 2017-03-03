@@ -130,9 +130,7 @@ end
 
 function M.setup_config(f)
 	check_initialized()
-
-	setfenv(f, M.config)
-	return f()
+	return f(M.config)
 end
 
 function M.reload_config()

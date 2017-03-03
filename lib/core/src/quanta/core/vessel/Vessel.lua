@@ -138,6 +138,9 @@ function M.reload_config()
 
 	M.config = {}
 	for _, g in ipairs(M.group) do
+		if not g.path then
+			goto l_continue
+		end
 		M.with_group(g, function()
 			local path = M.sys_path("config.lua")
 			if not FS.is_file(path) then
@@ -157,6 +160,7 @@ function M.reload_config()
 				chunk()
 			end)
 		end)
+	::l_continue::
 	end
 	U.type_assert(M.config, "table")
 	U.type_assert(M.config.director, require("Quanta.Director"))

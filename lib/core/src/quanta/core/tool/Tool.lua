@@ -92,6 +92,14 @@ function M:__init(name, options, commands, help_text, func)
 	self:add_commands(commands)
 end
 
+function M:clear_options()
+	self.options = {}
+end
+
+function M:clear_commands()
+	self.commands = {}
+end
+
 function M:add_options(options)
 	if U.is_type(options, M.Option) then
 		local option = options
@@ -299,7 +307,7 @@ function(self, parent, options, params)
 end)
 M.help_command.auto_read_options = false
 
-local main_options = {
+M.main_options = {
 M.Option("--log", nil, [=[
 --log=error | info | debug
   set log level
@@ -336,11 +344,11 @@ function(_, value)
 end),
 }
 
-local main_commands = {
-M.help_command,
+M.main_commands = {
+	M.help_command,
 }
 
-M.main_tool = M("main", main_options, main_commands, [=[
+M.main_tool = M("main", M.main_options, M.main_commands, [=[
 main [options] command [command_options] [command_params]
 ]=],
 function(self, parent, options, params)

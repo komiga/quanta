@@ -71,5 +71,13 @@ signed main() {
 		time::gregorian::set(t, 2,4,14, 2,3,1);
 		ASSERT_BOTH(t, 2,4,14, 31+28+31+14, 2,3,1);
 	}
+
+	{
+		Time t{};
+		s64 const posix_sec = 1299490200l;
+		time::set_posix(t, posix_sec);
+		ASSERT_BOTH(t, 2011,3,7, 31+28+7, 9,30,0);
+		TOGO_ASSERTE(time::posix(t) == posix_sec);
+	}
 	return 0;
 }

@@ -18,7 +18,7 @@ TOGO_LI_FUNC_DEF(__mm_ctor) {
 	auto t = lua::new_userdata<Time>(L);
 	if (lua_isnumber(L, 1)) {
 		t->sec = lua::get_integer(L, 1);
-	} else if (!lua_isnone(L, 1)) {
+	} else if (!lua_isnoneornil(L, 1)) {
 		*t = *lua::get_pointer<Time>(L, 1);
 	}
 	if (lua_isnumber(L, 2)) {

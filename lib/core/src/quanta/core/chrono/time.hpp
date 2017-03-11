@@ -111,6 +111,11 @@ inline s64 posix(Time const& t) {
 	return t.sec + QUANTA_TO_POSIX;
 }
 
+/// Set to seconds since the POSIX epoch.
+inline void set_posix(Time& t, s64 posix_sec) {
+	t.sec = posix_sec + POSIX_TO_QUANTA;
+}
+
 /// Hour on clock (UTC).
 inline signed hour_utc(Time const& t) {
 	return (internal::abs_utc(t) % SECS_PER_DAY) / SECS_PER_HOUR;

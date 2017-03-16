@@ -107,6 +107,13 @@ TOGO_LI_FUNC_DEF(sub) {
 	return 0;
 }
 
+TOGO_LI_FUNC_DEF(compare_less) {
+	auto l = lua::get_pointer<Time const>(L, 1);
+	auto r = lua::get_pointer<Time const>(L, 2);
+	lua::push_value(L, time::compare_less(*l, *r));
+	return 1;
+}
+
 TOGO_LI_FUNC_DEF(compare_equal) {
 	auto l = lua::get_pointer<Time const>(L, 1);
 	auto r = lua::get_pointer<Time const>(L, 2);
@@ -298,6 +305,7 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(time, difference)
 	TOGO_LI_FUNC_REF(time, add)
 	TOGO_LI_FUNC_REF(time, sub)
+	TOGO_LI_FUNC_REF(time, compare_less)
 	TOGO_LI_FUNC_REF(time, compare_equal)
 
 	TOGO_LI_FUNC_REF(time, posix)

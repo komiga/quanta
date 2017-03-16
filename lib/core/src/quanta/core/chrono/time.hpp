@@ -101,7 +101,12 @@ inline void sub(Time& t, Duration d) {
 	t.sec -= d;
 }
 
-/// Compare two times for equality (UTC).
+/// Less-than comparison (absolute).
+inline bool compare_less(Time const& l, Time const& r) {
+	return l.sec < r.sec;
+}
+
+/// Equality comparison (absolute).
 inline bool compare_equal(Time const& l, Time const& r) {
 	return l.sec == r.sec;
 }

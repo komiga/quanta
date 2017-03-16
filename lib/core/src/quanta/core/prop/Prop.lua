@@ -100,7 +100,7 @@ end
 function M.Specializer:read(context, parent, instance, obj, fallback)
 	local class = self:find(instance.id, instance.id_hash, fallback)
 	if not class then
-		return Match.Error("class specialization not found: %s", id)
+		return Match.Error("class specialization not found: %s", instance.id)
 	end
 	instance.data = class()
 	return instance.data:from_object(context, parent, instance, obj)

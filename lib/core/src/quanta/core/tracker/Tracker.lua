@@ -625,7 +625,7 @@ function M.Entry:to_object(obj, scope)
 
 	if #self.actions > 0 then
 		local actions_obj = O.push_child(obj)
-		O.set_name(actions_obj, "tags")
+		O.set_name(actions_obj, "actions")
 		for i, action in ipairs(self.actions) do
 			action:to_object(O.push_child(actions_obj), i ~= 1 and self.primary_action == i)
 		end

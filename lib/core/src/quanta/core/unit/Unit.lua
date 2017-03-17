@@ -532,6 +532,7 @@ M.Modifier = U.class(M.Modifier)
 function M.Modifier:__init(id, id_hash, data)
 	U.type_assert(id, "string", true)
 	U.type_assert(id_hash, "number", true)
+	U.assert(data == nil or U.is_instance(data))
 
 	self.id = id
 	self.id_hash = id_hash or (id and O.hash_name(id) or O.NAME_NULL)

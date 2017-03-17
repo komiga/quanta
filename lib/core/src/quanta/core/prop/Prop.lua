@@ -63,7 +63,9 @@ end--]]
 
 M.Specializer = U.class(M)
 
-function M.Specializer:__init()
+function M.Specializer:__init(base)
+	self.base = U.type_assert_any(base, {"function", U.is_class})
+	self.base_is_class = U.is_class(self.base)
 	self.classes = {}
 end
 
@@ -75,25 +77,41 @@ function M.Specializer:register(id, class)
 	U.assert(id_hash ~= O.NAME_NULL, "class ID must be non-empty")
 	U.assert(not self.classes[id_hash], "class '%s' is already registered", id)
 
-	self.classes[id_hash] = {
+	local reg = {
 		id = id,
 		id_hash = id_hash,
 		class = class,
 	}
+	self.classes[id_hash] = reg
+end
+
+function M.Specializer:find_registration(id_hash)
+	U.type_assert(id_hash, "number")
+
+	local reg = self.classes[id_hash]
+	if M.debug and reg then
+		U.assert(id == reg.id)
+	end
+	return reg
 end
 
 function M.Specializer:find(id, id_hash, fallback)
-	U.type_assert(id, "string")
-	U.type_assert(id_hash, "number")
+	local reg = self:find_registration(id_hash)
+	return reg and reg.class or fallback
+end
 
-	local registered = self.classes[id_hash]
-	if not registered then
-		return fallback
+function M.Specializer:create(id_hash, ...)
+	local id = id_hash
+	if type(id_hash) == "string" then
+		id_hash = O.hash_name(id_hash)
+	end
+
+	local reg = self:find_registration(id_hash)
+	U.assert(reg, "class specialization not found: %s", tostring(id))
+	if self.base_is_class then
+		return self.base(reg.id, reg.id_hash, reg.class(...))
 	else
-		if M.debug then
-			U.assert(id == registered.id)
-		end
-		return registered.class
+		return self.base(reg.id, reg.id_hash, reg.class, ...)
 	end
 end
 

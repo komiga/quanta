@@ -220,10 +220,14 @@ end
 
 M.Action = U.class(M.Action)
 
-function M.Action:__init()
-	self.id = nil
-	self.id_hash = O.NAME_NULL
-	self.data = nil
+function M.Action:__init(id, id_hash, data)
+	U.type_assert(id, "string", true)
+	U.type_assert(id_hash, "number", true)
+	U.assert(data == nil or U.is_instance(data))
+
+	self.id = id
+	self.id_hash = id_hash or (id and O.hash_name(id) or O.NAME_NULL)
+	self.data = data
 end
 
 function M.Action:to_object(obj, is_primary)
@@ -260,11 +264,11 @@ Match.Pattern{name = "action_primary"},
 })
 
 local function add_action(list, obj)
-	local action = M.Action()
-	action.id = O.identifier(obj)
-	action.id_hash = O.identifier_hash(obj)
+	local action = M.Action(
+		O.identifier(obj),
+		O.identifier_hash(obj)
+	)
 	table.insert(list, action)
-
 	return action
 end
 
@@ -771,10 +775,14 @@ M.Entry.t_head_tags:build()
 
 M.Attachment = U.class(M.Attachment)
 
-function M.Attachment:__init()
-	self.id = nil
-	self.id_hash = O.NAME_NULL
-	self.data = nil
+function M.Attachment:__init(id, id_hash, data)
+	U.type_assert(id, "string", true)
+	U.type_assert(id_hash, "number", true)
+	U.assert(data == nil or U.is_instance(data))
+
+	self.id = id
+	self.id_hash = id_hash or (id and O.hash_name(id) or O.NAME_NULL)
+	self.data = data
 end
 
 function M.Attachment:to_object(obj)

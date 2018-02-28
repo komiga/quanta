@@ -228,6 +228,7 @@ function M.Action:__init(id, id_hash, data)
 	self.id = id
 	self.id_hash = id_hash or (id and O.hash_name(id) or O.NAME_NULL)
 	self.data = data
+	self.passive = false
 end
 
 function M.Action:to_object(obj, is_primary)
@@ -245,6 +246,9 @@ function M.Action:to_object(obj, is_primary)
 	if is_primary then
 		O.set_name(O.push_tag(obj), "action_primary")
 	end
+	if self.passive then
+		O.set_name(O.push_tag(obj), "action_passive")
+	end
 	return obj
 end
 
@@ -257,10 +261,12 @@ function M.Action.remove_internal_tags(obj)
 	end
 
 	remove_tag("action_primary")
+	remove_tag("action_passive")
 end
 
 M.Action.t_ignore_internal_tags = Match.Tree({
 Match.Pattern{name = "action_primary"},
+Match.Pattern{name = "action_passive"},
 })
 
 local function add_action(list, obj)
@@ -324,6 +330,10 @@ M.Action.p_head = Match.Pattern{
 				return Match.Error("entry already has a primary action")
 			end
 			entry.primary_action = #entry.actions
+		end
+		local tag_action_passive = O.find_tag(obj, "action_passive")
+		if tag_action_passive then
+			U.table_last(entry.actions).passive = true
 		end
 	end,
 }

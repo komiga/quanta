@@ -127,7 +127,11 @@ local function fixup_time_ref(self, i, entry, time, part, no_branch)
 	else -- ref
 		ref_entry, ref_i = find_by_ref(self.entries, i, time.index, time.ool)
 		if not ref_entry then
-			return entry_error(entry, "entry range %s reference index is out-of-bounds", part)
+			if time.index == 1 then
+				return true
+			else
+				return entry_error(entry, "entry range %s reference index is out-of-bounds: %d / %s", part, time.index, tostring(ref_entry))
+			end
 		end
 	end
 
@@ -193,7 +197,7 @@ function M:validate_and_fixup()
 		local duration = T.value(entry.duration)
 		if duration < 0 then
 			return entry_error(entry, "entry range is degenerate: duration is negative")
-		elseif duration == 0 then
+		elseif duration == 0 and entry.r_end.type == M.EntryTime.Type.specified then
 			return entry_error(entry, "entry range is degenerate: duration is zero")
 		end
 

@@ -144,7 +144,7 @@ void object::clear(Object& obj) {
 	object::clear_quantity(obj);
 }
 
-/// Time value  context.
+/// Time value context.
 ///
 /// Relative date parts are taken from the context time.
 /// If the time value does not specify a zone offset, it is adjusted to the

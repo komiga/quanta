@@ -815,11 +815,12 @@ Match.Pattern{
 Match.Pattern{
 	name = Match.Any,
 	vtype = {O.Type.null, O.Type.expression},
+	expression = M.t_composition_body,
 	children = M.t_composition_body,
 	tags = M.Modifier.t_struct_list_head,
 	quantity = Measurement.t_struct_list_head,
 	func = function(_, _, obj)
-		return O.has_children(obj)
+		return O.has_children(obj) or O.has_operands(obj)
 	end,
 	acceptor = function(context, self, obj)
 		self.type = M.Type.composition

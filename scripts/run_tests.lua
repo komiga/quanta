@@ -60,8 +60,8 @@ function run()
 				cmd = cmd .. " " .. args
 			end
 			printf("\nRUNNING: %s", cmd)
-			local success, termination_reason, exit_code = os.execute(cmd)
-			if not success or (termination_reason == "exit" and exit_code ~= 0) then
+			local exit_code = os.execute(cmd)
+			if exit_code ~= 0 then
 				printf("ERROR: '%s' failed with exit code %d", test.path, exit_code)
 				return -1
 			end

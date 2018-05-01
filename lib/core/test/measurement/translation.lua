@@ -44,7 +44,7 @@ function do_translation_test(t)
 	local unit = Measurement.get_unit(t.unit)
 	U.assert(unit)
 
-	local item = t.item_index > 0 and O.child_at(obj, t.item_index) or obj
+	local item = t.item_index > 0 and O.operand_at(obj, t.item_index) or obj
 	U.assert(Measurement.get_unit(O.unit_hash(item)) == unit)
 
 	local m = Measurement(obj)

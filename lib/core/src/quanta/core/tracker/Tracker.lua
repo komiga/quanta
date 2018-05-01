@@ -309,6 +309,9 @@ function M.Action.adapt_struct_list(serialized_name, property_name)
 	Match.Pattern{
 		name = serialized_name,
 		vtype = {O.Type.null, O.Type.expression},
+		expression = {
+			element_pattern(nil),
+		},
 		children = {
 			element_pattern(nil),
 		},
@@ -684,14 +687,14 @@ Match.Pattern{
 	acceptor = function(context, self, obj)
 		if O.num_children(obj) ~= 2 then
 			return Match.Error("range must have two elements")
-		elseif O.op(O.child_at(obj, 2)) ~= O.Operator.sub then
+		elseif O.op(O.operand(obj, 2)) ~= O.Operator.sub then
 			return Match.Error("range operator must be a subtraction")
 		end
 
-		if not context:consume(M.EntryTime.t_head, O.child_at(obj, 1), self.r_start) then
+		if not context:consume(M.EntryTime.t_head, O.operand_at(obj, 1), self.r_start) then
 			return
 		end
-		if not context:consume(M.EntryTime.t_head, O.child_at(obj, 2), self.r_end) then
+		if not context:consume(M.EntryTime.t_head, O.operand_at(obj, 2), self.r_end) then
 			return
 		end
 	end,

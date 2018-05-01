@@ -148,10 +148,10 @@ M.filters.value.valued = function(context, value, obj, p)
 	return false
 end
 
-local function make_sub_filter(g, name, name_collect)
+local function make_sub_filter(g, name, name_collect, alt_has_name)
 	local name_post = name_collect .. "_post"
 	local name_num = "num_" .. name
-	local has_func = O["has_" .. name]
+	local has_func = O["has_" .. (alt_has_name or name)]
 	local num_func = O["num_" .. name]
 	local is_children = has_func == O.has_children
 
@@ -196,6 +196,7 @@ local function make_sub_filter(g, name, name_collect)
 	return g
 end
 
+M.filters.expression = make_sub_filter({}, "expression", "collect_expression", "operands")
 M.filters.children = make_sub_filter({}, "children", "collect")
 M.filters.tags     = make_sub_filter({}, "tags", "collect_tags")
 
@@ -232,6 +233,7 @@ end
 add_filter_group("name")
 add_filter_group("value")
 add_filter_group("func")
+add_filter_group("expression")
 add_filter_group("children")
 add_filter_group("tags")
 add_filter_group("quantity")
@@ -490,6 +492,11 @@ do_pattern = function(context, tree, p, obj, collection, keyed)
 			if collection then
 				table.insert(collection, value)
 			end
+		end
+	end
+	if O.is_expression(obj) then
+		if not do_sub(context, tree, nil, p.expression, p.collect_expression_post, obj, O.expression) then
+			return postamble(false)
 		end
 	end
 	if not do_sub(context, tree, nil, p.children, p.collect_post, obj, O.children) then

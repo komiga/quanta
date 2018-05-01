@@ -71,6 +71,9 @@ struct Test {
 	S_TF("a\nb")
 
 // markers
+	TF("G~?")
+	TF("?G~")
+
 	TSE("~", "~")
 	TSE("~x", "~x")
 	TSE("~~x", "~~x")
@@ -261,6 +264,7 @@ struct Test {
 	TSE("\"\\t\"", "\"\t\"")
 	TSE("\"\\n\"", "```\n```")
 
+	TSS("G\"\"")
 	TSS("type\"\"")
 	TSE("type``````", "type\"\"")
 	TSS("type\"value\"")

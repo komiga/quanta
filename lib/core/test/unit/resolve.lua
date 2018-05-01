@@ -104,9 +104,6 @@ function do_test(t, implicit_scope, resolver)
 			for _, item in ipairs(unit.items) do
 				check_unit(item)
 			end
-			for _, part in ipairs(unit.parts) do
-				check_unit(part)
-			end
 		end
 	end
 

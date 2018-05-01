@@ -179,7 +179,7 @@ make_unit_comp(nil, {}, {}, {
 		"",
 		"", {}, {},
 		{}, {},
-		{}, {}
+		{}
 	),
 })),
 make_test_typed(
@@ -191,7 +191,7 @@ make_unit_comp(nil, {}, {}, {
 		"",
 		"", {}, {},
 		{}, {},
-		{}, {}
+		{}
 	),
 })),
 
@@ -210,9 +210,9 @@ make_unit_comp(nil, {}, {}, {
 		"",
 		"root", {Prop.Author("X%Y", true, nil, true)}, {},
 		{}, {},
-		{}, {
+		{
 			make_element_primary(1, "P1", {}, {}, {
-				make_step(1, nil, {}, {}, {
+				make_step(1, false, {}, {}, {
 					make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 				}),
 			}),
@@ -227,7 +227,7 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {}
+	{}
 )),
 make_test(
 	[[S{}]],
@@ -236,7 +236,7 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {}
+	{}
 )),
 
 make_test(
@@ -246,7 +246,7 @@ make_unit_def(
 	"name",
 	"", {}, {},
 	{}, {},
-	{}, {}
+	{}
 )),
 
 make_test(
@@ -256,7 +256,7 @@ make_unit_def(
 	"",
 	"x", {}, {},
 	{}, {},
-	{}, {}
+	{}
 )),
 
 make_test(
@@ -266,7 +266,7 @@ make_unit_def(
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {},
-	{}, {}
+	{}
 )),
 make_test(
 	[[U{author = {"X%Y"}}]],
@@ -275,7 +275,7 @@ make_unit_def(
 	"",
 	"", {Prop.Author("X%Y", true, nil, true)}, {},
 	{}, {},
-	{}, {}
+	{}
 )),
 make_test(
 	[[U{author = {"X%Y", "Z%W"}}]],
@@ -287,7 +287,7 @@ make_unit_def(
 		Prop.Author("Z%W", true, nil, true),
 	}, {},
 	{}, {},
-	{}, {}
+	{}
 )),
 
 make_test(
@@ -297,7 +297,7 @@ make_unit_def(
 	"",
 	"", {}, {Prop.Note("x")},
 	{}, {},
-	{}, {}
+	{}
 )),
 make_test(
 	[[U{note = {01:23, "x"}}]],
@@ -306,7 +306,7 @@ make_unit_def(
 	"",
 	"", {}, {Prop.Note("x", make_time("2016-01-01T01:23Z"))},
 	{}, {},
-	{}, {}
+	{}
 )),
 make_test(
 	[[U{note = {{02T01:23, "x"}, "y"}}]],
@@ -318,7 +318,7 @@ make_unit_def(
 		Prop.Note("y"),
 	},
 	{}, {},
-	{}, {}
+	{}
 )),
 
 make_test(
@@ -333,9 +333,9 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {
+	{
 		make_element_primary(1, "blah", {}, {}, {
-			make_step(1, nil, {}, {}, {
+			make_step(1, false, {}, {}, {
 				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -351,9 +351,9 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {
+	{
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, nil, {}, {}, {
+			make_step(1, false, {}, {}, {
 				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -371,9 +371,9 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {
+	{
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, nil, {}, {}, {
+			make_step(1, false, {}, {}, {
 				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 				make_unit_ref(nil, "y", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 				make_unit_ref(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
@@ -393,9 +393,9 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {
+	{
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, nil, {}, {}, {
+			make_step(1, false, {}, {}, {
 				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -410,9 +410,9 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {
+	{
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, nil, {}, {}, {
+			make_step(1, false, {}, {}, {
 				make_unit_ref("prototype", "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -430,9 +430,9 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {
+	{
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, nil, {}, {}, {
+			make_step(1, false, {}, {}, {
 				make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 			}),
 		}),
@@ -452,24 +452,24 @@ make_unit_def(
 	"",
 	"", {}, {},
 	{}, {},
-	{}, {
+	{
 		make_element_primary(1, "", {}, {}, {
-			make_step(1, nil, {}, {}, {
+			make_step(1, false, {}, {}, {
 				make_unit_def(
 					Unit.DefinitionType.familiar,
 					"",
 					"stuff", {Prop.Author("X%Y", true, nil, true)}, {},
 					{}, {},
-					{}, {
+					{
 						make_element_primary(1, "", {}, {}, {
-							make_step(1, nil, {}, {}, {
+							make_step(1, false, {}, {}, {
 								make_unit_ref(nil, "x", nil, nil, 0, 0, true, true, true, true, {}, {}, {}),
 							}),
 						}),
 					}
 				),
 			}),
-			make_step(2, nil, {}, {}, {
+			make_step(2, false, {}, {}, {
 				make_unit_ref(nil, nil, nil, nil, 0, 0, true, true, true, true, {}, {
 					make_modifier("cook", Unit.UnknownModifier()),
 				}, {}),

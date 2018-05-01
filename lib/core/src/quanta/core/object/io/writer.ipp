@@ -160,14 +160,14 @@ static bool write_expression(
 	unsigned tabs,
 	bool scoped
 ) {
-	scoped |= array::size(object::children(obj)) <= 1;
+	scoped |= array::size(object::expression(obj)) <= 1;
 	if (scoped) {
 		RETURN_ERROR(io::write_value(stream, '('));
 	}
-	if (object::has_children(obj)) {
-		auto& children = object::children(obj);
-		auto it = begin(children);
-		auto end = array::end(children);
+	if (object::has_operands(obj)) {
+		auto& operands = object::expression(obj);
+		auto it = begin(operands);
+		auto end = array::end(operands);
 		RETURN_ERROR(write_object(stream, *it, tabs, true));
 		for (++it; it != end; ++it) {
 			RETURN_ERROR(
@@ -182,7 +182,7 @@ static bool write_expression(
 	return true;
 }
 
-static bool write_object(
+static bool write_value(
 	IWriter& stream,
 	Object const& obj,
 	unsigned tabs,
@@ -300,9 +300,7 @@ static bool write_object(
 		if (object::has_string_type(obj)) {
 			RETURN_ERROR(write_identifier(stream, object::string_type(obj)));
 		}
-		RETURN_ERROR(
-			write_string(stream, object::string(obj))
-		);
+		RETURN_ERROR(write_string(stream, object::string(obj)));
 		break;
 
 	case ObjectValueType::identifier:
@@ -310,8 +308,30 @@ static bool write_object(
 		break;
 
 	case ObjectValueType::expression:
+		RETURN_ERROR(write_expression(
+			stream, obj, tabs,
+			(obj.properties & object::M_VALUE_MARKERS) ||
+			object::has_source(obj) ||
+			object::has_tags(obj) ||
+			object::has_children(obj) ||
+			object::has_quantity(obj)
+		));
 		break;
 	}
+	return true;
+}
+
+static bool write_object(
+	IWriter& stream,
+	Object const& obj,
+	unsigned tabs,
+	bool named
+) {
+	if (named && object::is_named(obj)) {
+		RETURN_ERROR(write_identifier(stream, object::name(obj)));
+	}
+	RETURN_ERROR(write_value(stream, obj, tabs, would_write_value(obj, false), false));
+
 	if (object::has_source(obj) || object::marker_source_uncertain(obj)) {
 		RETURN_ERROR(write_source(stream, object::source(obj), object::marker_source_uncertain(obj)));
 		if (object::has_sub_source(obj) || object::marker_sub_source_uncertain(obj)) {
@@ -320,40 +340,24 @@ static bool write_object(
 	}
 
 	// TODO: split pre- and post-tags
-	if (object::is_expression(obj)) {
-		if (object::has_tags(obj)) {
-			auto& last_tag = array::back(object::tags(obj));
-			for (auto& tag : object::tags(obj)) {
-				RETURN_ERROR(write_tag(stream, tag, tabs, &tag == &last_tag));
-			}
-		}
-		RETURN_ERROR(write_expression(
-			stream, obj, tabs,
-			(obj.properties & object::M_VALUE_MARKERS) ||
-			object::has_source(obj) ||
-			object::has_tags(obj) ||
-			object::has_quantity(obj)
-		));
-	} else {
-		for (auto& tag : object::tags(obj)) {
-			RETURN_ERROR(write_tag(stream, tag, tabs, false));
-		}
-		if (object::has_children(obj)) {
-			RETURN_ERROR(io::write(stream, "{\n", 2));
-			++tabs;
-			for (auto& child : object::children(obj)) {
-				RETURN_ERROR(
-					write_tabs(stream, tabs) &&
-					write_object(stream, child, tabs) &&
-					io::write_value(stream, '\n')
-				);
-			}
-			--tabs;
+	for (auto& tag : object::tags(obj)) {
+		RETURN_ERROR(write_tag(stream, tag, tabs, false));
+	}
+	if (object::has_children(obj)) {
+		RETURN_ERROR(io::write(stream, "{\n", 2));
+		++tabs;
+		for (auto& child : object::children(obj)) {
 			RETURN_ERROR(
 				write_tabs(stream, tabs) &&
-				io::write_value(stream, '}')
+				write_object(stream, child, tabs) &&
+				io::write_value(stream, '\n')
 			);
 		}
+		--tabs;
+		RETURN_ERROR(
+			write_tabs(stream, tabs) &&
+			io::write_value(stream, '}')
+		);
 	}
 	if (object::has_quantity(obj)) {
 		auto& quantity = *object::quantity(obj);

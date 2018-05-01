@@ -719,6 +719,58 @@ static signed TOGO_LI_FUNC(sub_at)(lua_State* L, Object* /*obj*/, Array<Object>&
 	return 1;
 }
 
+TOGO_LI_FUNC_DEF(expression) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, TOGO_LI_FUNC(array_iter));
+	lua::push_lightuserdata(L, &object::expression(*obj));
+	lua::push_value(L, 0);
+	return 3;
+}
+
+TOGO_LI_FUNC_DEF(num_expression) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, array::size(object::expression(*obj)));
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(has_operands) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	lua::push_value(L, object::has_operands(*obj));
+	return 1;
+}
+
+TOGO_LI_FUNC_DEF(clear_expression) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	object::clear_expression(*obj);
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(push_operand) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	return li_push_sub(L, obj, object::expression(*obj), true);
+}
+
+TOGO_LI_FUNC_DEF(push_operand_mv) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	return li_push_sub(L, obj, object::expression(*obj), false);
+}
+
+TOGO_LI_FUNC_DEF(pop_operand) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	array::pop_back(object::expression(*obj));
+	return 0;
+}
+
+TOGO_LI_FUNC_DEF(remove_operand) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	return li_remove_sub(L, obj, object::expression(*obj));
+}
+
+TOGO_LI_FUNC_DEF(operand_at) {
+	auto obj = lua::get_pointer<Object>(L, 1);
+	return li_sub_at(L, obj, object::expression(*obj));
+}
+
 TOGO_LI_FUNC_DEF(children) {
 	auto obj = lua::get_pointer<Object>(L, 1);
 	lua::push_value(L, TOGO_LI_FUNC(array_iter));
@@ -1060,6 +1112,15 @@ static LuaModuleFunctionArray const li_funcs{
 	TOGO_LI_FUNC_REF(object, text)
 
 	TOGO_LI_FUNC_REF(object, set_expression)
+	TOGO_LI_FUNC_REF(object, expression)
+	TOGO_LI_FUNC_REF(object, num_expression)
+	TOGO_LI_FUNC_REF(object, has_operands)
+	TOGO_LI_FUNC_REF(object, clear_expression)
+	TOGO_LI_FUNC_REF(object, push_operand)
+	TOGO_LI_FUNC_REF(object, push_operand_mv)
+	TOGO_LI_FUNC_REF(object, pop_operand)
+	TOGO_LI_FUNC_REF(object, remove_operand)
+	TOGO_LI_FUNC_REF(object, operand_at)
 
 	TOGO_LI_FUNC_REF(object, children)
 	TOGO_LI_FUNC_REF(object, num_children)

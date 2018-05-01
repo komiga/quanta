@@ -32,39 +32,43 @@ function make_modifier(id, data)
 	return m
 end
 
-function make_step(index, name, measurements, modifiers, items)
-	U.type_assert(index, "number")
+function make_step(seq, implicit, measurements, modifiers, items)
+	U.type_assert(seq, "number")
+	U.type_assert(implicit, "boolean", true)
 
-	local s = Unit.Step()
-	s.index = index
-	s.composition = make_unit_comp(name, measurements, modifiers, items)
-	return s
+	local u = Unit.Step(seq, implicit)
+	u.measurements = measurements
+	u.modifiers = modifiers
+	for _, i in ipairs(items) do
+		u:add(i)
+	end
+	return u
 end
 
-function make_element(type, index, description, author, note, steps)
+function make_element(type, index, description, author, note, items)
 	U.type_assert(type, "number")
 	U.type_assert(index, "number")
 	U.type_assert(description, "string")
 	U.type_assert(author, "table")
 	U.type_assert(note, "table")
-	U.type_assert(steps, "table")
+	U.type_assert(items, "table")
 
-	local e = Unit.Element()
-	e.type = type
-	e.index = index
-	e.description = description
-	e.author = author
-	e.note = note
-	e.steps = steps
-	return e
+	local u = Unit.Element(type, index)
+	u.description = description
+	u.author = author
+	u.note = note
+	for _, i in ipairs(items) do
+		u:add(i)
+	end
+	return u
 end
 
 function make_element_generic(index, description, author, note, steps)
-	return make_element(Unit.Element.Type.generic, index, description, author, note, steps)
+	return make_element(Unit.ElementType.generic, index, description, author, note, steps)
 end
 
 function make_element_primary(index, description, author, note, steps)
-	return make_element(Unit.Element.Type.primary, index, description, author, note, steps)
+	return make_element(Unit.ElementType.primary, index, description, author, note, steps)
 end
 
 function make_unit_ref(
@@ -98,9 +102,11 @@ function make_unit_ref(
 	u.sub_source_certain = sub_source_certain
 	u.variant_certain = variant_certain
 	u.presence_certain = presence_certain
-	u.items = items
 	u.measurements = measurements
 	u.modifiers = modifiers
+	for _, i in ipairs(items) do
+		u:add(i)
+	end
 	return u
 end
 
@@ -112,14 +118,16 @@ function make_unit_comp(name, measurements, modifiers, items)
 
 	local u = Unit.Composition()
 	u:set_name(name)
-	u.items = items
 	u.modifiers = modifiers
 	u.measurements = measurements
+	for _, i in ipairs(items) do
+		u:add(i)
+	end
 	return u
 end
 
-function make_unit_def(def_type, name, description, author, note, measurements, modifiers, items, parts)
-	U.type_assert(def_type, "number")
+function make_unit_def(sub_type, name, description, author, note, measurements, modifiers, items, _splerwuh)
+	U.type_assert(sub_type, "number")
 	U.type_assert(name, "string")
 	U.type_assert(description, "string")
 	U.type_assert(author, "table")
@@ -127,18 +135,19 @@ function make_unit_def(def_type, name, description, author, note, measurements, 
 	U.type_assert(measurements, "table")
 	U.type_assert(modifiers, "table")
 	U.type_assert(items, "table")
-	U.type_assert(parts, "table")
+	U.assert(_splerwuh == nil)
 
 	local u = Unit.Definition()
-	u.def_type = def_type
+	u.sub_type = sub_type
 	u:set_name(name)
 	u.description = description
 	u.author = author
 	u.note = note
 	u.modifiers = modifiers
 	u.measurements = measurements
-	u.items = items
-	u.parts = parts
+	for _, i in ipairs(items) do
+		u:add(i)
+	end
 	return u
 end
 
@@ -251,46 +260,9 @@ function check_modifier_list_equal(x, y)
 	end
 end
 
-function check_step_equal(x, y)
-	U.assert(x.index == y.index)
-	check_unit_equal(x.composition, y.composition)
-end
-
-function check_element_equal(x, y)
-	U.assert(x.type == y.type)
-	U.assert(x.index == y.index)
-
-	U.assert(x.description == y.description)
-	U.assert(#x.author == #y.author)
-	for i = 1, #x.author do
-		check_author_equal(x.author[i], y.author[i])
-	end
-	U.assert(#x.note == #y.note)
-	for i = 1, #x.note do
-		check_note_equal(x.note[i], y.note[i])
-	end
-
-	U.assert(#x.steps == #y.steps)
-	for i = 1, #x.steps do
-		check_step_equal(x.steps[i], y.steps[i])
-	end
-end
-
-function check_unit_item_equal(x, y)
-	local class = U.type_class(x)
-	U.assert(class == U.type_class(y))
-	if class == Unit then
-		check_unit_equal(x, y)
-	elseif class == Unit.Element then
-		check_element_equal(x, y)
-	else
-		U.assert(false, "invalid composition item type: %s", type(x))
-	end
-end
-
 function check_unit_equal(x, y)
 	U.assert(x.type == y.type)
-	U.assert(x.def_type == y.def_type)
+	U.assert(x.sub_type == y.sub_type)
 	U.assert(x.name == y.name)
 	U.assert(x.name_hash == y.name_hash)
 	U.assert(x.id == y.id)
@@ -324,12 +296,7 @@ function check_unit_equal(x, y)
 
 	U.assert(#x.items == #y.items)
 	for i = 1, #x.items do
-		check_unit_item_equal(x.items[i], y.items[i])
-	end
-
-	U.assert(#x.parts == #y.parts)
-	for i = 1, #x.parts do
-		check_unit_item_equal(x.parts[i], y.parts[i])
+		check_unit_equal(x.items[i], y.items[i])
 	end
 
 	check_modifier_list_equal(x, y)

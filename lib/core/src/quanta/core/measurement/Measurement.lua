@@ -276,7 +276,7 @@ function M:from_object(obj)
 		return true
 	elseif O.is_expression(obj) then
 		local of, best, best_unit, unit
-		for i, sub in O.children(obj) do
+		for i, sub in O.expression(obj) do
 			U.assert(i == 1 or O.op(sub) == O.Operator.div)
 			if O.is_numeric(sub) then
 				unit = M.get_unit(O.unit_hash(sub))
@@ -318,9 +318,9 @@ function M:to_object(obj, no_rebase)
 	if self.of > 0 then
 		if value ~= 0 then
 			O.set_expression(obj)
-			O.clear_children(obj)
-			O.set_decimal(O.push_child(obj), self.of)
-			obj = O.push_child(obj)
+			O.clear_expression(obj)
+			O.set_decimal(O.push_operand(obj), self.of)
+			obj = O.push_operand(obj)
 			O.set_op(obj, O.Operator.div)
 		else
 			O.set_decimal(obj, self.of)
@@ -450,13 +450,14 @@ function M.struct_list_to_quantity(list, obj)
 		list[1]:to_object(O.make_quantity(obj))
 	elseif #list > 1 then
 		local quantity = O.make_quantity(obj)
+		O.set_expression(quantity)
 		for _, m in pairs(list) do
 			if not m:is_empty() then
-				m:to_object(O.push_child(quantity))
+				m:to_object(O.push_operand(quantity))
 			end
 		end
-		if not O.has_children(quantity) then
-			O.release_quantity(quantity)
+		if not O.has_operands(quantity) then
+			O.release_quantity(obj)
 		end
 	end
 end

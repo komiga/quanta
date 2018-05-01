@@ -179,10 +179,10 @@ signed main() {
 		Object a;
 		set_expression(a);
 		TOGO_ASSERTE(is_expression(a));
-		auto& e1 = push_back_inplace(children(a));
+		auto& e1 = push_back_inplace(expression(a));
 		set_integer(e1, 1);
 		TOGO_ASSERTE(op(e1) == ObjectOperator::none);
-		auto& e2 = push_back_inplace(children(a));
+		auto& e2 = push_back_inplace(expression(a));
 		set_integer(e2, 2);
 		set_op(e2, ObjectOperator::div);
 		TOGO_ASSERTE(op(e2) == ObjectOperator::div);

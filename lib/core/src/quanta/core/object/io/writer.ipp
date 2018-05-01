@@ -118,33 +118,6 @@ static bool write_object(
 	bool named = true
 );
 
-static bool write_tag(
-	IWriter& stream,
-	Object const& obj,
-	unsigned tabs,
-	bool scope_childless
-) {
-	RETURN_ERROR(
-		io::write_value(stream, ':') &&
-		write_markers(stream, obj) &&
-		write_identifier(stream, object::name(obj))
-	);
-	if (object::has_children(obj)) {
-		RETURN_ERROR(io::write_value(stream, '('));
-		auto& last_child = array::back(object::children(obj));
-		for (auto& child : object::children(obj)) {
-			RETURN_ERROR(
-				write_object(stream, child, tabs) &&
-				(&child == &last_child || io::write(stream, ", ", 2))
-			);
-		}
-		RETURN_ERROR(io::write_value(stream, ')'));
-	} else if (scope_childless) {
-		RETURN_ERROR(io::write(stream, "()", 2));
-	}
-	return true;
-}
-
 inline char const* op_string(ObjectOperator const op) {
 	switch (op) {
 	case ObjectOperator::add: return " + ";
@@ -182,27 +155,36 @@ static bool write_expression(
 	return true;
 }
 
+inline bool would_write_value(Object const& obj, bool const is_tag) {
+	return !object::is_null(obj) || (// if we would write a null
+		!is_tag &&
+		!(obj.properties & object::M_VALUE_MARKERS) &&
+		!object::has_children(obj) &&
+		!object::has_tags(obj)
+	);
+}
+
 static bool write_value(
 	IWriter& stream,
 	Object const& obj,
 	unsigned tabs,
-	bool named
+	bool would_write,
+	bool const is_tag
 ) {
-	if (named && object::is_named(obj)) {
-		RETURN_ERROR(
-			write_identifier(stream, object::name(obj)) &&
-			io::write(stream, " = ", 3)
-		);
+	if (would_write) {
+		if (is_tag) {
+			RETURN_ERROR(io::write_value(stream, '='));
+		} else if (object::is_named(obj)) {
+			RETURN_ERROR(io::write(stream, " = ", 3));
+		}
+		RETURN_ERROR(write_markers(stream, obj));
+	} else if (!is_tag) {
+		RETURN_ERROR(write_markers(stream, obj));
 	}
 
-	RETURN_ERROR(write_markers(stream, obj));
 	switch (object::type(obj)) {
 	case ObjectValueType::null:
-		if (
-			!(obj.properties & object::M_VALUE_MARKERS) &&
-			!object::has_children(obj) &&
-			!object::has_tags(obj)
-		) {
+		if (would_write) {
 			RETURN_ERROR(io::write(stream, "null", 4));
 		}
 		break;
@@ -310,6 +292,7 @@ static bool write_value(
 	case ObjectValueType::expression:
 		RETURN_ERROR(write_expression(
 			stream, obj, tabs,
+			is_tag ||
 			(obj.properties & object::M_VALUE_MARKERS) ||
 			object::has_source(obj) ||
 			object::has_tags(obj) ||
@@ -317,6 +300,43 @@ static bool write_value(
 			object::has_quantity(obj)
 		));
 		break;
+	}
+	return true;
+}
+
+static bool write_tag(
+	IWriter& stream,
+	Object const& obj,
+	unsigned tabs,
+	bool scope_childless
+) {
+	bool const would_write = would_write_value(obj, true);
+
+	RETURN_ERROR(io::write_value(stream, ':'));
+	if (!would_write) {
+		RETURN_ERROR(write_markers(stream, obj));
+	}
+	if (object::is_named(obj)) {
+		RETURN_ERROR(write_identifier(stream, object::name(obj)));
+	}
+	RETURN_ERROR(write_value(stream, obj, tabs, would_write, true));
+
+	if (object::has_children(obj)) {
+		RETURN_ERROR(io::write_value(stream, '('));
+		auto& last_child = array::back(object::children(obj));
+		for (auto& child : object::children(obj)) {
+			RETURN_ERROR(
+				write_object(stream, child, tabs) &&
+				(&child == &last_child || io::write(stream, ", ", 2))
+			);
+		}
+		RETURN_ERROR(io::write_value(stream, ')'));
+	} else if (scope_childless || (
+		!would_write &&
+		!object::is_named(obj) &&
+		!(obj.properties & object::M_VALUE_MARKERS)
+	)) {
+		RETURN_ERROR(io::write(stream, "()", 2));
 	}
 	return true;
 }

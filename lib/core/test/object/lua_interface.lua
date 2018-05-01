@@ -219,11 +219,11 @@ do
 	O.set_expression(a)
 	assert(O.is_expression(a))
 
-	local e1 = O.push_child(a)
+	local e1 = O.push_operand(a)
 	O.set_integer(e1, 1)
 	assert(O.op(e1) == O.Operator.none)
 
-	local e2 = O.push_child(a)
+	local e2 = O.push_operand(a)
 	O.set_integer(e2, 2)
 	O.set_op(e2, O.Operator.div)
 	assert(O.op(e2) == O.Operator.div)

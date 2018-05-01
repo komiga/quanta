@@ -138,6 +138,11 @@ enum : unsigned {
 	,
 };
 
+enum : unsigned {
+	OF_NONE		= 0,
+	OF_TAG		= 1 << 0,
+};
+
 enum class Response {
 	error,
 	complete,
@@ -169,6 +174,7 @@ struct ObjectParser {
 		Object* obj;
 		Stage const** sequence_pos;
 		bool any_part;
+		unsigned flags;
 	};
 
 	IReader& stream;
@@ -248,8 +254,8 @@ inline static StringRef parser_buffer_ref(ObjectParser const& p) {
 	return StringRef{array::begin(p.buffer), parser_buffer_size(p)};
 }
 
-inline static void parser_push(ObjectParser& p, Object& obj, Stage const** sequence_pos) {
-	p.branch = &array::push_back(p.stack, {&obj, sequence_pos, false});
+inline static void parser_push(ObjectParser& p, Object& obj, Stage const** sequence_pos, unsigned const flags = OF_NONE) {
+	p.branch = &array::push_back(p.stack, {&obj, sequence_pos, false, flags});
 	// TOGO_LOGF("push: %2lu %s\n", array::size(p.stack), (*sequence_pos)->name.data);
 }
 
@@ -1287,8 +1293,12 @@ extern Stage const
 
 * sequence_tag[],
 ** jump_tag_after_name,
+** jump_tag_after_marker_guess,
+** jump_tag_after_value,
+** jump_tag_expression_scope,
 
 * sub_assign,
+* sub_tag_assign,
 * sub_unit,
 * sub_sub_source,
 * sub_quantity_children,
@@ -1401,6 +1411,27 @@ STAGE(stage_assign, BF_NONE,
 	RESP(next);
 });
 
+STAGE(stage_tag_assign, BF_NONE,
+[](ObjectParser& p) -> Response {
+	if (p.c == '=') {
+		// expecting right-hand part, but might not get it!
+		RESP(exit_sub);
+	} else {
+		RESP_SEQ(jump, jump_tag_after_value);
+	}
+},
+[](ObjectParser& p) -> Response {
+	switch (p.c) {
+	case PC_EOF:
+	case '*': case '/':
+	case '}': case ')': case ']':
+	case ',': case ';': case '\n':
+		PARSER_ERROR_EXPECTED(p, "right-hand part following assignment");
+		RESP(error);
+	}
+	RESP(next);
+});
+
 STAGE(stage_marker_uncertainty, BF_NONE,
 [](ObjectParser& p) -> Response {
 	if (p.c == '?') {
@@ -1472,6 +1503,8 @@ STAGE(stage_value, BF_NONE,
 		parser_read_string_quote(p);
 	} else if (p.c == '`') {
 		parser_read_string_block(p);
+	} else if (p.c == '(' && (p.branch->flags & OF_TAG)) {
+		RESP_SEQ(jump, jump_tag_expression_scope);
 	} else if (parser_is_currency_lead(p)) {
 		parser_read_currency(p);
 		is_unit_carrier = true;
@@ -1533,6 +1566,72 @@ STAGE(stage_typed_string, BF_NONE,
 nullptr
 );
 
+// Wacky business ahead. Using the exit sequence of a sub-stage to read a lead
+// value (if any) while skipping junk.
+STAGE(stage_expression_scope, BF_S_EXPRESSION_SCOPE,
+[](ObjectParser& p) -> Response {
+	RESP_IF(p.c != '(', pass);
+
+	if (!object::is_null(*p.branch->obj)) {
+		PARSER_ERROR(p, "scoped expression is a value (must not have preceding value)");
+		RESP(error);
+	}
+	object::set_expression(*p.branch->obj);
+	RESP_SEQ(exit_sub, &sub_expression_scope_lead);
+},
+[](ObjectParser& p) -> Response {
+	auto op = ObjectOperator::none;
+	switch (p.c) {
+	case PC_EOF:
+		PARSER_ERROR(p, "expected sub-object or block close, got EOF");
+		RESP(error);
+
+	case '}': case ']':
+		PARSER_ERRORF(p, "unbalanced block close: '%c'", static_cast<char>(p.c));
+		RESP(error);
+
+	case ')':
+		RESP(next_gobble);
+
+	case '+': op = ObjectOperator::add; goto l_op;
+	case '-': op = ObjectOperator::sub; goto l_op;
+	case '*': op = ObjectOperator::mul; goto l_op;
+	case '/': op = ObjectOperator::div; goto l_op;
+
+	default:
+		break;
+
+	l_op:
+		RESP_IF(!parser_next(p), error)
+		else {
+			auto& obj = array::push_back_inplace(object::expression(*p.branch->obj));
+			object::set_op(obj, op);
+			parser_push(p, obj, jump_base_unnamed);
+			RESP(jump);
+		}
+	}
+	PARSER_ERROR_EXPECTED(p, "operator or scope terminator");
+	RESP(error);
+});
+
+STAGE(stage_expression_scope_lead, BF_S_EXPRESSION_SCOPE,
+nullptr,
+[](ObjectParser& p) -> Response {
+	auto jump_back = (p.branch->flags & OF_TAG)
+		? jump_tag_expression_scope
+		: jump_base_expression_scope
+	;
+	RESP_SEQ_IF(p.c == ')', loopback_exit, jump_back)
+	else {
+		// hack: return to stage_expression_scope on Response::complete
+		p.branch->sequence_pos = jump_back;
+		auto& lead = array::push_back_inplace(object::expression(*p.branch->obj));
+		object::set_op(lead, ObjectOperator::none);
+		parser_push(p, lead, jump_base_unnamed);
+		RESP(jump);
+	}
+});
+
 STAGE(stage_source, BF_NONE,
 [](ObjectParser& p) -> Response {
 	RESP_IF_ELSE(p.c == '$', exit, pass)
@@ -1572,7 +1671,7 @@ STAGE(stage_tags, BF_TAGS,
 
 	RESP_IF(!parser_next(p), error)
 	else {
-		parser_push(p, array::push_back_inplace(object::tags(*p.branch->obj)), sequence_tag);
+		parser_push(p, array::push_back_inplace(object::tags(*p.branch->obj)), sequence_tag, OF_TAG);
 		RESP(jump);
 	}
 });
@@ -1584,8 +1683,6 @@ STAGE(stage_children, BF_S_CHILDREN,
 [](ObjectParser& p) -> Response {
 	switch (p.c) {
 	case '}':
-		// hop over stage_expression_scope
-		p.hop_count = 1;
 		RESP(next_gobble);
 
 	case PC_EOF:
@@ -1602,79 +1699,16 @@ STAGE(stage_children, BF_S_CHILDREN,
 	}
 });
 
-// Wacky business ahead. Using the exit sequence of a sub-stage to read a lead
-// value (if any) while skipping junk.
-STAGE(stage_expression_scope, BF_S_EXPRESSION_SCOPE,
-[](ObjectParser& p) -> Response {
-	RESP_IF(p.c != '(', pass);
-
-	if (!object::is_null(*p.branch->obj)) {
-		PARSER_ERROR_EXPECTED(p, "scoped expression is a value (must not have preceding value)");
-		RESP(error);
-	}
-	object::set_expression(*p.branch->obj);
-	RESP_SEQ(exit_sub, &sub_expression_scope_lead);
-},
-[](ObjectParser& p) -> Response {
-	auto op = ObjectOperator::none;
-	switch (p.c) {
-	case PC_EOF:
-		PARSER_ERROR(p, "expected sub-object or block close, got EOF");
-		RESP(error);
-
-	case '}': case ']':
-		PARSER_ERRORF(p, "unbalanced block close: '%c'", static_cast<char>(p.c));
-		RESP(error);
-
-	case ')':
-		RESP(next_gobble);
-
-	case '+': op = ObjectOperator::add; goto l_op;
-	case '-': op = ObjectOperator::sub; goto l_op;
-	case '*': op = ObjectOperator::mul; goto l_op;
-	case '/': op = ObjectOperator::div; goto l_op;
-
-	default:
-		break;
-
-	l_op:
-		RESP_IF(!parser_next(p), error)
-		else {
-			auto& obj = array::push_back_inplace(object::children(*p.branch->obj));
-			object::set_op(obj, op);
-			parser_push(p, obj, jump_base_unnamed);
-			RESP(jump);
-		}
-	}
-	PARSER_ERROR_EXPECTED(p, "operator or scope terminator");
-	RESP(error);
-});
-
-STAGE(stage_expression_scope_lead, BF_S_EXPRESSION_SCOPE,
-nullptr,
-[](ObjectParser& p) -> Response {
-	RESP_SEQ_IF(p.c == ')', loopback_exit, jump_base_expression_scope)
-	else {
-		// hack: return to stage_expression_scope on Response::complete
-		p.branch->sequence_pos = jump_base_expression_scope;
-		auto& lead = array::push_back_inplace(object::children(*p.branch->obj));
-		object::set_op(lead, ObjectOperator::none);
-		parser_push(p, lead, jump_base_unnamed);
-		RESP(jump);
-	}
-});
-
 STAGE(stage_tag_name, BF_NONE,
 [](ObjectParser& p) -> Response {
-	if (parser_is_identifier_lead(p)) {
+	RESP_IF(!parser_is_identifier_lead(p), pass)
+	else {
 		RESP_IF(!parser_read_identifier(p), error)
 		else {
 			parser_apply(p, ApplyBufferAs::name);
 			RESP(next);
 		}
 	}
-	PARSER_ERROR_EXPECTED(p, "tag name");
-	RESP(error);
 },
 nullptr
 );
@@ -1768,6 +1802,10 @@ STAGE(stage_quantity_children, BF_S_QUANTITY_COLLECTION,
 
 STAGE(stage_tag_complete, BF_NONE,
 [](ObjectParser& p) -> Response {
+	if (!p.branch->any_part) {
+		PARSER_ERROR_EXPECTED(p, "tag part");
+		RESP(error);
+	}
 	p.flags |= PF_CARRY;
 	RESP(complete);
 },
@@ -1791,7 +1829,8 @@ STAGE(stage_complete, BF_NONE,
 			auto& obj = *((flags & BF_QUANTITY) ? object::quantity(*p.branch->obj) : p.branch->obj);
 			parser_move_object_into_child(obj);
 			object::set_expression(obj);
-			object::set_op(array::back(object::children(obj)), ObjectOperator::none);
+			object::expression(obj) = rvalue_ref(object::children(obj));
+			object::set_op(array::back(object::expression(obj)), ObjectOperator::none);
 			parser_push(p, obj, &sub_expression);
 			RESP(jump);
 		} else {
@@ -1803,7 +1842,7 @@ STAGE(stage_complete, BF_NONE,
 			shim.name = lead->name;
 			lead->name = {};
 			object::set_op(*lead, ObjectOperator::none);
-			array::push_back_inplace(object::children(shim), rvalue_ref(*lead));
+			array::push_back_inplace(object::expression(shim), rvalue_ref(*lead));
 			array::remove_over(scope, lead);
 			parser_push(p, array::back(scope), &sub_expression);
 			RESP(jump);
@@ -1854,7 +1893,7 @@ STAGE(stage_expression, BF_EXPRESSION,
 	l_op:
 		RESP_IF(!parser_next(p), error)
 		else {
-			auto& obj = array::push_back_inplace(object::children(*p.branch->obj));
+			auto& obj = array::push_back_inplace(object::expression(*p.branch->obj));
 			object::set_op(obj, op);
 			parser_push(p, obj, jump_base_unnamed);
 			RESP(jump);
@@ -1868,6 +1907,17 @@ STAGE(stage_sequence_end, BF_NONE,
 [](ObjectParser& p) -> Response {
 	(void)p;
 	RESP(error);
+},
+[](ObjectParser& p) -> Response {
+	(void)p;
+	RESP(error);
+}
+);
+
+STAGE(stage_skip, BF_NONE,
+[](ObjectParser& p) -> Response {
+	p.hop_count = 1;
+	RESP(next);
 },
 [](ObjectParser& p) -> Response {
 	(void)p;
@@ -1914,15 +1964,16 @@ Stage const
 	&stage_typed_string,
 	&stage_source, // -> stage_sub_source
 	&stage_tags, // pre
-	&stage_children,
 	&stage_expression_scope, // -> stage_expression_scope_lead
+	&stage_tags, // pre
+	&stage_children,
 	&stage_tags, // post
 	&stage_quantity, // -> stage_quantity_children
 	&stage_complete,
 	&stage_sequence_end,
 },
 ** jump_base_unnamed = find_stage(sequence_base, &stage_lead) + 1,
-** jump_base_after_marker_guess = find_stage(sequence_base, &stage_marker_uncertainty) + 1,
+** jump_base_after_marker_guess = find_stage(sequence_base, &stage_marker_guess) + 1,
 ** jump_base_after_value = find_stage(sequence_base, &stage_value) + 1,
 ** jump_base_expression_scope = find_stage(sequence_base, &stage_expression_scope),
 ** jump_base_quantity = find_stage(sequence_base, &stage_quantity),
@@ -1933,13 +1984,25 @@ Stage const
 	&stage_tag_marker_guess,
 	&stage_marker_approximation,
 	&stage_tag_name,
+	&stage_tag_assign,
+		&stage_marker_uncertainty,
+		&stage_tag_marker_guess,
+		&stage_marker_approximation,
+		&stage_value,
+		&stage_typed_string,
+		&stage_skip,
+		&stage_expression_scope, // -> stage_expression_scope_lead
 	&stage_tag_children,
 	&stage_tag_complete,
 	&stage_sequence_end,
 },
+** jump_tag_after_marker_guess = find_stage(sequence_tag, &stage_tag_marker_guess) + 1,
 ** jump_tag_after_name = find_stage(sequence_tag, &stage_tag_name) + 1,
+** jump_tag_after_value = find_stage(sequence_tag, &stage_tag_children),
+** jump_tag_expression_scope = find_stage(sequence_tag, &stage_expression_scope),
 
 * sub_assign = &stage_assign,
+* sub_tag_assign = &stage_tag_assign,
 * sub_unit = &stage_unit,
 * sub_sub_source = &stage_sub_source,
 * sub_quantity_children = &stage_quantity_children,

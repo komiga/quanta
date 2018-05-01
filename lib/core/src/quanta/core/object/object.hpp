@@ -612,15 +612,32 @@ inline StringRef text(Object const& obj) {
 }
 
 /// Set type to expression.
-///
-/// The "value part" of an expression is the object's children.
 inline void set_expression(Object& obj) {
 	object::set_type(obj, ObjectValueType::expression);
 }
 
+/// Expression value.
+inline Array<Object>& expression(Object& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::expression));
+	return obj.expression;
+}
+inline Array<Object> const& expression(Object const& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::expression));
+	return obj.expression;
+}
+
+/// Whether the object has any operands (is an expression).
+inline bool has_operands(Object const& obj) {
+	return array::any(obj.expression);
+}
+
+/// Clear expression.
+inline void clear_expression(Object& obj) {
+	TOGO_ASSERTE(object::is_type(obj, ObjectValueType::expression));
+	array::clear(obj.expression);
+}
+
 /// Children.
-///
-/// These are also the elements of an expression.
 inline Array<Object>& children(Object& obj) { return obj.children; }
 inline Array<Object> const& children(Object const& obj) { return obj.children; }
 
@@ -708,6 +725,7 @@ inline Object::Object()
 	, sub_source(0)
 	, name()
 	, value()
+	, expression(memory::default_allocator())
 	, tags(memory::default_allocator())
 	, children(memory::default_allocator())
 	, quantity(nullptr)
@@ -727,6 +745,7 @@ inline Object::Object(Object&& other)
 	, sub_source(other.sub_source)
 	, name(other.name)
 	, value(other.value)
+	, expression(rvalue_ref(other.expression))
 	, tags(rvalue_ref(other.tags))
 	, children(rvalue_ref(other.children))
 	, quantity(other.quantity)

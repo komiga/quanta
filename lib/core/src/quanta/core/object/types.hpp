@@ -156,6 +156,7 @@ struct Object {
 	u16 sub_source;
 	HashedUnmanagedString<ObjectNameHasher> name;
 	Value value;
+	Array<Object> expression;
 	Array<Object> tags;
 	Array<Object> children;
 	Object* quantity;

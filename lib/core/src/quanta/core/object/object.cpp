@@ -38,8 +38,6 @@ bool object::set_type(Object& obj, ObjectValueType const type) {
 }
 
 /// Reset value to type default.
-///
-/// This does not clear children if the object is an expression.
 void object::clear_value(Object& obj) {
 	auto& a = memory::default_allocator();
 	switch (object::type(obj)) {
@@ -72,7 +70,7 @@ void object::clear_value(Object& obj) {
 		unmanaged_string::clear(obj.value.identifier, a);
 		break;
 	case ObjectValueType::expression:
-		// FIXME: why not clear children? it's the value of an expression
+		array::set_capacity(obj.expression, 0);
 		break;
 	}
 }
@@ -114,6 +112,7 @@ void object::copy(Object& dst, Object const& src, bool const children IGEN_DEFAU
 		unmanaged_string::set(dst.value.identifier, src.value.identifier, a);
 		break;
 	case ObjectValueType::expression:
+		array::copy(dst.expression, src.expression);
 		break;
 	}
 	object::copy_tags(dst, src);

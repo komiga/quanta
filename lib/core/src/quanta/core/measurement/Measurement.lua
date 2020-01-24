@@ -104,7 +104,10 @@ M.define_quantity({
 		end,
 	},
 }, {
-	{"ratio",  0},
+	{"ratio", 0},
+	{"pct", 0, function(value)
+		return value / 100
+	end},
 })
 
 M.define_quantity({

@@ -16,6 +16,11 @@ function make_test(text, item_index, value, unit, of, approximation, certain)
 end
 
 local translation_tests = {
+	make_test("1ratio"  , 0, 1  , "ratio", 0),
+	make_test("0.5ratio", 0, 0.5, "ratio", 0),
+	make_test("100pct", 0, 1, "ratio", 0),
+	make_test("20pct" , 0, 0.2, "ratio", 0),
+
 	make_test("2"  , 0, 0, ""  , 2),
 	make_test("2g" , 0, 2, "g" , 0),
 	make_test("2ml", 0, 2, "ml", 0),
@@ -45,9 +50,10 @@ function do_translation_test(t)
 	U.assert(unit)
 
 	local item = t.item_index > 0 and O.operand_at(obj, t.item_index) or obj
-	U.assert(Measurement.get_unit(O.unit_hash(item)) == unit)
+	-- U.assert(Measurement.get_unit(O.unit_hash(item)) == unit)
 
 	local m = Measurement(obj)
+	U.assert(m:unit() == unit)
 	O.clear(obj)
 	m:to_object(obj)
 	print(O.write_text_string(obj, true))
